@@ -1,0 +1,129 @@
+name: Build Lift Log
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      - name: Pick an iPhone simulator
+        id: sim
+        run: |
+          UDID=$(xcrun simctl list devices available -j | python3 -c '
+          import json, re, sys
+          devs = json.load(sys.stdin)["devices"]
+          best = None
+          for runtime, items in devs.items():
+              m = re.search(r"iOS-(\d+)-(\d+)", runtime)
+              if not m:
+                  continue
+              ver = (int(m.group(1)), int(m.group(2)))
+              for d in items:
+                  if not d["name"].startswith("iPhone"):
+                      continue
+                  plain = 1 if re.fullmatch(r"iPhone \d+", d["name"]) else 0
+                  key = (ver, plain)
+                  if best is None or key > best[0]:
+                      best = (key, d["udid"], d["name"], runtime)
+          print(best[1])
+          print(best[2], best[3], file=sys.stderr)
+          ')
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+
+      - name: Run the app test on the simulator
+        run: |
+          mkdir -p build
+          set +e
+          xcodebuild test \
+            -project LiftLog.xcodeproj -scheme LiftLog \
+            -destination "id=${{ steps.sim.outputs.udid }}" \
+            -derivedDataPath build/sim \
+            -resultBundlePath build/TestResults.xcresult \
+            CODE_SIGNING_ALLOWED=NO > build/test.log 2>&1
+          status=$?
+          set -e
+          grep -E "error:|warning: .*LiftLog|Test Case|\*\* TEST|XCTAssert" build/test.log | tail -n 80 || true
+          exit $status
+
+      - name: Collect screenshots
+        if: always()
+        run: |
+          mkdir -p screenshots
+          if [ -d build/TestResults.xcresult ]; then
+            xcrun xcresulttool export attachments --path build/TestResults.xcresult --output-path screenshots || true
+          fi
+          # One more look in dark mode, with the data the test left behind.
+          APP=build/sim/Build/Products/Debug-iphonesimulator/LiftLog.app
+          UDID=${{ steps.sim.outputs.udid }}
+          if [ -d "$APP" ]; then
+            xcrun simctl boot "$UDID" 2>/dev/null || true
+            xcrun simctl ui "$UDID" appearance dark || true
+            xcrun simctl install "$UDID" "$APP" || true
+            xcrun simctl launch "$UDID" com.lsims6.liftlog || true
+            sleep 8
+            xcrun simctl io "$UDID" screenshot screenshots/7-dark-mode.png || true
+          fi
+          ls -la screenshots
+
+      - name: Build the iPhone app (unsigned; AltStore signs it)
+        run: |
+          set +e
+          xcodebuild build \
+            -project LiftLog.xcodeproj -scheme LiftLog \
+            -configuration Release -sdk iphoneos \
+            -destination "generic/platform=iOS" \
+            -derivedDataPath build/device \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" > build/device.log 2>&1
+          status=$?
+          set -e
+          grep -E "error:|\*\* BUILD" build/device.log | tail -n 40 || true
+          exit $status
+
+      - name: Package LiftLog.ipa
+        run: |
+          rm -rf Payload && mkdir Payload
+          cp -R build/device/Build/Products/Release-iphoneos/LiftLog.app Payload/
+          zip -qry LiftLog.ipa Payload
+          ls -la LiftLog.ipa
+
+      - name: Upload LiftLog.ipa
+        uses: actions/upload-artifact@v4
+        with:
+          name: LiftLog-ipa
+          path: LiftLog.ipa
+          retention-days: 30
+
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots
+          path: screenshots
+          retention-days: 14
+
+      - name: Upload build logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs
+          path: build/*.log
+          retention-days: 7
