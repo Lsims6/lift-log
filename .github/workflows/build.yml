@@ -16,6 +16,10 @@ jobs:
   build:
     runs-on: macos-15
     timeout-minutes: 45
+    env:
+      # Set these as repository secrets to send each passing build to Appetize (see README).
+      APPETIZE_TOKEN: ${{ secrets.APPETIZE_API_TOKEN }}
+      APPETIZE_KEY: ${{ secrets.APPETIZE_PUBLIC_KEY }}
     steps:
       - uses: actions/checkout@v4
 
@@ -162,6 +166,26 @@ jobs:
           if-no-files-found: ignore
           retention-days: 30
 
+      # Only builds that passed the test go to Appetize. With APPETIZE_PUBLIC_KEY set, it replaces
+      # the same Appetize app, so the link never changes; without it, Appetize makes a new app.
+      - name: Send to Appetize
+        id: appetize
+        if: success() && env.APPETIZE_TOKEN != ''
+        uses: appetizeio/github-action-appetize@v1.1.0
+        with:
+          apiToken: ${{ env.APPETIZE_TOKEN }}
+          publicKey: ${{ env.APPETIZE_KEY }}
+          appFile: LiftLog-simulator.zip
+          platform: ios
+          note: "Lift Log build ${{ github.run_number }} (${{ github.sha }})"
+          timeout: 300
+
+      - name: Appetize link
+        if: steps.appetize.outcome == 'success'
+        run: |
+          echo "Try it: https://appetize.io/app/${{ steps.appetize.outputs.publicKey }}" | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "appetize: https://appetize.io/app/${{ steps.appetize.outputs.publicKey }}" > appetize-link.txt
+
       - name: Upload LiftLog.ipa
         if: always()
         uses: actions/upload-artifact@v4
@@ -200,6 +224,7 @@ jobs:
           for f in build/*.log; do [ -f "$f" ] && tail -n 4000 "$f" > "$OUT/$(basename "$f")"; done
           [ -f LiftLog.ipa ] && cp LiftLog.ipa "$OUT/"
           [ -f LiftLog-simulator.zip ] && cp LiftLog-simulator.zip "$OUT/"
+          [ -f appetize-link.txt ] && cp appetize-link.txt "$OUT/"
           printf 'run: %s\ncommit: %s\nresult: %s\n' "${{ github.run_id }}" "${{ github.sha }}" "${{ job.status }}" > "$OUT/RESULT.txt"
           cd "$OUT"
           git init -q -b ci-results
