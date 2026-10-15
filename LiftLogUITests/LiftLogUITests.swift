@@ -16,9 +16,15 @@ final class LiftLogUITests: XCTestCase {
         add(attachment)
     }
 
+    /// Finds a control by its label whatever type it is reported as. Buttons that toggle
+    /// (the week days, the tabs, the set checkmarks) show up as switches, the rest as buttons.
+    private func control(_ web: XCUIElement, _ label: String) -> XCUIElement {
+        web.descendants(matching: .any).matching(NSPredicate(format: "label == %@", label)).firstMatch
+    }
+
     /// The Mon button in the week strip (its label is like "Monday, Oct 12").
     private func mondayButton(_ web: XCUIElement) -> XCUIElement {
-        web.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Monday'")).firstMatch
+        web.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH 'Monday'")).firstMatch
     }
 
     /// Scrolls down until the element is on screen; returns whether it was found.
@@ -43,7 +49,7 @@ final class LiftLogUITests: XCTestCase {
         XCTAssertTrue(monday.waitForExistence(timeout: 30), "The week strip didn't load")
         monday.tap()
 
-        let firstSet = web.buttons["Set 1 done"].firstMatch
+        let firstSet = control(web, "Set 1 done")
         XCTAssertTrue(firstSet.waitForExistence(timeout: 15), "Monday's set rows weren't shown")
         shot(app, "1-monday")
 
@@ -52,7 +58,7 @@ final class LiftLogUITests: XCTestCase {
         shot(app, "2-set-logged")
 
         // The set should now be in History.
-        web.buttons["History"].tap()
+        control(web, "History").tap()
         XCTAssertTrue(web.staticTexts["Hack squats"].waitForExistence(timeout: 10), "The logged set didn't show in History")
         shot(app, "3-history")
 
@@ -62,7 +68,7 @@ final class LiftLogUITests: XCTestCase {
         app.launch()
         let reopened = app.webViews.firstMatch
         XCTAssertTrue(reopened.waitForExistence(timeout: 30), "The app's page didn't come back after reopening")
-        let historyTab = reopened.buttons["History"]
+        let historyTab = control(reopened, "History")
         XCTAssertTrue(historyTab.waitForExistence(timeout: 30))
         historyTab.tap()
         XCTAssertTrue(reopened.staticTexts["Hack squats"].waitForExistence(timeout: 10),
@@ -70,18 +76,18 @@ final class LiftLogUITests: XCTestCase {
         shot(app, "4-history-after-reopen")
 
         // Finish and lock Monday.
-        reopened.buttons["Today"].tap()
+        control(reopened, "Today").tap()
         let monday2 = mondayButton(reopened)
         XCTAssertTrue(monday2.waitForExistence(timeout: 10))
         monday2.tap()
-        let finish = reopened.buttons["Finish workout & lock"]
+        let finish = control(reopened, "Finish workout & lock")
         XCTAssertTrue(scrollTo(finish, in: app), "The Finish workout button wasn't there")
         finish.tap()
-        XCTAssertTrue(reopened.buttons["Unlock to edit"].waitForExistence(timeout: 10), "Finishing the workout didn't lock it")
+        XCTAssertTrue(control(reopened, "Unlock to edit").waitForExistence(timeout: 10), "Finishing the workout didn't lock it")
         sleep(1)
         shot(app, "5-finished")
 
-        reopened.buttons["Progress"].tap()
+        control(reopened, "Progress").tap()
         sleep(1)
         shot(app, "6-progress")
     }
