@@ -23,3 +23,13 @@ An offline workout tracker for iPhone. Everything is saved in a file on the phon
 - **Import CSV** reads a file exported from Lift Log (the web version or this app). Past days come in as finished workouts.
 
 Your log lives inside the app. Refreshing it in AltStore keeps your data, but deleting the app deletes the log, so export a CSV now and then as a backup.
+
+## Appetize (try it in a browser)
+
+Every build that passes its test can be sent to [Appetize](https://appetize.io), which runs the app on a virtual iPhone in your browser.
+
+1. In Appetize, create an API token (account settings → API token).
+2. In this repo: **Settings → Secrets and variables → Actions → New repository secret**, name it `APPETIZE_API_TOKEN`, and paste the token.
+3. Optional, to keep one link that always has the newest build: open the app in your Appetize dashboard, copy its public key (the last part of its `appetize.io/app/...` link), and save it as a second secret named `APPETIZE_PUBLIC_KEY`.
+
+After that, each passing build updates Appetize automatically; the link is shown on the build's summary page.
