@@ -33,3 +33,7 @@ Every build that passes its test can be sent to [Appetize](https://appetize.io),
 3. Optional, to keep one link that always has the newest build: open the app in your Appetize dashboard, copy its public key (the last part of its `appetize.io/app/...` link), and save it as a second secret named `APPETIZE_PUBLIC_KEY`.
 
 After that, each passing build updates Appetize automatically; the link is shown on the build's summary page.
+
+## Test site
+
+The same screens are published to **https://lsims6.github.io/lift-log/** whenever `LiftLog/Web` changes (workflow: *Publish test site*). There, the log saves in that browser only; it's separate from the app on the phone. Pages must be set to **Settings → Pages → Source: GitHub Actions**.
