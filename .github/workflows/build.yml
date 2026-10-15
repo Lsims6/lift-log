@@ -56,17 +56,35 @@ jobs:
           ')
           echo "udid=$UDID" >> "$GITHUB_OUTPUT"
 
+      # Start the virtual iPhone and wait until it's fully up, so the test doesn't time out
+      # waiting for a cold simulator on a busy runner.
+      - name: Start the simulator
+        run: |
+          xcrun simctl boot "${{ steps.sim.outputs.udid }}" || true
+          xcrun simctl bootstatus "${{ steps.sim.outputs.udid }}" -b
+
       - name: Run the app test on the simulator
         run: |
           mkdir -p build
+          run_test() {
+            rm -rf build/TestResults.xcresult
+            xcodebuild test \
+              -project LiftLog.xcodeproj -scheme LiftLog \
+              -destination "id=${{ steps.sim.outputs.udid }}" \
+              -derivedDataPath build/sim \
+              -resultBundlePath build/TestResults.xcresult \
+              CODE_SIGNING_ALLOWED=NO > build/test.log 2>&1
+          }
           set +e
-          xcodebuild test \
-            -project LiftLog.xcodeproj -scheme LiftLog \
-            -destination "id=${{ steps.sim.outputs.udid }}" \
-            -derivedDataPath build/sim \
-            -resultBundlePath build/TestResults.xcresult \
-            CODE_SIGNING_ALLOWED=NO > build/test.log 2>&1
+          run_test
           status=$?
+          # A launch timeout is the runner being slow, not the app failing: try once more.
+          if [ $status -ne 0 ] && grep -qE "Failed to launch|Timed out while launching" build/test.log; then
+            echo "Simulator was slow to launch the app; retrying the test once."
+            cp build/test.log build/test-attempt1.log
+            run_test
+            status=$?
+          fi
           set -e
           grep -E "error:|warning: .*LiftLog|Test Case|\*\* TEST|XCTAssert" build/test.log | tail -n 80 || true
           if [ $status -ne 0 ]; then
