@@ -77,7 +77,9 @@ h1{font-family:var(--display);font-weight:700;font-size:30px;letter-spacing:.01e
 .sn{font-family:var(--display);font-size:18px;font-weight:700;color:var(--muted);text-align:center}
 .x{color:var(--muted);text-align:center}
 .reps{width:48px;height:44px;border:1px solid var(--line);border-radius:8px;text-align:center;font-family:var(--display);font-size:20px;font-weight:700;background:transparent;color:var(--ink);font-variant-numeric:tabular-nums}
-.chk{width:44px;height:44px;border-radius:8px;border:1.5px dashed var(--line);background:transparent;color:var(--surface);font-size:20px;font-weight:700;cursor:pointer}
+.chk{width:44px;height:44px;padding:0;margin:0;display:grid;place-items:center;border-radius:8px;border:1.5px dashed var(--line);background:transparent;color:var(--surface);cursor:pointer;-webkit-appearance:none;appearance:none}
+/* the checkmark is drawn, not typed, so it sits dead center on every device and font */
+.srow.on .chk::after{content:"";width:9px;height:17px;border:solid currentColor;border-width:0 3px 3px 0;border-radius:1px;transform:translate(0,-3px) rotate(45deg)}
 .srow.on .chk{border:1.5px solid var(--done);background:var(--done)}
 .srow.on .sn{color:var(--done)}
 .target small{font-family:var(--body);font-size:11px;text-transform:uppercase;letter-spacing:.05em}
@@ -412,7 +414,7 @@ function cardHTML(item){
       <div class="stepper"><button data-act="w-" aria-label="Set ${k+1} less weight">−</button><input data-act="w" inputmode="decimal" aria-label="Set ${k+1} weight" placeholder="${item.hint==="max"?"max":"lb"}" value="${s.w??""}"><button data-act="w+" aria-label="Set ${k+1} more weight">+</button></div>
       <span class="x">×</span>
       <input class="reps" data-act="r" inputmode="numeric" aria-label="Set ${k+1} reps" value="${s.reps??""}">
-      <button class="chk" data-act="set" aria-pressed="${on}" aria-label="Set ${k+1} done">${on?"✓":""}</button>
+      <button class="chk" data-act="set" aria-pressed="${on}" aria-label="Set ${k+1} done"></button>
     </div>`}).join("");
   return `<div class="card ${comp?"complete":""}" data-id="${item.id}">
     <div class="top"><div><div class="name">${item.name}</div><div class="last">${lastTxt}${hint}</div></div><div class="target">${adv.lo}–${adv.hi}<small> reps</small></div></div>
