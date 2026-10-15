@@ -5,6 +5,9 @@ on:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: write   # lets the last step save logs and screenshots to the ci-results branch
+
 concurrency:
   group: build-${{ github.ref }}
   cancel-in-progress: true
@@ -62,6 +65,9 @@ jobs:
           status=$?
           set -e
           grep -E "error:|warning: .*LiftLog|Test Case|\*\* TEST|XCTAssert" build/test.log | tail -n 80 || true
+          if [ $status -ne 0 ]; then
+            grep -E "error:|failed|XCTAssert" build/test.log | head -n 15 | while IFS= read -r line; do echo "::error::${line}"; done
+          fi
           exit $status
 
       - name: Collect screenshots
@@ -85,6 +91,7 @@ jobs:
           ls -la screenshots
 
       - name: Build the iPhone app (unsigned; AltStore signs it)
+        if: always()
         run: |
           set +e
           xcodebuild build \
@@ -96,9 +103,13 @@ jobs:
           status=$?
           set -e
           grep -E "error:|\*\* BUILD" build/device.log | tail -n 40 || true
+          if [ $status -ne 0 ]; then
+            grep -E "error:" build/device.log | head -n 15 | while IFS= read -r line; do echo "::error::${line}"; done
+          fi
           exit $status
 
       - name: Package LiftLog.ipa
+        if: always()
         run: |
           rm -rf Payload && mkdir Payload
           cp -R build/device/Build/Products/Release-iphoneos/LiftLog.app Payload/
@@ -127,3 +138,25 @@ jobs:
           name: build-logs
           path: build/*.log
           retention-days: 7
+
+      # Also keep the latest results (logs, screenshots, and the .ipa when it built) on a
+      # separate ci-results branch, so they can be read with plain git. main is never touched.
+      - name: Save results to the ci-results branch
+        if: always()
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set +e
+          OUT=$(mktemp -d)
+          cp -R screenshots "$OUT/" 2>/dev/null
+          for f in build/*.log; do [ -f "$f" ] && tail -n 4000 "$f" > "$OUT/$(basename "$f")"; done
+          [ -f LiftLog.ipa ] && cp LiftLog.ipa "$OUT/"
+          printf 'run: %s\ncommit: %s\nresult: %s\n' "${{ github.run_id }}" "${{ github.sha }}" "${{ job.status }}" > "$OUT/RESULT.txt"
+          cd "$OUT"
+          git init -q -b ci-results
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -qm "Results for build ${{ github.run_number }} (${{ job.status }})"
+          git push -qf "https://x-access-token:${TOKEN}@github.com/${{ github.repository }}.git" ci-results
+          echo "Saved results to the ci-results branch"
