@@ -1,0 +1,63 @@
+# XcodeGen spec. The GitHub build runs `xcodegen generate` to create LiftLog.xcodeproj,
+# so there is no generated project file to keep in sync by hand.
+name: LiftLog
+options:
+  bundleIdPrefix: com.lsims6
+  deploymentTarget:
+    iOS: "16.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    MARKETING_VERSION: "1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    SWIFT_VERSION: "5.0"
+targets:
+  LiftLog:
+    type: application
+    platform: iOS
+    sources:
+      - path: LiftLog
+        excludes:
+          - "Web"
+          - "Web/**"
+      - path: LiftLog/Web
+        type: folder
+        buildPhase: resources
+    info:
+      path: LiftLog/Info.plist
+      properties:
+        CFBundleDisplayName: Lift Log
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        UIRequiresFullScreen: true
+        ITSAppUsesNonExemptEncryption: false
+        LSSupportsOpeningDocumentsInPlace: false
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.lsims6.liftlog
+        PRODUCT_NAME: LiftLog
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        TARGETED_DEVICE_FAMILY: "1"
+        GENERATE_INFOPLIST_FILE: NO
+        CODE_SIGN_STYLE: Automatic
+  LiftLogUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: [LiftLogUITests]
+    dependencies:
+      - target: LiftLog
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.lsims6.liftlog.uitests
+        TEST_TARGET_NAME: LiftLog
+        GENERATE_INFOPLIST_FILE: YES
+schemes:
+  LiftLog:
+    build:
+      targets:
+        LiftLog: all
+        LiftLogUITests: [test]
+    test:
+      targets: [LiftLogUITests]
