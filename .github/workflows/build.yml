@@ -76,6 +76,23 @@ jobs:
           mkdir -p screenshots
           if [ -d build/TestResults.xcresult ]; then
             xcrun xcresulttool export attachments --path build/TestResults.xcresult --output-path screenshots || true
+            # Keep only the named PNG screenshots, renamed to their step names (1-monday.png, ...).
+            python3 - <<'PY' || true
+          import json, os
+          d = "screenshots"
+          man = os.path.join(d, "manifest.json")
+          if os.path.exists(man):
+              for test in json.load(open(man)):
+                  for a in test.get("attachments", []):
+                      src = os.path.join(d, a.get("exportedFileName", ""))
+                      name = a.get("suggestedHumanReadableName", "")
+                      if not os.path.isfile(src):
+                          continue
+                      if name[:1].isdigit():
+                          os.replace(src, os.path.join(d, name.split("_")[0] + ".png"))
+                      else:
+                          os.remove(src)
+          PY
           fi
           # One more look in dark mode, with the data the test left behind.
           APP=build/sim/Build/Products/Debug-iphonesimulator/LiftLog.app
@@ -116,11 +133,42 @@ jobs:
           zip -qry LiftLog.ipa Payload
           ls -la LiftLog.ipa
 
+      # A simulator copy of the app for Appetize.io, which runs it on a virtual iPhone in the browser.
+      # Built fresh (not reused from the test) so it starts with an empty log.
+      - name: Build simulator copy for Appetize
+        if: always()
+        run: |
+          set +e
+          xcodebuild build \
+            -project LiftLog.xcodeproj -scheme LiftLog \
+            -configuration Debug -sdk iphonesimulator \
+            -destination "generic/platform=iOS Simulator" \
+            -derivedDataPath build/appetize \
+            ARCHS=arm64 ONLY_ACTIVE_ARCH=NO CODE_SIGNING_ALLOWED=NO > build/appetize.log 2>&1
+          status=$?
+          set -e
+          grep -E "error:|\*\* BUILD" build/appetize.log | tail -n 20 || true
+          if [ $status -ne 0 ]; then exit $status; fi
+          cd build/appetize/Build/Products/Debug-iphonesimulator
+          zip -qry "$GITHUB_WORKSPACE/LiftLog-simulator.zip" LiftLog.app
+          ls -la "$GITHUB_WORKSPACE/LiftLog-simulator.zip"
+
+      - name: Upload simulator copy (for Appetize)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: LiftLog-simulator-for-Appetize
+          path: LiftLog-simulator.zip
+          if-no-files-found: ignore
+          retention-days: 30
+
       - name: Upload LiftLog.ipa
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: LiftLog-ipa
           path: LiftLog.ipa
+          if-no-files-found: ignore
           retention-days: 30
 
       - name: Upload screenshots
@@ -151,6 +199,7 @@ jobs:
           cp -R screenshots "$OUT/" 2>/dev/null
           for f in build/*.log; do [ -f "$f" ] && tail -n 4000 "$f" > "$OUT/$(basename "$f")"; done
           [ -f LiftLog.ipa ] && cp LiftLog.ipa "$OUT/"
+          [ -f LiftLog-simulator.zip ] && cp LiftLog-simulator.zip "$OUT/"
           printf 'run: %s\ncommit: %s\nresult: %s\n' "${{ github.run_id }}" "${{ github.sha }}" "${{ job.status }}" > "$OUT/RESULT.txt"
           cd "$OUT"
           git init -q -b ci-results
