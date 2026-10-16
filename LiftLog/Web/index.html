@@ -166,6 +166,9 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .exsel{font:inherit;font-weight:600;font-size:16px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:6px 30px 6px 10px;max-width:100%;-webkit-appearance:none;appearance:none;text-overflow:ellipsis}
 .exsel:disabled{opacity:.6}
 .top>div:first-child{min-width:0}
+/* cardio before & after the workout: same card, plus a second row for machine level and floors */
+.card.cardio .row+.row{gap:6px 10px}
+.card.cardio .reps{width:60px}
 @media (prefers-reduced-motion:no-preference){.set,.card{transition:background .12s,border-color .12s}}
 </style>
 </head>
@@ -196,7 +199,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
     <div id="lockBanner" class="banner" hidden></div>
     <div class="list" id="list"></div>
     <div id="finishBar" class="finish"></div>
-    <p class="note" id="logNote">Each set has its own weight and reps, so log a lighter warm-up and your top sets separately. Sets start at what you did last time. Tap ✓ when a set is done; everything saves on your phone as you go.</p>
+    <p class="note" id="logNote">Each set has its own weight and reps, so log a lighter warm-up and your top sets separately. Sets start at what you did last time. Tap ✓ when a set is done. Log your warm-up and cool-down cardio in the cards above and below the lifts. Everything saves on your phone as you go.</p>
   </section>
 
   <section id="statsView" class="wrap" style="gap:12px" hidden>
@@ -381,6 +384,38 @@ function lastFor(id, before){
   return null;
 }
 
+/* ---- cardio before & after the workout ----
+   Every day has a warm-up card above the lifts and a cool-down card below them, saved on the session as
+   cardio:{pre:{ex,min,lvl,fl,done}, post:{…}}. The machine defaults to the stair climber and each card starts
+   at what you did last time in that same spot. Level and floors are optional; floors only show for the stair climber.
+   A card counts once you tap Log it. */
+const CSLOT={pre:"before",post:"after"};
+function cDone(c){return !!(c&&c.done&&c.min>0)}
+function sCardio(s){return ["pre","post"].map(k=>s&&s.cardio&&s.cardio[k]).filter(cDone)}
+function lastCardio(slot,before){
+  const ds=Object.keys(sessions).filter(d=>d<before&&cDone(sessions[d].cardio&&sessions[d].cardio[slot])).sort();
+  return ds.length?{date:ds[ds.length-1],c:sessions[ds[ds.length-1]].cardio[slot]}:null}
+function cardioFor(slot){
+  const c=cur.cardio&&cur.cardio[slot]; if(c)return c;
+  const L=lastCardio(slot,date);
+  return L?{ex:L.c.ex,min:L.c.min,lvl:L.c.lvl??null,fl:null,_draft:true}:{ex:"stairs",min:slot==="pre"?10:15,lvl:null,fl:null,_draft:true}}
+function fmtCardio(c,withName=true){
+  return (withName?(NAMES[c.ex]||c.ex)+" · ":"")+c.min+" min"+(c.lvl?" · L"+c.lvl:"")+(c.fl?" · "+c.fl+" floors":"")}
+function cardioHTML(slot){
+  const c=cardioFor(slot), on=!c._draft&&cDone(c), L=lastCardio(slot,date), lbl=CSLOT[slot];
+  const last=L?`Last: ${fmtCardio(L.c,L.c.ex!==c.ex)} · ${nice(L.date,{month:"short",day:"numeric"})}`:(slot==="pre"?"Warm-up":"Cool-down")+" · optional";
+  const opts=(BYGROUP.cardio||[]).map(o=>`<option value="${o.id}"${o.id===c.ex?" selected":""}>${o.name}</option>`).join("");
+  return `<div class="card cardio ${on?"complete":""}" data-cslot="${slot}">
+    <div class="top"><div><div class="cat">Cardio · ${lbl} workout</div><label class="exwrap"><select class="exsel" data-c="ex" aria-label="Cardio ${lbl} workout: machine">${opts}</select></label><div class="last">${last}</div></div><div class="target">MIN</div></div>
+    <div class="row"><div class="stepper"><button data-c="min-" aria-label="Less cardio time ${lbl} workout">−</button><input data-c="min" inputmode="numeric" aria-label="Cardio minutes ${lbl} workout" value="${c.min??""}"><button data-c="min+" aria-label="More cardio time ${lbl} workout">+</button></div>
+      <span class="unit">minutes</span>
+      <button class="set ${on?"on":""}" data-c="done" aria-pressed="${on}" aria-label="Log cardio ${lbl} workout" style="margin-left:auto">${on?"Done ✓":"Log it"}</button></div>
+    <div class="row"><span class="unit">Level</span><div class="stepper small"><button data-c="lvl-" aria-label="Lower level">−</button><input data-c="lvl" inputmode="numeric" aria-label="Machine level ${lbl} workout" placeholder="—" value="${c.lvl??""}"><button data-c="lvl+" aria-label="Higher level">+</button></div>
+      ${c.ex==="stairs"?`<span class="unit">Floors</span><input class="reps" data-c="fl" inputmode="numeric" aria-label="Floors climbed ${lbl} workout" placeholder="—" value="${c.fl??""}">`:""}</div>
+  </div>`;
+}
+function commitC(slot,c){delete c._draft;cur.cardio=Object.assign({},cur.cardio,{[slot]:c});markDirty()}
+
 /* ---- progressive overload (double progression) ----
    Compound lifts work in 8–12 reps, isolation in 6–15. Working sets are the sets at your top weight.
    Each session aims for one more rep than last time; once every working set reaches the top of the
@@ -437,8 +472,8 @@ function render(){
   $("logNote").hidden=!!cur.locked;
   if(cur.locked){renderLocked(items);return}
   $("lockBanner").hidden=true;
-  $("list").innerHTML=items.map(i=>cardHTML(i,new Set(items.filter(x=>x.slot!==i.slot).map(x=>x.id)))).join("");
-  const any=Object.values(cur.entries).some(e=>e.min>0||setsDone(e).length);
+  $("list").innerHTML=cardioHTML("pre")+items.map(i=>cardHTML(i,new Set(items.filter(x=>x.slot!==i.slot).map(x=>x.id)))).join("")+cardioHTML("post");
+  const any=Object.values(cur.entries).some(e=>e.min>0||setsDone(e).length)||sCardio(cur).length>0;
   $("finishBar").innerHTML=any
     ?`<button class="btn" id="finishBtn">Finish workout &amp; lock</button><span class="note">Locks today's entries so they can't be changed by accident. You can unlock later.</span>`
     :"";
@@ -455,6 +490,8 @@ function renderLocked(items){
   // also show anything logged that isn't on this day's plan
   Object.entries(cur.entries).forEach(([id,e])=>{if(items.some(i=>i.id===id))return;
     if(e.min>0)done.push([NAMES[id]||id,e.min+" min"]);else{const sd=setsDone(e);if(sd.length)done.push([NAMES[id]||id,fmtSets(sd)])}});
+  ["pre","post"].forEach(k=>{const c=cur.cardio&&cur.cardio[k];if(!cDone(c))return;min+=c.min;
+    const row=["Cardio "+CSLOT[k]+" · "+(NAMES[c.ex]||c.ex),fmtCardio(c,false)];if(k==="pre")done.unshift(row);else done.push(row)});
   const when=cur.lockedAt?new Date(cur.lockedAt).toLocaleTimeString([], {hour:"numeric",minute:"2-digit"}):"";
   const b=$("lockBanner");b.hidden=false;
   b.innerHTML=`<div><b>Workout finished</b><span>${nice(date)}${when?" · locked "+when:""}</span></div>
@@ -512,7 +549,7 @@ function cardHTML(item,taken=new Set()){
 function itemById(id){return dayItems().find(i=>i.id===id)}
 
 $("list").addEventListener("click",ev=>{
-  if(cur.locked)return;
+  if(cur.locked||ev.target.closest("[data-cslot]"))return;
   const b=ev.target.closest("button[data-act]"); if(!b)return;
   const card=b.closest(".card"), item=itemById(card.dataset.id), e=entryFor(item), act=b.dataset.act;
   const step=item.step||5, row=b.closest(".srow"), k=row?+row.dataset.k:-1, s=k>=0?e.sets[k]:null;
@@ -527,7 +564,7 @@ $("list").addEventListener("click",ev=>{
   commit(item,e); render();
 });
 $("list").addEventListener("change",ev=>{
-  if(cur.locked)return;
+  if(cur.locked||ev.target.closest("[data-cslot]"))return;
   const sel=ev.target.closest("select.exsel");
   if(sel){const card=sel.closest(".card"),old=card.dataset.id;
     cur.swaps=Object.assign({},cur.swaps,{[card.dataset.slot]:sel.value});
@@ -541,6 +578,24 @@ $("list").addEventListener("change",ev=>{
   else if(inp.dataset.act==="r")setR(e,k,n==null?null:Math.max(1,Math.round(n)));
   else e.min=n||0;
   commit(item,e); render();
+});
+$("list").addEventListener("click",ev=>{
+  const card=ev.target.closest("[data-cslot]"), b=ev.target.closest("button[data-c]"); if(cur.locked||!card||!b)return;
+  const slot=card.dataset.cslot, c=cardioFor(slot), a=b.dataset.c;
+  if(a==="min-")c.min=Math.max(0,(+c.min||0)-5);
+  else if(a==="min+")c.min=(+c.min||0)+5;
+  else if(a==="lvl-")c.lvl=Math.max(1,(+c.lvl||1)-1);
+  else if(a==="lvl+")c.lvl=(+c.lvl||0)+1;
+  else if(a==="done"){if(!(c.min>0))c.min=slot==="pre"?10:15;c.done=!(c.done&&!c._draft)}
+  commitC(slot,c); render();
+});
+$("list").addEventListener("change",ev=>{
+  const card=ev.target.closest("[data-cslot]"), f=ev.target.closest("[data-c]"); if(cur.locked||!card||!f)return;
+  const slot=card.dataset.cslot, c=cardioFor(slot), a=f.dataset.c, v=f.value.trim();
+  if(a==="ex"){c.ex=v;if(v!=="stairs")c.fl=null}
+  else{const n=v===""?null:Number(v);if(v!==""&&!(isFinite(n)&&n>=0))return render();
+    c[a]=n==null?(a==="min"?0:null):Math.round(n)}
+  commitC(slot,c); render();
 });
 /* Changing a set also updates the not-yet-done sets after it that matched its old value,
    so bumping your top set carries down the remaining top sets but never touches the warm-up above it. */
@@ -639,10 +694,12 @@ function renderHist(){
   // every day with logged sets, cardio or a weigh-in; rest days with only a weigh-in get their own card
   const days=[...new Set([...Object.keys(sessions),...Object.keys(bodyweight)])].sort().reverse();
   const html=days.map(d=>{const s=sessions[d]||{entries:{}};
-    const rows=Object.entries(s.entries||{}).map(([id,e])=>{
+    let rows=Object.entries(s.entries||{}).map(([id,e])=>{
       if(e.min!=null)return e.min>0?`<tr><td>${NAMES[id]||id}</td><td>${e.min} min</td></tr>`:"";
       const sd=setsDone(e); if(!sd.length)return "";
       return `<tr><td>${NAMES[id]||id}</td><td>${fmtSets(sd)}</td></tr>`}).join("");
+    const crow=k=>{const c=s.cardio&&s.cardio[k];return cDone(c)?`<tr><td>Cardio ${CSLOT[k]} · ${NAMES[c.ex]||c.ex}</td><td>${fmtCardio(c,false)}</td></tr>`:""};
+    rows=crow("pre")+rows+crow("post");
     const w=bodyweight[d];
     if(!rows&&w==null)return "";
     const bwRow=w!=null?`<tr class="bwh"><td>${BW_NAME}</td><td>${w} lb</td></tr>`:"";
@@ -669,11 +726,14 @@ const ORDER=Object.keys(ITEMS);
 let statEx=ls.get("gl.statEx",null);
 
 function weekStart(s){const d=parse(s);const w=(d.getDay()+6)%7;d.setDate(d.getDate()-w);return todayStr(d)}
-function logged(s){return Object.values(s.entries||{}).some(e=>e.min>0||setsDone(e).length)}
+function logged(s){return Object.values(s.entries||{}).some(e=>e.min>0||setsDone(e).length)||sCardio(s).length>0}
 /* One row per session: w = top-set weight, reps = fewest reps done at that weight. */
 function liftRows(id){
-  return Object.keys(sessions).sort().map(d=>{const e=(sessions[d].entries||{})[id];if(!e)return null;
-    if(ITEMS[id]&&ITEMS[id].cardio)return e.min>0?{date:d,min:e.min}:null;
+  return Object.keys(sessions).sort().map(d=>{const e=(sessions[d].entries||{})[id];
+    if(ITEMS[id]&&ITEMS[id].cardio){ // the plan's cardio slot plus any before/after cardio on that machine
+      let min=e&&e.min>0?e.min:0,fl=0;sCardio(sessions[d]).forEach(c=>{if(c.ex===id){min+=c.min;fl+=c.fl||0}});
+      return min>0?{date:d,min,fl}:null}
+    if(!e)return null;
     const sd=setsDone(e);if(!sd.length)return null;
     const w=Math.max(...sd.map(x=>+x.w||0)), atTop=sd.filter(x=>(+x.w||0)===w);
     return {date:d,w,reps:Math.min(...atTop.map(x=>x.reps||0)),n:sd.length,all:e.sets.length===sd.length,sets:sd,
@@ -682,7 +742,7 @@ function liftRows(id){
 }
 function sessionVolume(s){let v=0;Object.values(s.entries||{}).forEach(e=>{if(e.min!=null)return;
   setsDone(e).forEach(x=>v+=(+x.w||0)*(x.reps||0))});return v}
-function sessionMinutes(s){let m=0;Object.values(s.entries||{}).forEach(e=>{if(e.min>0)m+=e.min});return m}
+function sessionMinutes(s){let m=0;Object.values(s.entries||{}).forEach(e=>{if(e.min>0)m+=e.min});sCardio(s).forEach(c=>m+=c.min);return m}
 function kfmt(n){return n>=10000?(n/1000).toFixed(0)+"k":n>=1000?(n/1000).toFixed(1)+"k":String(Math.round(n))}
 
 function renderStats(){
@@ -736,8 +796,8 @@ function renderExercise(){
   if(it.cardio){
     $("exTitle").textContent=`${it.name} · minutes per session`;
     lineChart($("exChart"),r.map(x=>({d:x.date,v:x.min,tip:`${nice(x.date)}: ${x.min} min`})),"min");
-    const tot=r.reduce((a,x)=>a+x.min,0);
-    $("exFacts").innerHTML=fact(r.length,"sessions")+fact(tot,"total min")+fact(Math.round(tot/r.length),"avg min");
+    const tot=r.reduce((a,x)=>a+x.min,0), fl=r.reduce((a,x)=>a+(x.fl||0),0);
+    $("exFacts").innerHTML=fact(r.length,"sessions")+fact(tot,"total min")+(fl?fact(fl,"total floors"):fact(Math.round(tot/r.length),"avg min"));
     return;
   }
   const bw=r.every(x=>!x.w);
@@ -808,13 +868,17 @@ function barChart(el,pts){
 
 function csv(){
   const q=v=>{v=v==null?"":String(v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
-  const out=[["Date","Day","Exercise","Set","Weight (lb)","Reps","Minutes"]];
+  const out=[["Date","Day","Exercise","Set","Weight (lb)","Reps","Minutes","Level","Floors"]];
   const days=[...new Set([...Object.keys(sessions),...Object.keys(bodyweight)])].sort();
   days.forEach(d=>{const s=sessions[d]||{entries:{}};
     if(bodyweight[d]!=null)out.push([d,DAYNAME[s.day]||"",BW_NAME,"",bodyweight[d],"",""]);
+    // before/after cardio: the Set column says "Before" or "After"
+    const crow=k=>{const c=s.cardio&&s.cardio[k];if(cDone(c))out.push([d,DAYNAME[s.day]||"",NAMES[c.ex]||c.ex,k==="pre"?"Before":"After","","",c.min,c.lvl??"",c.fl??""])};
+    crow("pre");
     Object.entries(s.entries||{}).forEach(([id,e])=>{
       if(e.min!=null){if(e.min>0)out.push([d,DAYNAME[s.day]||"",NAMES[id]||id,"","","",e.min]);return}
-      setsDone(e).forEach((x,i)=>out.push([d,DAYNAME[s.day]||"",NAMES[id]||id,i+1,x.w,x.reps,""]));})});
+      setsDone(e).forEach((x,i)=>out.push([d,DAYNAME[s.day]||"",NAMES[id]||id,i+1,x.w,x.reps,""]));});
+    crow("post");});
   return out.map(r=>r.map(q).join(",")).join("\n");
 }
 /* ---- export: the iPhone share sheet in the app, a plain download in a browser ---- */
@@ -852,7 +916,7 @@ function importCSV(text){
   const rows=parseCSV(text.replace(/^﻿/,"")).filter(r=>r.some(c=>c.trim()));
   if(!rows.length)throw new Error("empty");
   const head=rows.shift().map(h=>h.trim().toLowerCase()), col=n=>head.findIndex(h=>h.startsWith(n));
-  const iD=col("date"),iDay=col("day"),iEx=col("exercise"),iW=col("weight"),iR=col("reps"),iM=col("min");
+  const iD=col("date"),iDay=col("day"),iEx=col("exercise"),iW=col("weight"),iR=col("reps"),iM=col("min"),iSet=col("set"),iL=col("level"),iF=col("floor");
   if(iD<0||iEx<0)throw new Error("header");
   const byName={};Object.entries(NAMES).forEach(([id,n])=>byName[n.toLowerCase()]=id);
   const got={};let bwN=0;
@@ -867,6 +931,9 @@ function importCSV(text){
     const dk=iDay>=0?(r[iDay]||"").trim().toLowerCase():"";
     const s=got[d]||(got[d]={date:d,day:PLAN[dk]?dk:defaultDay(d),entries:{}});
     const min=iM>=0?Number(r[iM]):NaN;
+    const tag=iSet>=0?(r[iSet]||"").trim().toLowerCase():"";
+    if(min>0&&(tag==="before"||tag==="after")){const num=i=>{const t=i>=0?(r[i]||"").trim():"",n=Number(t);return t!==""&&n>0?n:null};
+      s.cardio=Object.assign({},s.cardio,{[tag==="before"?"pre":"post"]:{ex:id,min,lvl:num(iL),fl:num(iF),done:true}});return}
     if(min>0){s.entries[id]={min};return}
     const wRaw=iW>=0?(r[iW]||"").trim():"", w=wRaw===""?null:Number(wRaw), reps=iR>=0?Number(r[iR]):NaN;
     if(!(reps>0))return;
@@ -876,7 +943,8 @@ function importCSV(text){
   if(!ds.length){if(bwN){persist();rerender();return `Imported ${bwN} weigh-in${bwN>1?"s":""}.`}return "No workouts found in that file."}
   let merged=0; const today=todayStr();
   ds.forEach(d=>{
-    if(sessions[d]){merged++;Object.assign(sessions[d].entries,got[d].entries);return}
+    if(sessions[d]){merged++;Object.assign(sessions[d].entries,got[d].entries);
+      if(got[d].cardio)sessions[d].cardio=Object.assign({},sessions[d].cardio,got[d].cardio);return}
     sessions[d]={...got[d],locked:d<today};   // past days come in finished, so they can't be changed by accident
   });
   persist(); loadCur(); rerender();
