@@ -145,6 +145,16 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .plist li:first-child{border-top:0}
 .plist em{font-style:normal;color:var(--muted);font-size:12.5px}
 .pill{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:2px 7px;border-radius:999px;border:1px solid var(--done);color:var(--done);margin-left:6px}
+/* body weight: one compact row on Today, a trend panel on Progress */
+.bw{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.bw .lbl{display:flex;flex-direction:column;min-width:0;flex:1}
+.bw .lbl b{font-weight:600;font-size:15px}
+.bw .lbl span{font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.bw.has{border-color:var(--done)}
+.bw .stepper input{width:76px}
+.bw .clr{font:inherit;font-size:12px;border:0;background:none;color:var(--muted);cursor:pointer;padding:4px;text-decoration:underline}
+.bwhead{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.chart .ln.avg{stroke:var(--ink);stroke-width:1.5;opacity:.55;stroke-dasharray:4 3}
 @media (prefers-reduced-motion:no-preference){.set,.card{transition:background .12s,border-color .12s}}
 </style>
 </head>
@@ -169,6 +179,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
       <button id="nextDay" class="btn ghost" aria-label="Next day">›</button>
     </div>
     <div class="daybar" id="daybar" role="group" aria-label="Workout day"></div>
+    <div class="bw" id="bwRow"></div>
     <div class="dayhead"><h2 id="dayTitle"></h2><small id="dayCount"></small></div>
     <label class="plansel"><span>Workout</span><select id="planSel" aria-label="Workout for this day"></select></label>
     <div id="lockBanner" class="banner" hidden></div>
@@ -178,6 +189,15 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
   </section>
 
   <section id="statsView" class="wrap" style="gap:12px" hidden>
+    <div class="panel" id="bwPanel">
+      <div class="bwhead"><h3>Body weight</h3>
+        <div class="chips" id="bwRange" role="group" aria-label="Body weight range">
+          <button data-r="30" aria-pressed="false">30 days</button><button data-r="90" aria-pressed="true">90 days</button><button data-r="0" aria-pressed="false">All</button>
+        </div></div>
+      <div class="chart" id="bwChart"></div>
+      <div class="facts" id="bwFacts"></div>
+      <div class="note">Dots are weigh-ins; the dashed line is your 7-day average, which evens out day-to-day water swings.</div>
+    </div>
     <div id="statsEmpty" class="empty" hidden>Your progress shows up here after your first logged workout. Tap a few sets on the Today tab to start.</div>
     <div id="statsBody" class="wrap" style="gap:12px">
       <div class="tiles" id="tiles"></div>
@@ -278,6 +298,7 @@ const NATIVE=!!(window.webkit&&window.webkit.messageHandlers&&window.webkit.mess
 const BOOT=NATIVE?(window.__LIFTLOG__||{}):ls.get("ll.data",{});
 let sessions=normAll(BOOT.sessions||{});            // date -> session
 let customNames=Object.assign({},BOOT.names||{});    // names for exercises brought in by CSV import
+let bodyweight=Object.assign({},BOOT.bodyweight||{}); // date -> body weight in lb (separate from workouts, never locked)
 // exercises that used to be in the plan, so older history still shows their names
 const RETIRED={dbcurl:"Dumbbell curls",facepull:"Face pulls",hammercurl:"Hammer curls",machinecurl:"Bicep curl machine",
   pecdeck:"Pec deck",machinelat:"Machine lateral raise",ohtri:"Overhead triceps extension"};
@@ -352,6 +373,7 @@ function render(){
   $("daybar").innerHTML=DAYS.map((d,i)=>{const ds=shift(mon,i),s=sessions[ds];
     const mark=s&&s.locked?" ✓":(s&&logged(s)?" •":"");
     return `<button data-date="${ds}" aria-pressed="${ds===date}" aria-label="${nice(ds,{weekday:"long",month:"short",day:"numeric"})}${s&&s.locked?", finished":""}"><b>${DAYNAME[d]}</b><span>${parse(ds).getDate()}${mark}</span></button>`}).join("");
+  renderBW();
   $("planSel").value=cur.day; $("planSel").disabled=!!cur.locked;
   const plan=PLAN[cur.day];
   $("dayTitle").textContent=plan.label;
@@ -471,10 +493,62 @@ $("dateInput").addEventListener("change",ev=>{if(ev.target.value){flush();date=e
 $("prevDay").onclick=()=>{flush();date=shift(date,-1);loadCur();render()};
 $("nextDay").onclick=()=>{flush();date=shift(date,1);loadCur();render()};
 
+/* ---- body weight ----
+   One weigh-in per date, in lb, kept apart from the workout so it can be entered on rest days
+   and still changed after a workout is locked. The −/+ buttons move in 0.2 lb like a bathroom scale. */
+const BW_STEP=0.2, BW_NAME="Body weight";
+const r1=n=>Math.round(n*10)/10;
+function bwBefore(d){const k=Object.keys(bodyweight).filter(x=>x<d).sort().pop();return k?{date:k,w:bodyweight[k]}:null}
+function renderBW(){
+  const w=bodyweight[date], prev=bwBefore(date);
+  let sub;
+  if(w!=null&&prev){const ch=r1(w-prev.w);sub=`${ch>0?"▲ +":ch<0?"▼ ":"± "}${ch} lb since ${nice(prev.date,{month:"short",day:"numeric"})}`}
+  else if(w!=null)sub="First weigh-in";
+  else sub=prev?`Last: ${prev.w} lb · ${nice(prev.date,{month:"short",day:"numeric"})}`:"Weigh in to track your trend";
+  const row=$("bwRow"); row.className="bw"+(w!=null?" has":"");
+  row.innerHTML=`<div class="lbl"><b>Body weight</b><span>${sub}</span></div>
+    <div class="stepper"><button data-bw="-" aria-label="Less body weight">−</button><input data-bw="v" inputmode="decimal" aria-label="Body weight in pounds" placeholder="${prev?prev.w:"lb"}" value="${w??""}"><button data-bw="+" aria-label="More body weight">+</button></div>
+    <span class="unit">lb</span>${w!=null?`<button class="clr" data-bw="x" aria-label="Clear body weight">Clear</button>`:""}`;
+}
+function setBW(v){
+  if(v==null||!(v>0))delete bodyweight[date]; else bodyweight[date]=r1(v);
+  persist(); renderBW();
+}
+$("bwRow").addEventListener("click",ev=>{const b=ev.target.closest("button[data-bw]");if(!b)return;
+  const base=bodyweight[date]??(bwBefore(date)||{}).w;
+  if(b.dataset.bw==="x")return setBW(null);
+  if(base==null){$("bwRow").querySelector("input").focus();return}
+  // first tap on a new day starts from the last weigh-in, so ± just nudges it
+  setBW(bodyweight[date]==null?base:base+(b.dataset.bw==="+"?BW_STEP:-BW_STEP));
+});
+$("bwRow").addEventListener("change",ev=>{if(!ev.target.matches("input[data-bw]"))return;
+  const v=ev.target.value.trim(), n=v===""?null:Number(v);
+  if(v!==""&&!(n>0&&n<1000))return renderBW();
+  setBW(n);
+});
+
+let bwDays=ls.get("ll.bwRange",90);
+function renderBWStats(){
+  $("bwRange").querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",+b.dataset.r===bwDays));
+  const all=Object.keys(bodyweight).sort();
+  if(!all.length){$("bwChart").innerHTML=`<div class="note">No weigh-ins yet. Enter your body weight at the top of the Today tab, any day of the week.</div>`;$("bwFacts").innerHTML="";return}
+  const from=bwDays?shift(todayStr(),-bwDays+1):"0000";
+  let ds=all.filter(d=>d>=from); if(!ds.length)ds=all.slice(-1);
+  // 7-day average: the mean of weigh-ins in the week ending on each date, which smooths out water-weight swings
+  const avg=d=>{const lo=shift(d,-6),xs=all.filter(x=>x>=lo&&x<=d).map(x=>bodyweight[x]);return r1(xs.reduce((a,b)=>a+b,0)/xs.length)};
+  const pts=ds.map(d=>({d,v:bodyweight[d],a:avg(d),tip:`${nice(d,{month:"short",day:"numeric"})}: ${bodyweight[d]} lb · 7-day avg ${avg(d)}`}));
+  lineChart($("bwChart"),pts,"lb",pts.length>2?pts.map(p=>p.a):null);
+  const last=pts[pts.length-1], ch=r1(last.v-pts[0].v);
+  $("bwFacts").innerHTML=fact(last.v+" lb","latest")+fact(last.a+" lb","7-day avg")
+    +fact((ch>0?"+":"")+ch+" lb",pts.length>1?"since "+nice(pts[0].d,{month:"short",day:"numeric"}):"change");
+}
+$("bwRange").addEventListener("click",ev=>{const b=ev.target.closest("button[data-r]");if(!b)return;
+  bwDays=+b.dataset.r;ls.set("ll.bwRange",bwDays);renderBWStats();});
+
 /* ---- saving ---- */
 const SAVED_LABEL=NATIVE?"Saved on this iPhone":"Saved in this browser";
 function persist(){
-  const payload={version:1,savedAt:Date.now(),names:customNames,sessions};
+  const payload={version:1,savedAt:Date.now(),names:customNames,sessions,bodyweight};
   try{
     if(NATIVE)window.webkit.messageHandlers.liftlog.postMessage({type:"save",json:JSON.stringify(payload)});
     else ls.set("ll.data",payload);
@@ -497,7 +571,8 @@ function renderHist(){
       const d=setsDone(e); if(!d.length)return "";
       return `<tr><td>${NAMES[id]||id}</td><td>${fmtSets(d)}</td></tr>`}).join("");
     if(!rows)return "";
-    return `<div class="hcard"><h3><span>${nice(d)} · ${PLAN[s.day]?PLAN[s.day].label:""}${s.locked?'<span class="lockpill">Done</span>':""}</span><button data-open="${d}">${s.locked?"Open":"Edit"}</button></h3><table>${rows}</table></div>`}).join("");
+    const bwRow=bodyweight[d]!=null?`<tr><td>${BW_NAME}</td><td>${bodyweight[d]} lb</td></tr>`:"";
+    return `<div class="hcard"><h3><span>${nice(d)} · ${PLAN[s.day]?PLAN[s.day].label:""}${s.locked?'<span class="lockpill">Done</span>':""}</span><button data-open="${d}">${s.locked?"Open":"Edit"}</button></h3><table>${bwRow}${rows}</table></div>`}).join("");
 }
 $("hist").addEventListener("click",ev=>{const b=ev.target.closest("button[data-open]");if(!b)return;
   date=b.dataset.open;loadCur();showView("log");});
@@ -534,6 +609,7 @@ function sessionMinutes(s){let m=0;Object.values(s.entries||{}).forEach(e=>{if(e
 function kfmt(n){return n>=10000?(n/1000).toFixed(0)+"k":n>=1000?(n/1000).toFixed(1)+"k":String(Math.round(n))}
 
 function renderStats(){
+  renderBWStats();
   const ds=Object.keys(sessions).filter(d=>logged(sessions[d])).sort();
   $("statsEmpty").hidden=ds.length>0; $("statsBody").hidden=!ds.length;
   if(!ds.length)return;
@@ -612,7 +688,7 @@ function niceRange(min,max){if(min===max){min-=5;max+=5}const pad=(max-min)*.15;
   const step=Math.pow(10,Math.floor(Math.log10((max-min)/3)));const s=[1,2,2.5,5,10].map(m=>m*step).find(x=>(max-min)/x<=4)||step*10;
   return {lo:Math.floor(min/s)*s,hi:Math.ceil(max/s)*s,s}}
 function yAxis(lo,hi,s,y){let g="";for(let v=lo;v<=hi+1e-9;v+=s){const yy=y(v).toFixed(1);
-  g+=`<line class="grid" x1="${PL}" x2="${W-PR}" y1="${yy}" y2="${yy}"/><text class="axis" x="${PL-6}" y="${+yy+4}" text-anchor="end">${kfmt(v)}</text>`}return g}
+  g+=`<line class="grid" x1="${PL}" x2="${W-PR}" y1="${yy}" y2="${yy}"/><text class="axis" x="${PL-6}" y="${+yy+4}" text-anchor="end">${s<1?v.toFixed(1):kfmt(v)}</text>`}return g}
 function hover(el,pts,xs,ys){
   const svg=el.querySelector("svg"),tip=document.createElement("div");tip.className="tip";tip.hidden=true;el.appendChild(tip);
   const xh=svg.querySelector(".xh");
@@ -625,16 +701,16 @@ function hover(el,pts,xs,ys){
   svg.addEventListener("pointermove",at);svg.addEventListener("pointerdown",at);
   svg.addEventListener("pointerleave",()=>{tip.hidden=true;if(xh)xh.style.display="none"});
 }
-function lineChart(el,pts,unit){
+function lineChart(el,pts,unit,overlay){
   if(!pts.length){el.innerHTML=`<div class="note">No sessions logged yet.</div>`;return}
-  const vals=pts.map(p=>p.v),{lo,hi,s}=niceRange(Math.min(...vals),Math.max(...vals));
+  const vals=pts.map(p=>p.v),all=overlay?vals.concat(overlay):vals,{lo,hi,s}=niceRange(Math.min(...all),Math.max(...all));
   const y=v=>PT+(1-(v-lo)/(hi-lo))*(H-PT-PB);
   const xs=pts.map((p,i)=>pts.length===1?(PL+W-PR)/2:PL+8+i*(W-PR-PL-16)/(pts.length-1)),ys=vals.map(y);
   const line=xs.map((x,i)=>(i?"L":"M")+x.toFixed(1)+","+ys[i].toFixed(1)).join("");
   const area=pts.length>1?`<path class="area" d="${line}L${xs[xs.length-1]},${H-PB}L${xs[0]},${H-PB}Z"/>`:"";
   const lab=(i,a)=>`<text class="axis" x="${xs[i]}" y="${H-6}" text-anchor="${a}">${nice(pts[i].d,{month:"short",day:"numeric"})}</text>`;
   el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Trend in ${unit}">${yAxis(lo,hi,s,y)}${area}
-    <path class="ln" d="${line}"/><line class="xh" y1="${PT}" y2="${H-PB}" style="display:none"/>
+    <path class="ln" d="${line}"/>${overlay?`<path class="ln avg" d="${xs.map((x,i)=>(i?"L":"M")+x.toFixed(1)+","+y(overlay[i]).toFixed(1)).join("")}"/>`:""}<line class="xh" y1="${PT}" y2="${H-PB}" style="display:none"/>
     ${xs.map((x,i)=>`<circle class="dot" cx="${x}" cy="${ys[i]}" r="${i===xs.length-1?5:4}"/>`).join("")}
     ${lab(0,pts.length===1?"middle":"start")}${pts.length>1?lab(pts.length-1,"end"):""}</svg>`;
   hover(el,pts,xs,ys);
@@ -656,7 +732,9 @@ function barChart(el,pts){
 function csv(){
   const q=v=>{v=v==null?"":String(v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
   const out=[["Date","Day","Exercise","Set","Weight (lb)","Reps","Minutes"]];
-  Object.keys(sessions).sort().forEach(d=>{const s=sessions[d];
+  const days=[...new Set([...Object.keys(sessions),...Object.keys(bodyweight)])].sort();
+  days.forEach(d=>{const s=sessions[d]||{entries:{}};
+    if(bodyweight[d]!=null)out.push([d,DAYNAME[s.day]||"",BW_NAME,"",bodyweight[d],"",""]);
     Object.entries(s.entries||{}).forEach(([id,e])=>{
       if(e.min!=null){if(e.min>0)out.push([d,DAYNAME[s.day]||"",NAMES[id]||id,"","","",e.min]);return}
       setsDone(e).forEach((x,i)=>out.push([d,DAYNAME[s.day]||"",NAMES[id]||id,i+1,x.w,x.reps,""]));})});
@@ -700,10 +778,12 @@ function importCSV(text){
   const iD=col("date"),iDay=col("day"),iEx=col("exercise"),iW=col("weight"),iR=col("reps"),iM=col("min");
   if(iD<0||iEx<0)throw new Error("header");
   const byName={};Object.entries(NAMES).forEach(([id,n])=>byName[n.toLowerCase()]=id);
-  const got={};
+  const got={};let bwN=0;
   rows.forEach(r=>{
     const d=(r[iD]||"").trim(), name=(r[iEx]||"").trim();
     if(!/^\d{4}-\d{2}-\d{2}$/.test(d)||!name)return;
+    if(name.toLowerCase()===BW_NAME.toLowerCase()){const w=Number((r[iW]||"").trim());
+      if(w>0){bodyweight[d]=r1(w);bwN++}return}
     let id=byName[name.toLowerCase()];
     if(!id){id="x-"+name.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
       customNames[id]=name;NAMES[id]=name;byName[name.toLowerCase()]=id;}
@@ -715,14 +795,15 @@ function importCSV(text){
     if(!(reps>0))return;
     (s.entries[id]||(s.entries[id]={sets:[]})).sets.push({w:Number.isFinite(w)?w:null,reps,done:true});
   });
-  const ds=Object.keys(got); if(!ds.length)return "No workouts found in that file.";
+  const ds=Object.keys(got), bwMsg=bwN?` and ${bwN} weigh-in${bwN>1?"s":""}`:"";
+  if(!ds.length){if(bwN){persist();rerender();return `Imported ${bwN} weigh-in${bwN>1?"s":""}.`}return "No workouts found in that file."}
   let merged=0; const today=todayStr();
   ds.forEach(d=>{
     if(sessions[d]){merged++;Object.assign(sessions[d].entries,got[d].entries);return}
     sessions[d]={...got[d],locked:d<today};   // past days come in finished, so they can't be changed by accident
   });
   persist(); loadCur(); rerender();
-  return `Imported ${ds.length} workout${ds.length>1?"s":""}${merged?` (${merged} added to days you already had)`:""}.`;
+  return `Imported ${ds.length} workout${ds.length>1?"s":""}${merged?` (${merged} added to days you already had)`:""}${bwMsg}.`;
 }
 
 /* ---- boot ---- */
