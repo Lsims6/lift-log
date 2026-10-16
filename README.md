@@ -4,7 +4,7 @@ An offline workout tracker for iPhone. Everything is saved in a file on the phon
 
 ## What's here
 
-- `LiftLog/Web/index.html`: the whole app screen (workouts, per-set logging, progressive overload, finish & lock, progress charts, history, CSV import/export). Open it in any browser to try it out; there it saves to the browser instead of the phone.
+- `LiftLog/Web/index.html`: the whole app screen (workouts, per-set logging, progressive overload, finish & lock, body-weight tracking, progress charts, history, CSV import/export). Open it in any browser to try it out; there it saves to the browser instead of the phone.
 - `LiftLog/LiftLogApp.swift`: the small iPhone shell that shows the page and saves the log to `Documents/lift-log.json` (with a backup copy).
 - `LiftLogUITests/`: an automatic test on a simulated iPhone: logs a set, closes the app, reopens it, and checks the set is still there.
 - `project.yml`: the Xcode project definition (the build generates the `.xcodeproj` from it with XcodeGen).
@@ -21,6 +21,7 @@ An offline workout tracker for iPhone. Everything is saved in a file on the phon
 
 - **Export CSV** (History tab) opens the share sheet: save to Files, AirDrop, or email.
 - **Import CSV** reads a file exported from Lift Log (the web version or this app). Past days come in as finished workouts.
+- Body weight is exported as rows with the exercise "Body weight" and the weight in the Weight column, and comes back in on import.
 
 Your log lives inside the app. Refreshing it in AltStore keeps your data, but deleting the app deletes the log, so export a CSV now and then as a backup.
 
