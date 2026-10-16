@@ -1,6 +1,6 @@
 import XCTest
 
-/// Runs on a simulated iPhone in the GitHub build: logs a set on Monday's workout, closes the app,
+/// Runs on a simulated iPhone in the GitHub build: logs warm-up cardio and a set on Monday's workout, closes the app,
 /// reopens it, and checks the set is still there. It always uses Monday so it doesn't depend on
 /// which day the build happens to run. Screenshots are kept for review.
 final class LiftLogUITests: XCTestCase {
@@ -49,10 +49,16 @@ final class LiftLogUITests: XCTestCase {
         XCTAssertTrue(monday.waitForExistence(timeout: 30), "The week strip didn't load")
         monday.tap()
 
+        // Log the warm-up cardio card above the lifts (it starts on the stair climber).
+        let warmup = control(web, "Log cardio before workout")
+        XCTAssertTrue(warmup.waitForExistence(timeout: 15), "The before-workout cardio card wasn't shown")
+        shot(app, "1-monday")
+        warmup.tap()
+        sleep(1)
+
         let firstSet = control(web, "Set 1 done")
         XCTAssertTrue(firstSet.waitForExistence(timeout: 15), "Monday's set rows weren't shown")
-        shot(app, "1-monday")
-
+        XCTAssertTrue(scrollTo(firstSet, in: app), "Monday's first set wasn't reachable")
         firstSet.tap()
         sleep(1)
         shot(app, "2-set-logged")
@@ -73,6 +79,8 @@ final class LiftLogUITests: XCTestCase {
         historyTab.tap()
         XCTAssertTrue(reopened.staticTexts["Hack squats"].waitForExistence(timeout: 10),
                       "The logged set was lost after closing the app")
+        XCTAssertTrue(reopened.staticTexts["Cardio before · Stair climber"].waitForExistence(timeout: 10),
+                      "The warm-up cardio was lost after closing the app")
         shot(app, "4-history-after-reopen")
 
         // Finish and lock Monday.
