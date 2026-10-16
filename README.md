@@ -4,7 +4,7 @@ An offline workout tracker for iPhone. Everything is saved in a file on the phon
 
 ## What's here
 
-- `LiftLog/Web/index.html`: the whole app screen (workouts, per-set logging, progressive overload, finish & lock, body-weight tracking, progress charts, history, CSV import/export). Open it in any browser to try it out; there it saves to the browser instead of the phone.
+- `LiftLog/Web/index.html`: the whole app screen (workouts, per-set logging, progressive overload, finish & lock, exercise swaps within each muscle group, optional body-weight tracking, progress charts, history, CSV import/export). Open it in any browser to try it out; there it saves to the browser instead of the phone.
 - `LiftLog/LiftLogApp.swift`: the small iPhone shell that shows the page and saves the log to `Documents/lift-log.json` (with a backup copy).
 - `LiftLogUITests/`: an automatic test on a simulated iPhone: logs a set, closes the app, reopens it, and checks the set is still there.
 - `project.yml`: the Xcode project definition (the build generates the `.xcodeproj` from it with XcodeGen).

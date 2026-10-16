@@ -151,10 +151,19 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .bw .lbl b{font-weight:600;font-size:15px}
 .bw .lbl span{font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
 .bw.has{border-color:var(--done)}
-.bw .stepper input{width:76px}
+.bw .stepper input{width:84px}
+.bw.open .lbl{flex-basis:100%}
+.bwbtns{display:flex;gap:8px;align-items:center;width:100%}
+.bwbtns .btn{flex:1}
 .bw .clr{font:inherit;font-size:12px;border:0;background:none;color:var(--muted);cursor:pointer;padding:4px;text-decoration:underline}
 .bwhead{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
 .chart .ln.avg{stroke:var(--ink);stroke-width:1.5;opacity:.55;stroke-dasharray:4 3}
+.cat{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;margin-bottom:3px}
+.exwrap{position:relative;display:inline-block;max-width:100%}
+.exwrap::after{content:"";position:absolute;right:11px;top:50%;width:6px;height:6px;border:solid var(--muted);border-width:0 2px 2px 0;transform:translateY(-70%) rotate(45deg);pointer-events:none}
+.exsel{font:inherit;font-weight:600;font-size:16px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:6px 30px 6px 10px;max-width:100%;-webkit-appearance:none;appearance:none;text-overflow:ellipsis}
+.exsel:disabled{opacity:.6}
+.top>div:first-child{min-width:0}
 @media (prefers-reduced-motion:no-preference){.set,.card{transition:background .12s,border-color .12s}}
 </style>
 </head>
@@ -273,6 +282,48 @@ const PLAN = {
 const DAYS=["mon","tue","wed","thu","fri"], DAYNAME={mon:"Mon",tue:"Tue",wed:"Wed",thu:"Thu",fri:"Fri"};
 const NAMES={}; DAYS.forEach(d=>PLAN[d].items.forEach(i=>NAMES[i.id]=i.name));
 
+/* ---- exercise swaps ----
+   Every slot in a day belongs to a muscle group, and its dropdown only offers exercises from that
+   same group, so a day's categories never change. Each exercise keeps its own history and progression.
+   c:1 marks compound lifts (8–12 reps); everything else is isolation (6–15). */
+const GROUP={hack:"quads",hipthrust:"glutes",hamcurl:"hams",legext:"quadiso",calf:"calves",
+  rows:"rows",pulldown:"vert",backext:"lowback",lowbackmachine:"lowback",ezbar:"biceps",
+  bench:"chest",shoulder:"shoulders",latraise:"sidedelts",pushdown:"triceps",
+  treadmill:"cardio",bike:"cardio",rower:"cardio",hangcrunch:"abs",wcrunch:"abs",
+  revpecdeck:"reardelts",kelso:"traps",straightpd:"lats"};
+const GLABEL={quads:"Quads",glutes:"Glutes",hams:"Hamstrings",quadiso:"Quads (isolation)",calves:"Calves",
+  rows:"Back · row",vert:"Back · pulldown",lowback:"Lower back",biceps:"Biceps",chest:"Chest",shoulders:"Shoulders",
+  sidedelts:"Side delts",triceps:"Triceps",cardio:"Cardio",abs:"Abs",reardelts:"Rear delts",traps:"Traps",lats:"Lats"};
+const ALT={
+  quads:[{id:"legpress",name:"Leg press",c:1,step:10},{id:"smithsquat",name:"Smith machine squat",c:1},{id:"pendulum",name:"Pendulum squat",c:1},{id:"goblet",name:"Goblet squat",c:1}],
+  glutes:[{id:"bbhipthrust",name:"Barbell hip thrust",c:1},{id:"glutekick",name:"Glute kickback machine"},{id:"abductor",name:"Hip abductor machine"}],
+  hams:[{id:"seatedcurl",name:"Seated leg curl"},{id:"lyingcurl",name:"Lying leg curl"},{id:"rdl",name:"Romanian deadlift",c:1}],
+  quadiso:[{id:"slext",name:"Single-leg extensions"}],
+  calves:[{id:"seatedcalf",name:"Seated calf raises"},{id:"lpcalf",name:"Leg press calf raises"}],
+  rows:[{id:"cablerow",name:"Seated cable row",c:1},{id:"chestrow",name:"Chest-supported row machine",c:1},{id:"tbar",name:"T-bar row",c:1},{id:"dbrow",name:"One-arm dumbbell row",c:1}],
+  vert:[{id:"closepd",name:"Close-grip pulldown",c:1},{id:"machinepd",name:"Machine pulldown",c:1}],
+  lowback:[{id:"goodmorning",name:"Good mornings",c:1}],
+  biceps:[{id:"dbcurl",name:"Dumbbell curls"},{id:"hammercurl",name:"Hammer curls"},{id:"machinecurl",name:"Bicep curl machine"},{id:"cablecurl",name:"Cable curls"},{id:"preacher",name:"Preacher curls"}],
+  chest:[{id:"inclinebench",name:"Incline bench press",c:1},{id:"chestpress",name:"Chest press machine",c:1},{id:"dbbench",name:"Dumbbell bench press",c:1},{id:"inclinedb",name:"Incline dumbbell press",c:1},{id:"pecdeck",name:"Pec deck"}],
+  shoulders:[{id:"dbshoulder",name:"Dumbbell shoulder press",c:1},{id:"arnold",name:"Arnold press",c:1}],
+  sidedelts:[{id:"cablelat",name:"Cable lateral raise",step:2.5},{id:"machinelat",name:"Machine lateral raise"}],
+  triceps:[{id:"ohtri",name:"Overhead triceps extension"},{id:"ropepush",name:"Rope pushdowns"},{id:"dipmachine",name:"Dip machine"},{id:"skull",name:"Skull crushers"}],
+  cardio:[{id:"stairs",name:"Stair climber",cardio:true},{id:"elliptical",name:"Elliptical",cardio:true}],
+  abs:[{id:"cablecrunch",name:"Cable crunches"},{id:"abmachine",name:"Ab crunch machine"},{id:"legraise",name:"Hanging leg raises",w:0,hint:"0 = bodyweight"}],
+  reardelts:[{id:"facepull",name:"Face pulls"},{id:"reardeltraise",name:"Rear delt dumbbell raise",step:2.5}],
+  traps:[{id:"dbshrug",name:"Dumbbell shrugs"},{id:"shrugmachine",name:"Shrug machine"}],
+  lats:[{id:"dbpullover",name:"Dumbbell pullover"},{id:"machinepullover",name:"Machine pullover"}]};
+const LIB={};   // every exercise by id: the plan's own first, then the alternatives
+DAYS.forEach(d=>PLAN[d].items.forEach(i=>{i.g=GROUP[i.id];if(!LIB[i.id])LIB[i.id]=i}));
+Object.entries(ALT).forEach(([g,xs])=>xs.forEach(x=>{if(!LIB[x.id])LIB[x.id]=x.cardio?{...x,g}:{sets:2,reps:10,w:null,...x,g};NAMES[x.id]=x.name}));
+const BYGROUP={}; Object.values(LIB).forEach(i=>(BYGROUP[i.g]=BYGROUP[i.g]||[]).push(i));
+// which exercise fills a slot: what you picked for this date, else what you picked last time for this day, else the plan's
+function lastSwap(day,slot,before){
+  const ds=Object.keys(sessions).filter(d=>d<before&&sessions[d].day===day&&sessions[d].swaps&&LIB[sessions[d].swaps[slot]]).sort();
+  return ds.length?sessions[ds[ds.length-1]].swaps[slot]:null}
+function pick(slot){const s=cur.swaps&&cur.swaps[slot];return s&&LIB[s]?s:(lastSwap(cur.day,slot,date)||slot)}
+function dayItems(){return PLAN[cur.day].items.map(o=>({...LIB[pick(o.id)],slot:o.id,g:o.g}))}
+
 const $=id=>document.getElementById(id);
 const ls={get(k,f){try{const v=localStorage.getItem(k);return v?JSON.parse(v):f}catch(e){return f}},
           set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
@@ -315,6 +366,7 @@ function fmtW(w){return w==null||w===""?"—":(w===0?"BW":String(w))}
 function status(t,cls){const s=$("status");s.textContent=t;s.className="status "+(cls||"")}
 
 function loadCur(){
+  bwOpen=false;bwErr="";
   const s=sessions[date];
   cur = s ? JSON.parse(JSON.stringify(s)) : {date, day:defaultDay(date), entries:{}};
   cur.entries=cur.entries||{};
@@ -332,7 +384,7 @@ function lastFor(id, before){
    Each session aims for one more rep than last time; once every working set reaches the top of the
    range, the next session adds weight and drops back to the bottom of the range. Warm-up sets stay as they were. */
 const COMPOUND=new Set(["hack","hipthrust","rows","pulldown","bench","shoulder"]);
-function repRange(item){return COMPOUND.has(item.id)?[8,12]:[6,15]}
+function repRange(item){return COMPOUND.has(item.id)||item.c?[8,12]:[6,15]}
 function advice(item,last){
   const [lo,hi]=repRange(item), step=item.step||5;
   const sd=last?setsDone(last.e):[];
@@ -377,12 +429,13 @@ function render(){
   $("planSel").value=cur.day; $("planSel").disabled=!!cur.locked;
   const plan=PLAN[cur.day];
   $("dayTitle").textContent=plan.label;
-  const doneN=plan.items.filter(i=>isComplete(i,cur.entries[i.id])).length;
-  $("dayCount").textContent=`${nice(date)} · ${doneN}/${plan.items.length} done`;
+  const items=dayItems();
+  const doneN=items.filter(i=>isComplete(i,cur.entries[i.id])).length;
+  $("dayCount").textContent=`${nice(date)} · ${doneN}/${items.length} done`;
   $("logNote").hidden=!!cur.locked;
-  if(cur.locked){renderLocked(plan);return}
+  if(cur.locked){renderLocked(items);return}
   $("lockBanner").hidden=true;
-  $("list").innerHTML=plan.items.map(i=>cardHTML(i)).join("");
+  $("list").innerHTML=items.map(i=>cardHTML(i,new Set(items.filter(x=>x.slot!==i.slot).map(x=>x.id)))).join("");
   const any=Object.values(cur.entries).some(e=>e.min>0||setsDone(e).length);
   $("finishBar").innerHTML=any
     ?`<button class="btn" id="finishBtn">Finish workout &amp; lock</button><span class="note">Locks today's entries so they can't be changed by accident. You can unlock later.</span>`
@@ -391,14 +444,14 @@ function render(){
 
 /* ---- finish & lock ---- */
 let unlockArmed=false;
-function renderLocked(plan){
+function renderLocked(items){
   const done=[],skipped=[];let sets=0,vol=0,min=0;
-  plan.items.forEach(i=>{const e=cur.entries[i.id];
+  items.forEach(i=>{const e=cur.entries[i.id];
     if(i.cardio){if(e&&e.min>0){done.push([i.name,e.min+" min"]);min+=e.min}else skipped.push(i.name);return}
     const sd=setsDone(e);if(!sd.length){skipped.push(i.name);return}
     sets+=sd.length;sd.forEach(x=>vol+=(+x.w||0)*(x.reps||0));done.push([i.name,fmtSets(sd)]);});
   // also show anything logged that isn't on this day's plan
-  Object.entries(cur.entries).forEach(([id,e])=>{if(plan.items.some(i=>i.id===id))return;
+  Object.entries(cur.entries).forEach(([id,e])=>{if(items.some(i=>i.id===id))return;
     if(e.min>0)done.push([NAMES[id]||id,e.min+" min"]);else{const sd=setsDone(e);if(sd.length)done.push([NAMES[id]||id,fmtSets(sd)])}});
   const when=cur.lockedAt?new Date(cur.lockedAt).toLocaleTimeString([], {hour:"numeric",minute:"2-digit"}):"";
   const b=$("lockBanner");b.hidden=false;
@@ -419,7 +472,11 @@ $("lockBanner").addEventListener("click",ev=>{if(!ev.target.closest("#unlockBtn"
   unlockArmed=false;cur.locked=false;delete cur.lockedAt;markDirty();render();});
 function isComplete(item,e){if(!e)return false;return item.cardio?e.min>0:(e.sets||[]).length>0&&e.sets.every(x=>x.done)}
 
-function cardHTML(item){
+function exPick(item,taken){
+  const opts=(BYGROUP[item.g]||[item]).filter(o=>o.id===item.id||!taken.has(o.id));
+  return `<div class="cat">${GLABEL[item.g]||""}</div><label class="exwrap"><select class="exsel" aria-label="${GLABEL[item.g]||"Exercise"}: choose exercise">${opts.map(o=>`<option value="${o.id}"${o.id===item.id?" selected":""}>${o.name}</option>`).join("")}</select></label>`;
+}
+function cardHTML(item,taken=new Set()){
   const e=entryFor(item), last=lastFor(item.id,date);
   let lastTxt="First time logging this";
   if(last){lastTxt = item.cardio ? `Last: ${last.e.min} min · ${nice(last.date)}` :
@@ -427,8 +484,8 @@ function cardHTML(item){
   const hint=item.hint?` · ${item.hint}`:"";
   const comp=!e._draft&&isComplete(item,e);
   if(item.cardio){
-    return `<div class="card ${comp?"complete":""}" data-id="${item.id}">
-      <div class="top"><div><div class="name">${item.name}</div><div class="last">${lastTxt}</div></div><div class="target">MIN</div></div>
+    return `<div class="card ${comp?"complete":""}" data-id="${item.id}" data-slot="${item.slot}">
+      <div class="top"><div>${exPick(item,taken)}<div class="last">${lastTxt}</div></div><div class="target">MIN</div></div>
       <div class="row"><div class="stepper"><button data-act="min-" aria-label="Less time">−</button><input data-act="min" inputmode="numeric" aria-label="${item.name} minutes" value="${e.min??""}"><button data-act="min+" aria-label="More time">+</button></div>
       <span class="unit">minutes</span>
       <button class="set ${comp?"on":""}" data-act="cardiodone" style="margin-left:auto">${comp?"Done ✓":"Log it"}</button></div></div>`;
@@ -441,8 +498,8 @@ function cardHTML(item){
       <input class="reps" data-act="r" inputmode="numeric" aria-label="Set ${k+1} reps" value="${s.reps??""}">
       <button class="chk" data-act="set" aria-pressed="${on}" aria-label="Set ${k+1} done"></button>
     </div>`}).join("");
-  return `<div class="card ${comp?"complete":""}" data-id="${item.id}">
-    <div class="top"><div><div class="name">${item.name}</div><div class="last">${lastTxt}${hint}</div></div><div class="target">${adv.lo}–${adv.hi}<small> reps</small></div></div>
+  return `<div class="card ${comp?"complete":""}" data-id="${item.id}" data-slot="${item.slot}">
+    <div class="top"><div>${exPick(item,taken)}<div class="last">${lastTxt}${hint}</div></div><div class="target">${adv.lo}–${adv.hi}<small> reps</small></div></div>
     ${goalHTML(item,e,adv)}
     <div class="shead"><span>Set</span><span>Weight (lb)</span><span>Reps</span><span>Done</span></div>
     <div class="srows">${rows}</div>
@@ -450,7 +507,7 @@ function cardHTML(item){
   </div>`;
 }
 
-function itemById(id){return PLAN[cur.day].items.find(i=>i.id===id)}
+function itemById(id){return dayItems().find(i=>i.id===id)}
 
 $("list").addEventListener("click",ev=>{
   if(cur.locked)return;
@@ -469,6 +526,11 @@ $("list").addEventListener("click",ev=>{
 });
 $("list").addEventListener("change",ev=>{
   if(cur.locked)return;
+  const sel=ev.target.closest("select.exsel");
+  if(sel){const card=sel.closest(".card"),old=card.dataset.id;
+    cur.swaps=Object.assign({},cur.swaps,{[card.dataset.slot]:sel.value});
+    const oe=cur.entries[old]; if(oe&&!(oe.min>0)&&!setsDone(oe).length)delete cur.entries[old]; // drop untouched sets of the old pick
+    markDirty();render();return}
   const inp=ev.target.closest("input[data-act]"); if(!inp)return;
   const item=itemById(inp.closest(".card").dataset.id), e=entryFor(item), v=inp.value.trim();
   const n=v===""?null:Number(v); if(v!==""&&!isFinite(n))return render();
@@ -488,44 +550,53 @@ $("daybar").addEventListener("click",ev=>{const b=ev.target.closest("button[data
   flush();date=b.dataset.date;unlockArmed=false;loadCur();render();});
 $("planSel").innerHTML=DAYS.map(d=>`<option value="${d}">${DAYNAME[d]} · ${PLAN[d].label}</option>`).join("");
 $("planSel").addEventListener("change",ev=>{if(cur.locked)return;
-  cur.day=ev.target.value; if(Object.keys(cur.entries).length)markDirty(); render();});
+  cur.day=ev.target.value; cur.swaps={}; if(Object.keys(cur.entries).length)markDirty(); render();});
 $("dateInput").addEventListener("change",ev=>{if(ev.target.value){flush();date=ev.target.value;loadCur();render();}});
 $("prevDay").onclick=()=>{flush();date=shift(date,-1);loadCur();render()};
 $("nextDay").onclick=()=>{flush();date=shift(date,1);loadCur();render()};
 
 /* ---- body weight ----
-   One weigh-in per date, in lb, kept apart from the workout so it can be entered on rest days
-   and still changed after a workout is locked. The −/+ buttons move in 0.2 lb like a bathroom scale. */
+   Optional: nothing is saved until you tap Save. One weigh-in per date, in lb, kept apart from the
+   workout so it can be entered on rest days and changed after a workout is locked.
+   The −/+ buttons move in 0.2 lb like a bathroom scale. */
 const BW_STEP=0.2, BW_NAME="Body weight";
 const r1=n=>Math.round(n*10)/10;
+const md=d=>nice(d,{month:"short",day:"numeric"});
+let bwOpen=false, bwErr="";
 function bwBefore(d){const k=Object.keys(bodyweight).filter(x=>x<d).sort().pop();return k?{date:k,w:bodyweight[k]}:null}
 function renderBW(){
-  const w=bodyweight[date], prev=bwBefore(date);
-  let sub;
-  if(w!=null&&prev){const ch=r1(w-prev.w);sub=`${ch>0?"▲ +":ch<0?"▼ ":"± "}${ch} lb since ${nice(prev.date,{month:"short",day:"numeric"})}`}
-  else if(w!=null)sub="First weigh-in";
-  else sub=prev?`Last: ${prev.w} lb · ${nice(prev.date,{month:"short",day:"numeric"})}`:"Weigh in to track your trend";
-  const row=$("bwRow"); row.className="bw"+(w!=null?" has":"");
-  row.innerHTML=`<div class="lbl"><b>Body weight</b><span>${sub}</span></div>
-    <div class="stepper"><button data-bw="-" aria-label="Less body weight">−</button><input data-bw="v" inputmode="decimal" aria-label="Body weight in pounds" placeholder="${prev?prev.w:"lb"}" value="${w??""}"><button data-bw="+" aria-label="More body weight">+</button></div>
-    <span class="unit">lb</span>${w!=null?`<button class="clr" data-bw="x" aria-label="Clear body weight">Clear</button>`:""}`;
+  const w=bodyweight[date], prev=bwBefore(date), row=$("bwRow");
+  row.className="bw"+(w!=null?" has":"")+(bwOpen?" open":"");
+  if(!bwOpen){
+    let b,sub;
+    if(w==null){b="Body weight";sub=prev?`Optional · last ${prev.w} lb on ${md(prev.date)}`:"Optional · log it when you weigh in"}
+    else{b=`Body weight · ${w} lb`;
+      if(prev){const ch=r1(w-prev.w);sub=`${ch>0?"▲ +":ch<0?"▼ ":"± "}${ch} lb since ${md(prev.date)}`}else sub="First weigh-in"}
+    row.innerHTML=`<div class="lbl"><b>${b}</b><span>${sub}</span></div><button class="btn ghost" data-bw="open">${w==null?"+ Log weight":"Edit"}</button>`;
+    return;
+  }
+  const start=w??(prev?prev.w:"");
+  row.innerHTML=`<div class="lbl"><b>Body weight</b><span class="${bwErr?"down":""}">${bwErr||(w==null&&prev?`Starts at your last weigh-in (${prev.w} lb). Adjust, then Save.`:"Enter your weight, then Save.")}</span></div>
+    <div class="row"><div class="stepper"><button data-bw="-" aria-label="Less body weight">−</button><input data-bw="v" inputmode="decimal" enterkeyhint="done" aria-label="Body weight in pounds" placeholder="lb" value="${start}"><button data-bw="+" aria-label="More body weight">+</button></div><span class="unit">lb</span></div>
+    <div class="bwbtns"><button class="btn" data-bw="save">Save</button><button class="btn ghost" data-bw="cancel">Cancel</button>${w!=null?`<button class="clr" data-bw="x">Remove</button>`:""}</div>`;
 }
-function setBW(v){
-  if(v==null||!(v>0))delete bodyweight[date]; else bodyweight[date]=r1(v);
-  persist(); renderBW();
+function bwInput(){return $("bwRow").querySelector("input[data-bw]")}
+function bwSave(){
+  const v=bwInput().value.trim(), n=Number(v);
+  if(v===""||!(n>0&&n<1000)){bwErr="Enter a weight in lb, like 182.4";renderBW();bwInput().focus();return}
+  bodyweight[date]=r1(n);bwOpen=false;bwErr="";persist();renderBW();
 }
 $("bwRow").addEventListener("click",ev=>{const b=ev.target.closest("button[data-bw]");if(!b)return;
-  const base=bodyweight[date]??(bwBefore(date)||{}).w;
-  if(b.dataset.bw==="x")return setBW(null);
-  if(base==null){$("bwRow").querySelector("input").focus();return}
-  // first tap on a new day starts from the last weigh-in, so ± just nudges it
-  setBW(bodyweight[date]==null?base:base+(b.dataset.bw==="+"?BW_STEP:-BW_STEP));
+  const a=b.dataset.bw;
+  if(a==="open"){bwOpen=true;bwErr="";renderBW();const i=bwInput();if(!i.value)i.focus();return}
+  if(a==="cancel"){bwOpen=false;bwErr="";renderBW();return}
+  if(a==="save")return bwSave();
+  if(a==="x"){delete bodyweight[date];bwOpen=false;persist();renderBW();return}
+  const i=bwInput(), cur=Number(i.value);   // −/+ only change the box; nothing saves until Save
+  if(!(cur>0)){i.focus();return}
+  i.value=r1(cur+(a==="+"?BW_STEP:-BW_STEP));
 });
-$("bwRow").addEventListener("change",ev=>{if(!ev.target.matches("input[data-bw]"))return;
-  const v=ev.target.value.trim(), n=v===""?null:Number(v);
-  if(v!==""&&!(n>0&&n<1000))return renderBW();
-  setBW(n);
-});
+$("bwRow").addEventListener("keydown",ev=>{if(ev.key==="Enter"&&ev.target.matches("input[data-bw]")){ev.preventDefault();bwSave()}});
 
 let bwDays=ls.get("ll.bwRange",90);
 function renderBWStats(){
@@ -556,7 +627,7 @@ function persist(){
   }catch(e){status("Couldn't save. Try again.","off")}
 }
 // Every change is written right away: the file is small, and it means nothing is lost if the app is closed mid-set.
-function markDirty(){cur.updatedAt=Date.now(); sessions[cur.date]=JSON.parse(JSON.stringify(cur)); dirty=true; persist();}
+function markDirty(){const sw={};PLAN[cur.day].items.forEach(o=>sw[o.id]=pick(o.id));cur.swaps=sw;cur.updatedAt=Date.now(); sessions[cur.date]=JSON.parse(JSON.stringify(cur)); dirty=true; persist();}
 function flush(){if(dirty)persist()}
 addEventListener("pagehide",flush);
 document.addEventListener("visibilitychange",()=>{if(document.hidden)flush()});
@@ -587,7 +658,7 @@ $("tabHist").onclick=()=>{flush();showView("hist")};
 $("tabStats").onclick=()=>{flush();showView("stats")};
 
 /* ---- progress & stats ---- */
-const ITEMS={}; DAYS.forEach(d=>PLAN[d].items.forEach(i=>{if(!ITEMS[i.id])ITEMS[i.id]=i}));
+const ITEMS=LIB;
 const ORDER=Object.keys(ITEMS);
 let statEx=ls.get("gl.statEx",null);
 
