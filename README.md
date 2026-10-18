@@ -38,3 +38,13 @@ After that, each passing build updates Appetize automatically; the link is shown
 ## Test site
 
 The same screens are published to **https://lsims6.github.io/lift-log/** whenever `LiftLog/Web` changes (workflow: *Publish test site*). There, the log saves in that browser only; it's separate from the app on the phone. Pages must be set to **Settings → Pages → Source: GitHub Actions**.
+
+## TestFlight (Apple Developer account)
+
+With these four repository secrets set (Settings → Secrets and variables → Actions), every build that passes its test is signed and uploaded to TestFlight:
+
+- `ASC_KEY_ID`, `ASC_ISSUER_ID`: from App Store Connect → Users and Access → Integrations → App Store Connect API
+- `ASC_KEY_P8`: the full text of the downloaded `AuthKey_….p8` file
+- `APPLE_TEAM_ID`: from developer.apple.com/account → Membership details
+
+Install the **TestFlight** app on the iPhone, add yourself to an internal testing group in App Store Connect, and Lift Log shows up there. TestFlight builds expire after 90 days; any push (or **Run workflow** on the Actions tab) makes a fresh one.
