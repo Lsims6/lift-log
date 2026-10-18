@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   build:
-    runs-on: macos-15
+    runs-on: macos-26   # Xcode 26: Apple requires the iOS 26 SDK for TestFlight uploads
     timeout-minutes: 45
     env:
       # Set these as repository secrets to send each passing build to Appetize (see README).
