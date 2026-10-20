@@ -27,13 +27,17 @@ final class LiftLogUITests: XCTestCase {
         web.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH 'Monday'")).firstMatch
     }
 
-    /// Scrolls down until the element is on screen; returns whether it was found.
-    private func scrollTo(_ element: XCUIElement, in app: XCUIApplication, maxSwipes: Int = 8) -> Bool {
+    /// Scrolls down until the element is on screen and clear of the Workout | Food bar at the bottom;
+    /// returns whether it was found.
+    private func scrollTo(_ element: XCUIElement, in app: XCUIApplication, maxSwipes: Int = 10) -> Bool {
+        func clear() -> Bool {
+            element.exists && element.isHittable && element.frame.maxY < app.frame.maxY - 140
+        }
         for _ in 0..<maxSwipes {
-            if element.exists && element.isHittable { return true }
+            if clear() { return true }
             app.swipeUp()
         }
-        return element.exists && element.isHittable
+        return clear()
     }
 
     func testLoggedSetSurvivesRelaunch() {
@@ -52,7 +56,9 @@ final class LiftLogUITests: XCTestCase {
         // Log the warm-up cardio card above the lifts (it starts on the stair climber).
         let warmup = control(web, "Log cardio before workout")
         XCTAssertTrue(warmup.waitForExistence(timeout: 15), "The before-workout cardio card wasn't shown")
+        XCTAssertTrue(control(web, "Log cardio lunch break").exists, "The lunch-break cardio card wasn't shown")
         shot(app, "1-monday")
+        XCTAssertTrue(scrollTo(warmup, in: app), "The before-workout cardio card wasn't reachable")
         warmup.tap()
         sleep(1)
 
@@ -90,8 +96,6 @@ final class LiftLogUITests: XCTestCase {
         monday2.tap()
         let finish = control(reopened, "Finish workout & lock")
         XCTAssertTrue(scrollTo(finish, in: app), "The Finish workout button wasn't there")
-        app.swipeUp() // lift it clear of the Workout | Food bar along the bottom of the screen
-        sleep(1)
         finish.tap()
         XCTAssertTrue(control(reopened, "Unlock to edit").waitForExistence(timeout: 10), "Finishing the workout didn't lock it")
         sleep(1)
