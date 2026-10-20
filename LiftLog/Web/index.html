@@ -194,6 +194,20 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .fentry .acts{display:flex;gap:14px;margin-top:6px}
 .fentry .acts button{font:inherit;font-size:13px;border:0;background:none;color:var(--accent);cursor:pointer;padding:4px 0}
 .fentry .acts button.del{color:var(--warn)}
+.msearch{font:inherit;font-size:16px;width:100%;height:44px;padding:0 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+.mlist{display:flex;flex-direction:column}
+.mlist .sec2{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;padding:10px 0 4px}
+.mrow{display:flex;align-items:center;gap:8px;border-top:1px solid var(--line)}
+.mrow:first-child,.mlist .sec2+.mrow{border-top:0}
+.mrow>button.add{flex:1;min-width:0;display:flex;justify-content:space-between;align-items:center;gap:10px;font:inherit;text-align:left;background:none;border:0;color:var(--ink);padding:11px 2px;cursor:pointer;min-height:44px}
+.mrow>button.add:active{background:var(--bg)}
+.mrow .nm{min-width:0}
+.mrow .nm small{display:block;font-size:11.5px;color:var(--muted)}
+.mrow .cl{font-family:var(--display);font-size:18px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.mrow .cl small{font-family:var(--body);font-size:11px;font-weight:500;color:var(--muted);margin-left:2px}
+.mrow .in{font-size:11px;font-weight:700;color:var(--done);margin-left:6px}
+.mrow .rmf{font:inherit;font-size:12px;border:0;background:none;color:var(--warn);cursor:pointer;padding:8px 4px;white-space:nowrap}
+.mhint{font-size:13px;color:var(--muted);padding:6px 0}
 details.panel>summary{cursor:pointer;font-size:14px;font-weight:600;list-style-position:inside}
 .fset{display:flex;flex-direction:column;gap:8px}
 .fset label{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600}
@@ -242,12 +256,19 @@ details.panel>summary{cursor:pointer;font-size:14px;font-weight:600;list-style-p
     </div>
     <div class="panel" id="calSum"></div>
     <div class="panel">
-      <h3>What did you eat?</h3>
-      <textarea id="fText" class="ftext" rows="2" enterkeyhint="done" placeholder="Cane's 3 finger combo, diet coke" aria-label="What you ate"></textarea>
-      <div class="fbtns"><button class="btn" id="fEst">Estimate calories</button><button class="btn ghost" id="fManual">Enter it myself</button></div>
-      <div class="note" id="fMsg" hidden></div>
+      <h3>Add food</h3>
       <div id="fDraft" class="wrap" style="gap:8px" hidden></div>
       <div id="fRecentWrap" hidden><div class="cat">Eat this a lot? Tap to log it again</div><div class="chips" id="fRecent" role="group" aria-label="Recent foods"></div></div>
+      <input id="mSearch" class="msearch" type="search" enterkeyhint="search" autocomplete="off" autocorrect="off" placeholder="Search: biscuit, 3 finger, footlong…" aria-label="Search the menu">
+      <div class="chips" id="mChains" role="group" aria-label="Restaurant"></div>
+      <div id="mResults" class="mlist"></div>
+      <button class="btn ghost" id="fManual">Not on the list? Enter it myself</button>
+      <div id="fAiWrap" class="wrap" style="gap:8px" hidden>
+        <div class="cat">Or describe it and let Claude estimate</div>
+        <textarea id="fText" class="ftext" rows="2" enterkeyhint="done" placeholder="Cane's 3 finger combo, diet coke" aria-label="What you ate"></textarea>
+        <button class="btn" id="fEst">Estimate calories</button>
+      </div>
+      <div class="note" id="fMsg" hidden></div>
     </div>
     <div class="hist" id="foodList"></div>
     <div class="panel">
@@ -318,6 +339,7 @@ details.panel>summary{cursor:pointer;font-size:14px;font-weight:600;list-style-p
   </section>
 </div>
 
+<script src="menu.js"></script>
 <script>
 const PLAN = {
   mon:{label:"Legs", items:[
@@ -425,6 +447,7 @@ let customNames=Object.assign({},BOOT.names||{});    // names for exercises brou
 let bodyweight=Object.assign({},BOOT.bodyweight||{}); // date -> body weight in lb (separate from workouts, never locked)
 let food=Object.assign({},BOOT.food||{});            // date -> [{id,t,text,items:[{name,cal,p}]}] (separate from workouts, never locked)
 let foodTarget=Object.assign({lo:2500,hi:3000},BOOT.foodTarget||{}); // daily calorie range
+let myFoods=Array.isArray(BOOT.myFoods)?BOOT.myFoods:[];  // foods you saved yourself: [{id,n,cal,p}]
 // exercises that used to be in the plan, so older history still shows their names
 const RETIRED={dbcurl:"Dumbbell curls",facepull:"Face pulls",hammercurl:"Hammer curls",machinecurl:"Bicep curl machine",
   pecdeck:"Pec deck",machinelat:"Machine lateral raise",ohtri:"Overhead triceps extension"};
@@ -746,7 +769,7 @@ $("bwRange").addEventListener("click",ev=>{const b=ev.target.closest("button[dat
 /* ---- saving ---- */
 const SAVED_LABEL=NATIVE?"Saved on this iPhone":"Saved in this browser";
 function persist(){
-  const payload={version:1,savedAt:Date.now(),names:customNames,sessions,bodyweight,food,foodTarget};
+  const payload={version:1,savedAt:Date.now(),names:customNames,sessions,bodyweight,food,foodTarget,myFoods};
   try{
     if(NATIVE)window.webkit.messageHandlers.liftlog.postMessage({type:"save",json:JSON.stringify(payload)});
     else ls.set("ll.data",payload);
@@ -1077,7 +1100,8 @@ function dayP(d){return dayFood(d).reduce((a,e)=>a+entryP(e),0)}
 
 function renderFood(){
   $("fDate").value=fDate;
-  renderCalSum(); renderDraft(); renderRecent(); renderFoodList(); renderCalChart(); renderFoodSettings();
+  renderCalSum(); renderDraft(); renderRecent(); renderMenu(); renderFoodList(); renderCalChart(); renderFoodSettings();
+  $("fAiWrap").hidden=!hasKey;
   const m=$("fMsg"); m.hidden=!fMsg; m.textContent=fMsg; m.className="note"+(/^(Couldn|That|The estimate|Add your|Type)/.test(fMsg)?" down":"");
   $("fEst").disabled=fBusy; $("fManual").disabled=fBusy; $("fEst").textContent=fBusy?"Estimating…":"Estimate calories";
 }
@@ -1099,8 +1123,9 @@ function renderDraft(){
   if(!fDraft){el.hidden=true;el.innerHTML="";return}
   el.hidden=false;
   const rows=fDraft.items.map((x,k)=>`<div class="frow" data-k="${k}"><input data-f="name" aria-label="Item ${k+1} name" placeholder="Food" value="${esc(x.name)}"><input class="fcal" data-f="cal" inputmode="numeric" aria-label="Item ${k+1} calories" placeholder="0" value="${x.cal??""}"><span class="unit">cal</span><button class="fx" data-f="rm" aria-label="Remove item ${k+1}">×</button></div>`).join("");
-  el.innerHTML=`<div class="cat">${fDraft.edit?"Editing entry":"Check the numbers, then add it"}</div>${rows}
-    <div class="row"><button class="set addset" data-f="add">+ Item</button></div>
+  const savable=fDraft.items.some(x=>x.name.trim()&&!MENU_NAMES.has(x.name.trim().toLowerCase()));
+  el.innerHTML=`<div class="cat">${fDraft.edit?"Editing entry":"This meal · tap more foods below to add them"}</div>${rows}
+    <div class="row"><button class="set addset" data-f="add">+ Item</button>${savable?`<button class="set addset" data-f="keep">☆ Save to My foods</button>`:""}</div>
     ${fDraft.note?`<div class="note">${esc(fDraft.note)}</div>`:""}
     <div class="ftot"><span>Total</span><span id="fDraftTot">${n0(entryCal(fDraft))} cal</span></div>
     <div class="fbtns"><button class="btn" data-f="save">${fDraft.edit?"Save changes":"Add to "+(fDate===todayStr()?"today":nice(fDate))}</button><button class="btn ghost" data-f="cancel">${fDraft.edit?"Cancel":"Discard"}</button></div>`;
@@ -1117,7 +1142,7 @@ function renderRecent(){
 }
 function renderFoodList(){
   const es=dayFood(fDate).slice().sort((a,b)=>a.t-b.t);
-  if(!es.length){$("foodList").innerHTML=`<div class="empty">Nothing logged ${fDate===todayStr()?"today":"on this day"}. Type what you ate above, like “Chick-fil-A chicken biscuit meal, diet coke”.</div>`;return}
+  if(!es.length){$("foodList").innerHTML=`<div class="empty">Nothing logged ${fDate===todayStr()?"today":"on this day"}. Search or pick a restaurant above and tap what you ate.</div>`;return}
   $("foodList").innerHTML=es.map(e=>{
     const time=todayStr(new Date(e.t))===fDate?new Date(e.t).toLocaleTimeString([],{hour:"numeric",minute:"2-digit"}):"";
     const rows=e.items.map(x=>`<tr><td>${esc(x.name)}</td><td>${n0(x.cal)} cal</td></tr>`).join("");
@@ -1143,7 +1168,7 @@ function renderFoodSettings(){
   if(document.activeElement!==$("fHi"))$("fHi").value=foodTarget.hi;
   $("fKeyStatus").innerHTML=hasKey?`<span class="keyok">✓ Key saved ${NATIVE?"in this iPhone's Keychain":"in this browser"}</span>`:"No key yet. Create one at platform.claude.com → API keys, then paste it here.";
   $("fKeyDel").hidden=!hasKey;
-  $("fPrivacy").textContent=`Estimates use Claude (${AI_MODEL}). Only what you type in the food box is sent, and only when you tap Estimate. The key never goes into your log or CSV exports. Each estimate costs a small fraction of a cent. “Enter it myself” and the recent-food chips never go online.`;
+  $("fPrivacy").textContent=`Optional: the menu, My foods and “Enter it myself” are free and never go online. A key adds a box for describing food in your own words. Estimates use Claude (${AI_MODEL}). Only what you type in the food box is sent, and only when you tap Estimate. The key never goes into your log or CSV exports. Each estimate costs a small fraction of a cent, billed to your API account.`;
 }
 
 /* talking to Claude: native app → Swift does the request; browser → fetch directly */
@@ -1179,18 +1204,29 @@ $("fEst").onclick=async()=>{
   catch(e){fMsg=e.message}
   fBusy=false;renderFood();
 };
-$("fManual").onclick=()=>{const text=$("fText").value.trim();
-  fDraft={text,items:[{name:text,cal:null,p:null}],note:""};fMsg="";renderFood();
-  const c=$("fDraft").querySelector("input.fcal");if(c)c.focus();};
+$("fManual").onclick=()=>{const q=$("mSearch").value.trim();   // starts the name from whatever you searched for
+  const row={name:q,cal:null,p:null};
+  if(fDraft){fDraft.text="";fDraft.items.push(row)}else fDraft={text:"",items:[row],note:""};
+  fMsg="";renderFood();
+  const rs=$("fDraft").querySelectorAll(".frow"),last=rs[rs.length-1];
+  if(last)(q?last.querySelector("input.fcal"):last.querySelector("input[data-f=name]")).focus();};
 $("fDraft").addEventListener("input",ev=>{const i=ev.target.closest("input[data-f]");if(!i||!fDraft)return;
   const x=fDraft.items[+i.closest(".frow").dataset.k];
   if(i.dataset.f==="name")x.name=i.value;
   else{const n=Number(i.value.trim());x.cal=i.value.trim()===""||!isFinite(n)?null:Math.max(0,Math.round(n));x.p=null}  // a hand-edited number drops Claude's protein guess for that item
   $("fDraftTot").textContent=n0(entryCal(fDraft))+" cal";});
+$("fDraft").addEventListener("change",ev=>{if(ev.target.matches("input[data-f=name]")&&fDraft){  // show "Save to My foods" once a typed name is in
+  const has=!!$("fDraft").querySelector("[data-f=keep]"),want=fDraft.items.some(x=>x.name.trim()&&!MENU_NAMES.has(x.name.trim().toLowerCase()));
+  if(has!==want)renderDraft()}});
 $("fDraft").addEventListener("click",ev=>{const b=ev.target.closest("button[data-f]");if(!b||!fDraft)return;const a=b.dataset.f;
   if(a==="rm"){fDraft.items.splice(+b.closest(".frow").dataset.k,1);if(!fDraft.items.length)fDraft.items.push({name:"",cal:null,p:null})}
   else if(a==="add")fDraft.items.push({name:"",cal:null,p:null});
   else if(a==="cancel"){fDraft=null;fMsg=""}
+  else if(a==="keep"){let n=0;
+    fDraft.items.forEach(x=>{const nm=x.name.trim();if(!nm||!(x.cal>0)||MENU_NAMES.has(nm.toLowerCase()))return;
+      const old=myFoods.find(f=>f.n.toLowerCase()===nm.toLowerCase());
+      if(old){old.cal=x.cal;old.p=x.p??null}else myFoods.push({id:newId(),n:nm,cal:x.cal,p:x.p??null});n++});
+    persist();buildFoodIndex();fMsg=n?`Saved ${n} to My foods. Find ${n>1?"them":"it"} by searching or under My foods.`:"Give it a name and calories first.";}
   else if(a==="save"){
     const items=fDraft.items.map(x=>({name:x.name.trim(),cal:x.cal||0,p:x.p}))
       .filter(x=>x.name||x.cal).map(x=>({...x,name:x.name||"Food"}));
@@ -1199,7 +1235,7 @@ $("fDraft").addEventListener("click",ev=>{const b=ev.target.closest("button[data
     if(fDraft.edit){food[fDate]=dayFood(fDate).map(e=>e.id===fDraft.edit?{...e,text,items}:e)}
     else{const now=new Date(),t=fDate===todayStr()?now.getTime():parse(fDate).getTime()+12*36e5;
       food[fDate]=[...dayFood(fDate),{id:newId(),t,text,items}];$("fText").value=""}
-    fDraft=null;fMsg="";persist();
+    fDraft=null;fMsg="";$("mSearch").value="";persist();
   }
   renderFood();
   if(a==="add"){const ns=$("fDraft").querySelectorAll("input[data-f=name]");ns[ns.length-1].focus()}
@@ -1210,7 +1246,7 @@ $("fRecent").addEventListener("click",ev=>{const b=ev.target.closest("button[dat
 $("foodList").addEventListener("click",ev=>{const b=ev.target.closest("button[data-fe]");if(!b)return;
   const id=b.closest("[data-eid]").dataset.eid, e=dayFood(fDate).find(x=>x.id===id);if(!e)return;
   if(b.dataset.fe==="edit"){fDraft={edit:id,text:e.text,items:e.items.map(x=>({...x})),note:""};fDelArmed=null;renderFood();
-    window.scrollTo({top:$("fText").getBoundingClientRect().top+scrollY-80,behavior:"smooth"});return}
+    window.scrollTo({top:$("fDraft").getBoundingClientRect().top+scrollY-120,behavior:"smooth"});return}
   if(fDelArmed!==id){fDelArmed=id;renderFoodList();setTimeout(()=>{if(fDelArmed===id){fDelArmed=null;if(view==="food")renderFoodList()}},4000);return}
   fDelArmed=null;food[fDate]=dayFood(fDate).filter(x=>x.id!==id);if(!food[fDate].length)delete food[fDate];
   if(fDraft&&fDraft.edit===id)fDraft=null;persist();renderFood();});
@@ -1236,6 +1272,65 @@ $("fKeyDel").onclick=()=>{
   renderFood();};
 // a new day rolls the Food tab forward when the app comes back from the background
 document.addEventListener("visibilitychange",()=>{if(!document.hidden&&view==="food"&&fDate!==todayStr()&&!fDraft&&fDate===shift(todayStr(),-1))goFood(todayStr())});
+
+/* ---- menu: the restaurants in menu.js plus My foods ----
+   Tap a food to put it in "This meal"; tap more to build up a meal, then add it in one go.
+   Search matches every word you type against the restaurant and food names. */
+const MENU=window.LIFTLOG_MENU||{chains:[]};
+const MY={id:"my",name:"My foods",short:"Mine"};
+const MENU_NAMES=new Set();
+let FOODS=[], mChain=ls.get("ll.mChain",null), mDelArmed=null;
+const fnorm=t=>String(t).toLowerCase().replace(/"/g," inch ").replace(/['’.®™]/g,"").replace(/&/g," and ").replace(/[^a-z0-9]+/g," ").trim();
+function buildFoodIndex(){
+  FOODS=[];MENU_NAMES.clear();
+  MENU.chains.forEach(c=>c.items.forEach(([n,cal,p,sec])=>{const full=c.short+" · "+n;MENU_NAMES.add(full.toLowerCase());
+    FOODS.push({key:c.id+"|"+n,chain:c,n,full,cal,p,sec,hay:" "+fnorm(c.name+" "+(c.alias||"")+" "+c.short+" "+n+" "+sec)})}));
+  myFoods.forEach(f=>FOODS.push({key:"my|"+f.id,id:f.id,chain:MY,n:f.n,full:f.n,cal:f.cal,p:f.p,sec:"My foods",hay:" "+fnorm("my "+f.n)}));
+}
+buildFoodIndex();
+function searchFoods(q){
+  const ws=fnorm(q).split(" ").filter(Boolean); if(!ws.length)return [];
+  // short words have to match the start of a word ("nug" finds Nuggets, "12" finds 12 ct but not 120)
+  const hit=FOODS.filter(f=>ws.every(w=>f.hay.includes(w.length>=4?w:" "+w)));   // longer words can match inside one ("shake" → Milkshake)
+  return hit.sort((a,b)=>(b.chain===MY)-(a.chain===MY)).slice(0,40);
+}
+function mRow(f,showChain){
+  const inN=fDraft?fDraft.items.filter(x=>x.name===f.full).length:0;
+  return `<div class="mrow"><button class="add" data-mk="${esc(f.key)}"><span class="nm">${esc(f.n)}${inN?`<span class="in">✓${inN>1?" ×"+inN:""}</span>`:""}${showChain?`<small>${esc(f.chain.name)}</small>`:""}</span><span class="cl">${n0(f.cal)}<small>cal</small></span></button>${f.chain===MY?`<button class="rmf" data-mdel="${f.id}">${mDelArmed===f.id?"Tap to remove":"Remove"}</button>`:""}</div>`;
+}
+function renderMenu(){
+  const chains=(myFoods.length?[MY]:[]).concat(MENU.chains);
+  if(mChain&&!chains.some(c=>c.id===mChain))mChain=null;
+  $("mChains").innerHTML=chains.map(c=>`<button data-chain="${c.id}" aria-pressed="${c.id===mChain}">${esc(c.name)}</button>`).join("");
+  renderMenuResults();
+}
+function renderMenuResults(){
+  const q=$("mSearch").value.trim(), el=$("mResults");
+  if(q){const hits=searchFoods(q);
+    el.innerHTML=hits.length?hits.map(f=>mRow(f,true)).join(""):`<div class="mhint">Nothing matches “${esc(q)}”. Tap Enter it myself below to add it with your own number.</div>`;return}
+  if(!mChain){el.innerHTML=`<div class="mhint">Pick a restaurant or search. Tap foods to build your meal.</div>`;return}
+  const list=FOODS.filter(f=>f.chain.id===mChain);
+  if(!list.length){el.innerHTML=`<div class="mhint">No saved foods yet. Enter one yourself, then tap ☆ Save to My foods.</div>`;return}
+  let sec="",html="";list.forEach(f=>{if(f.sec!==sec&&f.chain!==MY){sec=f.sec;html+=`<div class="sec2">${esc(sec)}</div>`}html+=mRow(f,false)});
+  el.innerHTML=html;
+}
+$("mSearch").addEventListener("input",renderMenuResults);
+$("mSearch").addEventListener("keydown",ev=>{if(ev.key==="Enter"){ev.preventDefault();$("mSearch").blur()}});
+$("mChains").addEventListener("click",ev=>{const b=ev.target.closest("button[data-chain]");if(!b)return;
+  mChain=mChain===b.dataset.chain?null:b.dataset.chain;ls.set("ll.mChain",mChain);mDelArmed=null;renderMenu();});
+$("mResults").addEventListener("click",ev=>{
+  const d=ev.target.closest("button[data-mdel]");
+  if(d){const id=d.dataset.mdel;
+    if(mDelArmed!==id){mDelArmed=id;renderMenuResults();setTimeout(()=>{if(mDelArmed===id){mDelArmed=null;renderMenuResults()}},4000);return}
+    mDelArmed=null;myFoods=myFoods.filter(f=>f.id!==id);persist();buildFoodIndex();renderMenu();return}
+  const b=ev.target.closest("button[data-mk]");if(!b)return;
+  const f=FOODS.find(x=>x.key===b.dataset.mk);if(!f)return;
+  const row={name:f.full,cal:f.cal,p:f.p};
+  if(!fDraft)fDraft={text:"",items:[],note:""};
+  fDraft.items=fDraft.items.filter(x=>x.name.trim()||x.cal);   // drop an empty starter row
+  fDraft.items.push(row);if(!fDraft.edit)fDraft.text="";
+  fMsg="";renderCalSum();renderDraft();renderRecent();renderMenuResults();$("fMsg").hidden=true;
+});
 
 /* ---- boot ---- */
 loadCur(); render(); status(SAVED_LABEL,"ok");

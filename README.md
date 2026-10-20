@@ -1,6 +1,6 @@
 # Lift Log
 
-A workout and calorie tracker for iPhone. Everything is saved in a file on the phone. The only thing that ever goes over the internet is a food description you type on the Food tab, and only when you tap **Estimate calories**.
+A workout and calorie tracker for iPhone. Everything is saved in a file on the phone. Nothing goes over the internet unless you add an optional API key for food estimates.
 
 ## What's here
 
@@ -19,12 +19,13 @@ A workout and calorie tracker for iPhone. Everything is saved in a file on the p
 
 ## Food & calories
 
-The **Food** tab tracks calories against a daily target range (2,500–3,000 to start; change it under *Calorie target & estimate settings*).
+The **Food** tab tracks calories against a daily target range (2,500–3,000 to start; change it under *Calorie target & estimate settings*). It's free and works offline.
 
-- Type what you ate in plain words ("Cane's 3 finger combo, diet coke") and tap **Estimate calories**. Claude (Haiku 5.5) splits it into items with calories and protein; fix any number, then **Add**.
-- **Enter it myself** skips Claude. The recent-food chips re-log something you've eaten before without asking again.
-- Estimates need an Anthropic API key from [platform.claude.com](https://platform.claude.com) (billed separately from a Claude subscription, about $0.0003 per estimate). Paste it in the settings on the Food tab; the app keeps it in the iPhone's Keychain, never in the log or CSV.
-- Food shows on the History tab and goes into CSV exports (Set column "Food 1", "Food 2"…, with Calories, Protein and Meal columns).
+- **Menu:** search ("biscuit", "3 finger", "footlong") or pick a restaurant, then tap foods to build the meal and **Add**. The menu lives in `LiftLog/Web/menu.js` (Chick-fil-A, Raising Cane's, McDonald's, Subway, Firehouse Subs, with sources noted at the top). Edit it and push to add or fix foods.
+- **My foods:** anything not on the menu, tap **Enter it myself**, type the calories, and **☆ Save to My foods** so it shows up in search next time.
+- **Recent** chips re-log a meal you've had before in one tap.
+- **Optional:** with an Anthropic API key (platform.claude.com, billed per use, about $0.0003 an estimate) a box appears for describing food in your own words. The key is kept in the iPhone's Keychain.
+- Food shows on the History tab and goes into CSV exports (Set column "Food 1", "Food 2"…, with Calories, Protein and Meal columns). My foods are saved with the log.
 
 ## Moving data
 
