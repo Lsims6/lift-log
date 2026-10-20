@@ -154,7 +154,9 @@ final class WebViewController: UIViewController, WKScriptMessageHandler, WKNavig
     /// so a reloaded page always starts from what is on disk now, never from a stale copy.
     private func installBootScript(on content: WKUserContentController) {
         content.removeAllUserScripts()
-        let boot = "window.__LIFTLOG__ = \(Store.load()); window.__LIFTLOG_KEY__ = \(KeyStore.hasKey);"
+        let info = Bundle.main.infoDictionary ?? [:]
+        let version = "\(info["CFBundleShortVersionString"] as? String ?? "?") (build \(info["CFBundleVersion"] as? String ?? "?"))"
+        let boot = "window.__LIFTLOG__ = \(Store.load()); window.__LIFTLOG_KEY__ = \(KeyStore.hasKey); window.__LIFTLOG_VERSION__ = \"\(version)\";"
         content.addUserScript(WKUserScript(source: boot, injectionTime: .atDocumentStart, forMainFrameOnly: true))
     }
 

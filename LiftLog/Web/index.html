@@ -36,6 +36,11 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font
 .wrap{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
 section.wrap{width:100%}
 header{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.gear{width:44px;height:44px;display:grid;place-items:center;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);cursor:pointer;padding:0;align-self:center}
+.gear svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.gear[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.tabs button.back{border:0;background:none;color:var(--accent);padding-left:0}
+.calsum-link{font:inherit;font-size:12.5px;border:0;background:none;color:var(--accent);cursor:pointer;padding:2px 0;text-align:left}
 h1{font-family:var(--display);font-weight:700;font-size:30px;letter-spacing:.01em;margin:0;line-height:1;text-transform:uppercase}
 .status{font-size:12px;color:var(--muted);letter-spacing:.04em;text-transform:uppercase;font-weight:600}
 .status.saving{color:var(--accent)} .status.off{color:var(--warn)} .status.ok{color:var(--done)}
@@ -159,6 +164,8 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .bwbtns .btn{flex:1}
 .bw .clr{font:inherit;font-size:12px;border:0;background:none;color:var(--muted);cursor:pointer;padding:4px;text-decoration:underline}
 .bwhead{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.chart .goal{stroke:var(--done);stroke-width:1.5;stroke-dasharray:6 4}
+.chart .goaltx{fill:var(--done);font-weight:600}
 .chart .ln.avg{stroke:var(--ink);stroke-width:1.5;opacity:.55;stroke-dasharray:4 3}
 .cat{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;margin-bottom:3px}
 .exwrap{position:relative;display:inline-block;max-width:100%}
@@ -255,6 +262,7 @@ details.panel>summary{cursor:pointer;font-size:14px;font-weight:600;list-style-p
       <h1>Lift Log</h1>
       <div id="status" class="status">Loading…</div>
     </div>
+    <button id="gearBtn" class="gear" aria-label="Settings" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
     <div class="tabs" id="subTabs" role="group" aria-label="View"></div>
   </header>
 
@@ -298,8 +306,22 @@ details.panel>summary{cursor:pointer;font-size:14px;font-weight:600;list-style-p
       <div class="note" id="fMsg" hidden></div>
     </div>
     <div class="hist" id="foodList"></div>
-    <details class="panel" id="tSet">
-      <summary>Calorie target</summary>
+  </section>
+
+  <section id="foodHistView" class="wrap" style="gap:12px" hidden>
+    <div class="panel">
+      <h3>Last 14 days</h3>
+      <div class="chart" id="calChart"></div>
+      <div class="facts" id="calFacts"></div>
+    </div>
+    <h2 class="sec" style="margin:0">Food history</h2>
+    <div class="hist" id="foodHist"></div>
+  </section>
+
+  <section id="settingsView" class="wrap" style="gap:12px" hidden>
+    <h2 class="sec" style="margin:0">Settings</h2>
+    <div class="panel" id="tSet">
+      <h3>Calorie target</h3>
       <div class="fset" id="tCalc">
         <div class="note">Your target comes from your TDEE, the calories you burn in a day. The range runs from extreme loss (about 2 lb a week) up to mild loss (about ½ lb a week).</div>
         <label>Sex</label>
@@ -327,9 +349,17 @@ details.panel>summary{cursor:pointer;font-size:14px;font-weight:600;list-style-p
         <div class="two"><input id="fLo" inputmode="numeric" aria-label="Target low"><span class="unit">to</span><input id="fHi" inputmode="numeric" aria-label="Target high"></div>
         <div class="note" id="tMode"></div>
       </div>
-    </details>
-    <details class="panel" id="fSet">
-      <summary>Claude estimates (optional)</summary>
+        </div>
+    <div class="panel" id="gSet">
+      <h3>Weight goal</h3>
+      <div class="fset">
+        <label for="gWt">Goal weight (lb)</label>
+        <input id="gWt" inputmode="decimal" placeholder="lb">
+        <div id="gOut"></div>
+      </div>
+    </div>
+    <div class="panel" id="fSet">
+      <h3>Claude estimates <span class="note">(optional)</span></h3>
       <div class="fset">
         <label for="fKey">Anthropic API key</label>
         <div class="note" id="fKeyStatus"></div>
@@ -337,21 +367,15 @@ details.panel>summary{cursor:pointer;font-size:14px;font-weight:600;list-style-p
         <div class="fbtns"><button class="btn" id="fKeySave">Save key</button><button class="btn ghost" id="fKeyDel">Remove key</button></div>
         <div class="note" id="fPrivacy"></div>
       </div>
-    </details>
-  </section>
-
-  <section id="foodHistView" class="wrap" style="gap:12px" hidden>
-    <div class="panel">
-      <h3>Last 14 days</h3>
-      <div class="chart" id="calChart"></div>
-      <div class="facts" id="calFacts"></div>
+        </div>
+    <div class="panel" id="dSet">
+      <h3>Your data</h3>
+      <div class="note">One CSV file holds everything: workouts, cardio, weigh-ins and food. Export one now and then as a backup; deleting the app deletes the log. Settings and My foods aren't in the file.</div>
+      <div class="fbtns"><button id="exportBtn" class="btn">Export CSV</button><button id="importBtn" class="btn ghost">Import CSV</button></div>
+      <input id="importFile" type="file" accept=".csv,text/csv,text/comma-separated-values,text/plain" hidden>
+      <div id="exportMsg" class="note" hidden></div>
     </div>
-    <div class="row" style="justify-content:space-between">
-      <h2 class="sec" style="margin:0">Food history</h2>
-      <button id="fExportBtn" class="btn ghost">Export CSV</button>
-    </div>
-    <div id="fExportMsg" class="note" hidden></div>
-    <div class="hist" id="foodHist"></div>
+    <div class="note" id="aboutLine" style="text-align:center"></div>
   </section>
 
   <section id="statsView" class="wrap" style="gap:12px" hidden>
@@ -362,7 +386,7 @@ details.panel>summary{cursor:pointer;font-size:14px;font-weight:600;list-style-p
         </div></div>
       <div class="chart" id="bwChart"></div>
       <div class="facts" id="bwFacts"></div>
-      <div class="note">Dots are weigh-ins; the dashed line is your 7-day average, which evens out day-to-day water swings.</div>
+      <div class="note">Dots are weigh-ins. The grey dashed line is your 7-day average, which evens out day-to-day water swings; the green one is your goal (set it in Settings).</div>
     </div>
     <div id="statsEmpty" class="empty" hidden>Your progress shows up here after your first logged workout. Tap a few sets on the Today tab to start.</div>
     <div id="statsBody" class="wrap" style="gap:12px">
@@ -390,15 +414,7 @@ details.panel>summary{cursor:pointer;font-size:14px;font-weight:600;list-style-p
   </section>
 
   <section id="histView" class="wrap" style="gap:12px" hidden>
-    <div class="row" style="justify-content:space-between">
-      <h2 style="font-family:var(--display);text-transform:uppercase;margin:0;font-size:22px">History</h2>
-      <div class="row">
-        <button id="importBtn" class="btn ghost">Import CSV</button>
-        <button id="exportBtn" class="btn">Export CSV</button>
-      </div>
-    </div>
-    <input id="importFile" type="file" accept=".csv,text/csv,text/comma-separated-values,text/plain" hidden>
-    <div id="exportMsg" class="note" hidden></div>
+    <h2 class="sec" style="margin:0">History</h2>
     <div class="hist" id="hist"></div>
   </section>
 </div>
@@ -516,7 +532,7 @@ let bodyweight=Object.assign({},BOOT.bodyweight||{}); // date -> body weight in 
 let food=Object.assign({},BOOT.food||{});            // date -> [{id,t,text,items:[{name,cal,p}]}] (separate from workouts, never locked)
 let foodTarget=Object.assign({lo:2500,hi:3000},BOOT.foodTarget||{}); // daily calorie range
 let myFoods=Array.isArray(BOOT.myFoods)?BOOT.myFoods:[];
-let foodProfile=Object.assign({sex:null,age:null,ft:null,inch:null,wt:null,act:1.55,auto:false},BOOT.foodProfile||{}); // for the TDEE calculator  // foods you saved yourself: [{id,n,cal,p}]
+let foodProfile=Object.assign({sex:null,age:null,ft:null,inch:null,wt:null,act:1.55,auto:false,goal:null},BOOT.foodProfile||{}); // for the TDEE calculator  // foods you saved yourself: [{id,n,cal,p}]
 // exercises that used to be in the plan, so older history still shows their names
 const RETIRED={dbcurl:"Dumbbell curls",facepull:"Face pulls",hammercurl:"Hammer curls",machinecurl:"Bicep curl machine",
   pecdeck:"Pec deck",machinelat:"Machine lateral raise",ohtri:"Overhead triceps extension"};
@@ -820,7 +836,8 @@ function renderBW(){
     let b,sub;
     if(w==null){b="Body weight";sub=prev?`Optional · last ${prev.w} lb on ${md(prev.date)}`:"Optional · log it when you weigh in"}
     else{b=`Body weight · ${w} lb`;
-      if(prev){const ch=r1(w-prev.w);sub=`${ch>0?"▲ +":ch<0?"▼ ":"± "}${ch} lb since ${md(prev.date)}`}else sub="First weigh-in"}
+      if(prev){const ch=r1(w-prev.w);sub=`${ch>0?"▲ +":ch<0?"▼ ":"± "}${ch} lb since ${md(prev.date)}`}else sub="First weigh-in";
+      const g=foodProfile.goal;if(g>0){const l=r1(w-g);sub+=l>0?` · ${l} lb to goal`:" · at goal ✓"}}
     row.innerHTML=`<div class="lbl"><b>${b}</b><span>${sub}</span></div><button class="btn ghost" data-bw="open">${w==null?"+ Log weight":"Edit"}</button>`;
     return;
   }
@@ -857,10 +874,11 @@ function renderBWStats(){
   // 7-day average: the mean of weigh-ins in the week ending on each date, which smooths out water-weight swings
   const avg=d=>{const lo=shift(d,-6),xs=all.filter(x=>x>=lo&&x<=d).map(x=>bodyweight[x]);return r1(xs.reduce((a,b)=>a+b,0)/xs.length)};
   const pts=ds.map(d=>({d,v:bodyweight[d],a:avg(d),tip:`${nice(d,{month:"short",day:"numeric"})}: ${bodyweight[d]} lb · 7-day avg ${avg(d)}`}));
-  lineChart($("bwChart"),pts,"lb",pts.length>2?pts.map(p=>p.a):null);
+  lineChart($("bwChart"),pts,"lb",pts.length>2?pts.map(p=>p.a):null,foodProfile.goal);
   const last=pts[pts.length-1], ch=r1(last.v-pts[0].v);
+  const gl=goalLeft();
   $("bwFacts").innerHTML=fact(last.v+" lb","latest")+fact(last.a+" lb","7-day avg")
-    +fact((ch>0?"+":"")+ch+" lb",pts.length>1?"since "+nice(pts[0].d,{month:"short",day:"numeric"}):"change");
+    +(gl!=null?fact(gl>0?gl+" lb":"✓",gl>0?"to goal":"at goal"):fact((ch>0?"+":"")+ch+" lb",pts.length>1?"since "+nice(pts[0].d,{month:"short",day:"numeric"}):"change"));
 }
 $("bwRange").addEventListener("click",ev=>{const b=ev.target.closest("button[data-r]");if(!b)return;
   bwDays=+b.dataset.r;ls.set("ll.bwRange",bwDays);renderBWStats();});
@@ -910,23 +928,36 @@ $("hist").addEventListener("click",ev=>{
 const SECTIONS={
   workout:{tabs:[["log","Today"],["stats","Progress"],["hist","History"]]},
   food:{tabs:[["food","Today"],["fhist","History"]]}};
-const VIEWS={log:"logView",stats:"statsView",hist:"histView",food:"foodView",fhist:"foodHistView"};
+const VIEWS={log:"logView",stats:"statsView",hist:"histView",food:"foodView",fhist:"foodHistView",settings:"settingsView"};
 const SEC_OF=v=>v==="food"||v==="fhist"?"food":"workout";
+let backTo="log";   // where the Settings screen's Back button returns
 let section=ls.get("ll.section","workout"); if(!SECTIONS[section])section="workout";
 const lastTab={workout:"log",food:"food"};
 let view=section==="food"?"food":"log";
 function showView(v){
-  flush(); view=v; section=SEC_OF(v); lastTab[section]=v; ls.set("ll.section",section);
+  flush();
+  if(v==="settings"){if(view!=="settings")backTo=view}
+  else{section=SEC_OF(v);lastTab[section]=v;ls.set("ll.section",section)}
+  view=v;
   Object.entries(VIEWS).forEach(([k,id])=>$(id).hidden=k!==v);
-  $("subTabs").innerHTML=SECTIONS[section].tabs.map(([k,l])=>`<button data-view="${k}" aria-pressed="${k===v}">${l}</button>`).join("");
-  $("navbar").querySelectorAll("button[data-sec]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.sec===section));
+  $("subTabs").innerHTML=v==="settings"
+    ?`<button class="back" data-view="${backTo}">‹ Back</button>`
+    :SECTIONS[section].tabs.map(([k,l])=>`<button data-view="${k}" aria-pressed="${k===v}">${l}</button>`).join("");
+  $("navbar").querySelectorAll("button[data-sec]").forEach(b=>b.setAttribute("aria-pressed",v!=="settings"&&b.dataset.sec===section));
+  $("gearBtn").setAttribute("aria-pressed",v==="settings");
   rerender(); window.scrollTo(0,0);}
 function rerender(){
-  if(view==="hist")renderHist();else if(view==="stats")renderStats();else if(view==="food")renderFood();else if(view==="fhist")renderFoodHist();else render();}
+  if(view==="settings")renderSettings();else if(view==="hist")renderHist();else if(view==="stats")renderStats();else if(view==="food")renderFood();else if(view==="fhist")renderFoodHist();else render();}
 $("subTabs").addEventListener("click",ev=>{const b=ev.target.closest("button[data-view]");if(b&&b.dataset.view!==view)showView(b.dataset.view)});
 $("navbar").addEventListener("click",ev=>{const b=ev.target.closest("button[data-sec]");if(!b)return;
   const sec=b.dataset.sec;
-  showView(sec===section?SECTIONS[sec].tabs[0][0]:lastTab[sec]);});   // tapping the section you're in goes back to its Today
+  showView(sec===section&&view!=="settings"?SECTIONS[sec].tabs[0][0]:lastTab[sec]);});
+$("gearBtn").onclick=()=>showView(view==="settings"?backTo:"settings");
+function renderSettings(){
+  renderFoodSettings(); renderGoal();
+  const v=window.__LIFTLOG_VERSION__;
+  $("aboutLine").textContent=v?`Lift Log ${v}`:"Lift Log · test site (saves in this browser)";
+}   // tapping the section you're in goes back to its Today
 
 /* ---- progress & stats ---- */
 const ITEMS=LIB;
@@ -1047,9 +1078,9 @@ function hover(el,pts,xs,ys){
   svg.addEventListener("pointermove",at);svg.addEventListener("pointerdown",at);
   svg.addEventListener("pointerleave",()=>{tip.hidden=true;if(xh)xh.style.display="none"});
 }
-function lineChart(el,pts,unit,overlay){
+function lineChart(el,pts,unit,overlay,goal){
   if(!pts.length){el.innerHTML=`<div class="note">No sessions logged yet.</div>`;return}
-  const vals=pts.map(p=>p.v),all=overlay?vals.concat(overlay):vals,{lo,hi,s}=niceRange(Math.min(...all),Math.max(...all));
+  const vals=pts.map(p=>p.v),all=(overlay?vals.concat(overlay):vals).concat(goal>0?[goal]:[]),{lo,hi,s}=niceRange(Math.min(...all),Math.max(...all));
   const y=v=>PT+(1-(v-lo)/(hi-lo))*(H-PT-PB);
   const xs=pts.map((p,i)=>pts.length===1?(PL+W-PR)/2:PL+8+i*(W-PR-PL-16)/(pts.length-1)),ys=vals.map(y);
   const line=xs.map((x,i)=>(i?"L":"M")+x.toFixed(1)+","+ys[i].toFixed(1)).join("");
@@ -1057,6 +1088,7 @@ function lineChart(el,pts,unit,overlay){
   const lab=(i,a)=>`<text class="axis" x="${xs[i]}" y="${H-6}" text-anchor="${a}">${nice(pts[i].d,{month:"short",day:"numeric"})}</text>`;
   el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Trend in ${unit}">${yAxis(lo,hi,s,y)}${area}
     <path class="ln" d="${line}"/>${overlay?`<path class="ln avg" d="${xs.map((x,i)=>(i?"L":"M")+x.toFixed(1)+","+y(overlay[i]).toFixed(1)).join("")}"/>`:""}<line class="xh" y1="${PT}" y2="${H-PB}" style="display:none"/>
+    ${goal>0?`<line class="goal" x1="${PL}" x2="${W-PR}" y1="${y(goal).toFixed(1)}" y2="${y(goal).toFixed(1)}"/><text class="axis goaltx" x="${W-PR}" y="${(y(goal)-4).toFixed(1)}" text-anchor="end">Goal ${goal}</text>`:""}
     ${xs.map((x,i)=>`<circle class="dot" cx="${x}" cy="${ys[i]}" r="${i===xs.length-1?5:4}"/>`).join("")}
     ${lab(0,pts.length===1?"middle":"start")}${pts.length>1?lab(pts.length-1,"end"):""}</svg>`;
   hover(el,pts,xs,ys);
@@ -1104,7 +1136,6 @@ function exportCSV(msg){
   a.download=name; document.body.appendChild(a); a.click(); a.remove(); msg.textContent="Downloaded "+name;
 }
 $("exportBtn").onclick=()=>exportCSV($("exportMsg"));
-$("fExportBtn").onclick=()=>exportCSV($("fExportMsg"));   // same file: workouts, weigh-ins and food together
 
 /* ---- import: a CSV exported from Lift Log (web or app) ---- */
 $("importBtn").onclick=()=>$("importFile").click();
@@ -1213,12 +1244,12 @@ function dayP(d){return dayFood(d).reduce((a,e)=>a+entryP(e),0)}
 
 function renderFood(){
   $("fDate").value=fDate;
-  if(!calcTDEE()&&!renderFood.opened){$("tSet").open=true;renderFood.opened=true}
-  renderCalSum(); renderDraft(); renderRecent(); renderMenu(); renderFoodList(); renderFoodSettings();
+  renderCalSum(); renderDraft(); renderRecent(); renderMenu(); renderFoodList();
   $("fAiWrap").hidden=!hasKey;
   const m=$("fMsg"); m.hidden=!fMsg; m.textContent=fMsg; m.className="note"+(/^(Couldn|That|The estimate|Add your|Type)/.test(fMsg)?" down":"");
   $("fEst").disabled=fBusy; $("fManual").disabled=fBusy; $("fEst").textContent=fBusy?"Estimating…":"Estimate calories";
 }
+$("calSum").addEventListener("click",ev=>{if(ev.target.closest("[data-go=settings]"))showView("settings")});
 function renderCalSum(){
   const eaten=dayCal(fDate), p=dayP(fDate), n=dayFood(fDate).length, {lo,hi}=foodTarget;
   let sub,cls="";
@@ -1230,7 +1261,8 @@ function renderCalSum(){
   const when=fDate===todayStr()?"Today":nice(fDate);
   $("calSum").innerHTML=`<div class="calhead"><div><div class="cat">${when}</div><div class="calbig">${n0(eaten)}<small>cal</small></div></div>
       <div class="calsub ${cls}">${sub}<br>${n?`${n0(p)} g protein`:""}</div></div>
-    <div class="calbar" role="img" aria-label="${n0(eaten)} of ${n0(lo)} to ${n0(hi)} calories"><div class="band" style="left:${pct(lo)}%;width:${(pct(hi)-pct(lo)).toFixed(1)}%"></div><div class="fill ${cls}" style="width:${pct(eaten)}%"></div></div>`;
+    <div class="calbar" role="img" aria-label="${n0(eaten)} of ${n0(lo)} to ${n0(hi)} calories"><div class="band" style="left:${pct(lo)}%;width:${(pct(hi)-pct(lo)).toFixed(1)}%"></div><div class="fill ${cls}" style="width:${pct(eaten)}%"></div></div>
+    <button class="calsum-link" data-go="settings">${calcTDEE()&&foodProfile.auto?`Target ${n0(lo)}–${n0(hi)} from your TDEE · Change`:"Work out your target from height, weight & age ›"}</button>`;
 }
 function renderDraft(){
   const el=$("fDraft");
@@ -1301,13 +1333,13 @@ function renderFoodSettings(){
   renderCalc();
   $("fKeyStatus").innerHTML=hasKey?`<span class="keyok">✓ Key saved ${NATIVE?"in this iPhone's Keychain":"in this browser"}</span>`:"No key yet. Create one at platform.claude.com → API keys, then paste it here.";
   $("fKeyDel").hidden=!hasKey;
-  $("fPrivacy").textContent=`Optional: the menu, My foods and “Enter it myself” are free and never go online. A key adds a box for describing food in your own words. Estimates use Claude (${AI_MODEL}). Only what you type in the food box is sent, and only when you tap Estimate. The key never goes into your log or CSV exports. Each estimate costs a small fraction of a cent, billed to your API account.`;
+  $("fPrivacy").textContent=`Optional: the menu, My foods and “Enter it myself” are free and never go online. A key adds a box on Food › Today for describing food in your own words. Estimates use Claude (${AI_MODEL}). Only what you type in the food box is sent, and only when you tap Estimate. The key never goes into your log or CSV exports. Each estimate costs a small fraction of a cent, billed to your API account.`;
 }
 
 /* talking to Claude: native app → Swift does the request; browser → fetch directly */
 const AI_WAIT={}; let aiSeq=0;
 window.__aiResult=r=>{const f=AI_WAIT[r.id];if(f){delete AI_WAIT[r.id];f(r)}};
-window.__keyStatus=v=>{hasKey=!!v;if(view==="food")renderFoodSettings()};
+window.__keyStatus=v=>{hasKey=!!v;rerender()};
 function aiRequest(body){
   if(NATIVE)return new Promise(res=>{const id=++aiSeq;AI_WAIT[id]=res;
     window.webkit.messageHandlers.liftlog.postMessage({type:"ai",id,body})});
@@ -1319,7 +1351,7 @@ async function estimateFood(text){
   const res=await aiRequest(JSON.stringify({model:AI_MODEL,max_tokens:1024,system:FOOD_SYSTEM,tools:[FOOD_TOOL],
     tool_choice:{type:"tool",name:"log_food"},messages:[{role:"user",content:text}]}));
   if(res.status===0)throw new Error(res.body||"Couldn't reach Claude. Check your connection, or tap Enter it myself.");
-  if(res.status===401||res.status===403)throw new Error("That API key was turned down. Check it in the settings below.");
+  if(res.status===401||res.status===403)throw new Error("That API key was turned down. Check it in Settings (the gear, top right).");
   if(res.status!==200){let m="";try{m=JSON.parse(res.body).error.message}catch(e){}
     throw new Error(`The estimate failed (${res.status})${m?": "+m:""}. Try again, or tap Enter it myself.`)}
   let tu=null;try{tu=JSON.parse(res.body).content.find(c=>c.type==="tool_use")}catch(e){}
@@ -1331,7 +1363,7 @@ async function estimateFood(text){
 $("fEst").onclick=async()=>{
   const text=$("fText").value.trim();
   if(!text){fMsg="Type what you ate first.";renderFood();$("fText").focus();return}
-  if(!hasKey){fMsg="Add your Anthropic API key in the settings below first, or tap Enter it myself.";$("fSet").open=true;renderFood();return}
+  if(!hasKey){fMsg="Add your Anthropic API key in Settings (the gear, top right) first, or tap Enter it myself.";renderFood();return}
   fBusy=true;fMsg="";renderFood();
   try{const r=await estimateFood(text);fDraft={text,items:r.items,note:r.note};fMsg=""}
   catch(e){fMsg=e.message}
@@ -1392,7 +1424,7 @@ function saveTarget(){   // typing your own numbers switches off the automatic t
   let lo=Math.round(Number($("fLo").value)),hi=Math.round(Number($("fHi").value));
   if(!(lo>0))lo=foodTarget.lo; if(!(hi>0))hi=foodTarget.hi; if(hi<lo)[lo,hi]=[hi,lo];
   if(lo!==foodTarget.lo||hi!==foodTarget.hi)foodProfile.auto=false;
-  foodTarget={lo,hi};persist();renderFood();
+  foodTarget={lo,hi};persist();rerender();
 }
 
 /* ---- calorie target from TDEE ----
@@ -1434,6 +1466,24 @@ function renderCalc(){
   $("tUse").hidden=matches&&pr.auto; $("tUse").textContent=`Use ${n0(r.lo)}–${n0(r.hi)} as my target`;
   $("tMode").innerHTML=pr.auto&&matches?`<span class="keyok">✓ Set from your TDEE</span> and updates when your weight changes. Typing your own numbers here switches that off.`:"Set by hand.";
 }
+/* weight goal: how far to go, and roughly how long at your target range (extreme ≈ 2 lb/wk, mild ≈ ½ lb/wk) */
+function goalLeft(){const g=foodProfile.goal,L=latestBW();return g>0&&L?r1(L.w-g):null}
+function renderGoal(){
+  const g=foodProfile.goal,L=latestBW();
+  if(document.activeElement!==$("gWt"))$("gWt").value=g??"";
+  if(!(g>0)){$("gOut").innerHTML=`<div class="note">Set a goal and it shows on your body-weight chart and weigh-ins, with a rough time to get there.</div>`;return}
+  if(!L){$("gOut").innerHTML=`<div class="note">Log a weigh-in on Workout › Today to see how far you are from ${g} lb.</div>`;return}
+  const left=r1(L.w-g);
+  if(left<=0){$("gOut").innerHTML=`<div class="note keyok">✓ You're at your goal (${L.w} lb on ${md(L.date)}).</div>`;return}
+  const wk=rate=>Math.ceil(left/rate), by=n=>nice(shift(todayStr(),n*7),{month:"short",day:"numeric",year:"numeric"});
+  $("gOut").innerHTML=`<div class="facts">${fact(L.w+" lb","now")}${fact(g+" lb","goal")}${fact(left+" lb","to go")}</div>
+    <table class="ttab"><tr><td>At extreme loss <small>2 lb/wk</small></td><td>${wk(2)} wk <small>· ${by(wk(2))}</small></td></tr>
+    <tr><td>At weight loss <small>1 lb/wk</small></td><td>${wk(1)} wk <small>· ${by(wk(1))}</small></td></tr>
+    <tr><td>At mild loss <small>½ lb/wk</small></td><td>${wk(.5)} wk <small>· ${by(wk(.5))}</small></td></tr></table>
+    <div class="note">Rough guide: real weekly loss swings with water weight, so watch the 7-day average on Progress.</div>`;
+}
+$("gWt").addEventListener("change",()=>{const v=$("gWt").value.trim(),n=Number(v);
+  foodProfile.goal=v===""||!(n>0&&n<1000)?null:r1(n);persist();renderGoal();});
 function calcInput(){
   const num=id=>{const v=$(id).value.trim(),n=Number(v);return v===""||!(n>0)?null:n};
   foodProfile.age=num("tAge");foodProfile.ft=num("tFt");foodProfile.inch=$("tIn").value.trim()===""?null:Math.max(0,Number($("tIn").value)||0);
@@ -1444,17 +1494,17 @@ function calcInput(){
 $("tAct").addEventListener("change",calcInput);
 $("tSex").addEventListener("click",ev=>{const b=ev.target.closest("button[data-v]");if(!b)return;foodProfile.sex=b.dataset.v;applyAuto();persist();renderCalSum();renderCalc()});
 $("tUse").addEventListener("click",()=>{calcInput();const r=calcTDEE();if(!r)return;
-  foodTarget={lo:r.lo,hi:r.hi};foodProfile.auto=true;persist();renderFood();});
+  foodTarget={lo:r.lo,hi:r.hi};foodProfile.auto=true;persist();rerender();});
 $("fLo").addEventListener("change",saveTarget);$("fHi").addEventListener("change",saveTarget);
 $("fKeySave").onclick=()=>{const k=$("fKey").value.trim();if(!k){$("fKey").focus();return}
   $("fKey").value="";
   if(NATIVE)window.webkit.messageHandlers.liftlog.postMessage({type:"setKey",key:k});
   else{ls.set("ll.apikey",k);hasKey=true}
-  if(/^Add your/.test(fMsg))fMsg="";renderFood();};
+  if(/^Add your/.test(fMsg))fMsg="";rerender();};
 $("fKeyDel").onclick=()=>{
   if(NATIVE)window.webkit.messageHandlers.liftlog.postMessage({type:"setKey",key:""});
   else{try{localStorage.removeItem("ll.apikey")}catch(e){}hasKey=false}
-  renderFood();};
+  rerender();};
 // a new day rolls the Food tab forward when the app comes back from the background
 document.addEventListener("visibilitychange",()=>{if(!document.hidden&&view==="food"&&fDate!==todayStr()&&!fDraft&&fDate===shift(todayStr(),-1))goFood(todayStr())});
 
