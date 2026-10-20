@@ -48,6 +48,16 @@ final class LiftLogUITests: XCTestCase {
         let web = app.webViews.firstMatch
         XCTAssertTrue(web.waitForExistence(timeout: 30), "The app's page never appeared")
 
+        // A fresh install opens the setup screen: pick the 5-day split.
+        let template = control(web, "Plan: 5-day split")
+        XCTAssertTrue(template.waitForExistence(timeout: 30), "The first-run setup screen didn't appear")
+        shot(app, "0-setup")
+        template.tap()
+        let start = control(web, "Use 5-day split")
+        XCTAssertTrue(start.waitForExistence(timeout: 10), "The setup screen's start button didn't appear")
+        XCTAssertTrue(scrollTo(start, in: app), "The setup screen's start button wasn't reachable")
+        start.tap()
+
         // Go to Monday (legs), whose first exercise sits near the top of the screen.
         let monday = mondayButton(web)
         XCTAssertTrue(monday.waitForExistence(timeout: 30), "The week strip didn't load")

@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>Lift Log Privacy Policy</title>
+<style>
+:root{--bg:#eef0f3;--surface:#ffffff;--ink:#15181d;--muted:#5d6570;--line:#d6dae0;--accent:#1f56c9}
+@media (prefers-color-scheme:dark){:root{--bg:#111418;--surface:#1b1f25;--ink:#eef1f5;--muted:#9aa3ae;--line:#2c323b;--accent:#5b8cff}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 -apple-system,"Segoe UI",Roboto,sans-serif;padding:24px 16px 48px}
+main{max-width:640px;margin:0 auto;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px 20px 8px}
+h1{font-size:26px;margin:0 0 4px} h2{font-size:18px;margin:24px 0 6px}
+.date{color:var(--muted);font-size:14px;margin:0 0 16px}
+a{color:var(--accent)} li{margin:4px 0} p,ul{margin:0 0 12px}
+</style>
+</head>
+<body>
+<main>
+<h1>Lift Log Privacy Policy</h1>
+<p class="date">Effective October 20, 2026</p>
+
+<p>Lift Log is a workout, cardio, body-weight and calorie tracker. It's built so your information stays on your phone. This policy explains what that means.</p>
+
+<h2>The short version</h2>
+<ul>
+  <li>There's no account and no sign-in.</li>
+  <li>The developer doesn't collect, receive, sell or share any of your data.</li>
+  <li>There are no ads, analytics, trackers or third-party SDKs in the app.</li>
+  <li>Your log is stored only on your device.</li>
+</ul>
+
+<h2>What the app stores, and where</h2>
+<p>Everything you enter is saved in a file inside the app's own storage on your iPhone: workouts and sets, cardio, body weight, food entries and calories, your workout plan, and the details you give the calorie calculator (sex, age, height, weight, activity level and weight goal). That file is not sent anywhere by the app. Like other app data, it may be included in your own iCloud or computer backups of your phone, which Apple handles under its own privacy policy.</p>
+<p>The nutrition menu (restaurant calories) is built into the app. Looking things up in it never goes online.</p>
+
+<h2>When data leaves your phone</h2>
+<p>Only when you choose to send it:</p>
+<ul>
+  <li><b>CSV export.</b> When you tap Export CSV, the app makes a file and opens the iPhone share sheet. It goes only where you send it (Files, AirDrop, Mail, and so on).</li>
+  <li><b>Optional Claude estimates.</b> If you add your own Anthropic API key in Settings and tap “Estimate calories”, the text you typed in that box (for example “3 finger combo, diet coke”) is sent to Anthropic's API to estimate calories, using your key. Nothing else from your log is sent. Anthropic handles that request under its own terms and privacy policy (<a href="https://www.anthropic.com/legal/privacy">anthropic.com/legal/privacy</a>). Your key is kept in the iPhone Keychain and is never included in your log or exports. If you don't add a key, this feature is off and nothing is ever sent.</li>
+</ul>
+
+<h2>Deleting your data</h2>
+<p>Settings → Erase all data deletes everything from the app, including your plan, settings and Claude key. Deleting the app also deletes its data.</p>
+
+<h2>Health information</h2>
+<p>Calorie targets and time-to-goal figures are estimates from a standard formula (Mifflin-St Jeor) and are not medical advice. Check with your doctor before starting a diet or exercise program.</p>
+
+<h2>Children</h2>
+<p>Lift Log isn't directed at children under 13 and doesn't knowingly collect information from anyone. Since nothing is collected, there's nothing to collect from children either.</p>
+
+<h2>Changes</h2>
+<p>If this policy changes, the new version will be posted on this page with a new effective date.</p>
+
+<h2>Contact</h2>
+<p>Questions or requests: open an issue at <a href="https://github.com/Lsims6/lift-log/issues">github.com/Lsims6/lift-log/issues</a>.</p>
+</main>
+</body>
+</html>

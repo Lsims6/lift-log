@@ -17,6 +17,10 @@ A workout and calorie tracker for iPhone. Everything is saved in a file on the p
 3. The **screenshots** artifact shows the app running on a simulated iPhone.
 4. Install `LiftLog.ipa` with AltStore: **My Apps → + →** pick the file.
 
+## Workout plan
+
+Your workouts, their exercises and which day each one falls on are all editable: **Settings → Workout plan → Edit workouts & schedule**. You can rename, add or delete workouts; add, remove or reorder exercises; change set counts; pick any workout (or a rest day) for each day of the week; and make your own exercises (name, muscle group, compound / isolation / cardio). A new install opens a setup screen with starter plans (5-day split, Push/Pull/Legs, Upper/Lower, Full body, or start from scratch). Logs made before plans were editable keep the original 5-day split with its starting weights.
+
 ## Workout extras
 
 - **Lunch-break cardio:** a card above the workout every day (Walk by default, or any cardio machine). It stays editable after the workout is locked, counts toward cardio minutes, and a lunch-only day isn't counted as a gym day.
@@ -24,7 +28,7 @@ A workout and calorie tracker for iPhone. Everything is saved in a file on the p
 
 ## Layout
 
-The gear at the top right opens **Settings**: calorie target (TDEE calculator), weight goal (shown on weigh-ins and the Progress chart, with a rough time to reach it), the optional Claude key, CSV export/import, and the app version.
+The gear at the top right opens **Settings**: workout plan, calorie target (TDEE calculator), weight goal (shown on weigh-ins and the Progress chart, with a rough time to reach it), the optional Claude key, CSV export/import, privacy policy, erase all data, and the app version.
 
 The bar along the bottom switches between **Workout** and **Food**. The tabs up top switch views inside each one: Workout has Today, Progress and History; Food has Today and History (daily totals vs your target, a 14-day chart, and every day's meals). The app reopens in the section you used last.
 
@@ -69,3 +73,7 @@ With these four repository secrets set (Settings → Secrets and variables → A
 - `APPLE_TEAM_ID`: from developer.apple.com/account → Membership details
 
 Install the **TestFlight** app on the iPhone, add yourself to an internal testing group in App Store Connect, and Lift Log shows up there. TestFlight builds expire after 90 days; any push (or **Run workflow** on the Actions tab) makes a fresh one.
+
+## Privacy policy
+
+`LiftLog/Web/privacy.html`, published at **https://lsims6.github.io/lift-log/privacy.html** with the test site. Use that address for the App Store listing's privacy policy URL. Settings links to it.
