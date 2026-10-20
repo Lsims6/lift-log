@@ -77,7 +77,7 @@ enum KeyStore {
         kSecAttrAccount as String: "api-key",
     ]
 
-    static func get() -> String? {
+    static func read() -> String? {
         var query = base
         query[kSecReturnData as String] = true
         query[kSecMatchLimit as String] = kSecMatchLimitOne
@@ -96,7 +96,7 @@ enum KeyStore {
         SecItemAdd(item as CFDictionary, nil)
     }
 
-    static var hasKey: Bool { get() != nil }
+    static var hasKey: Bool { read() != nil }
 }
 
 /// Sends a food-estimate request to the Claude API. The page builds the request body; this side only adds the
@@ -105,7 +105,7 @@ enum ClaudeAPI {
     static let url = URL(string: "https://api.anthropic.com/v1/messages")!
 
     static func send(body: String, done: @escaping (_ status: Int, _ body: String) -> Void) {
-        guard let key = KeyStore.get() else {
+        guard let key = KeyStore.read() else {
             done(0, "Add your Anthropic API key in the settings below first, or tap Enter it myself.")
             return
         }
