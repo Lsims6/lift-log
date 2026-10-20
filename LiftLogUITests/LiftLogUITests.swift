@@ -90,6 +90,8 @@ final class LiftLogUITests: XCTestCase {
         monday2.tap()
         let finish = control(reopened, "Finish workout & lock")
         XCTAssertTrue(scrollTo(finish, in: app), "The Finish workout button wasn't there")
+        app.swipeUp() // lift it clear of the Workout | Food bar along the bottom of the screen
+        sleep(1)
         finish.tap()
         XCTAssertTrue(control(reopened, "Unlock to edit").waitForExistence(timeout: 10), "Finishing the workout didn't lock it")
         sleep(1)
