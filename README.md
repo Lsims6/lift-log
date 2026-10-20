@@ -17,13 +17,18 @@ A workout and calorie tracker for iPhone. Everything is saved in a file on the p
 3. The **screenshots** artifact shows the app running on a simulated iPhone.
 4. Install `LiftLog.ipa` with AltStore: **My Apps → + →** pick the file.
 
+## Workout extras
+
+- **Lunch-break cardio:** a card above the workout every day (Walk by default, or any cardio machine). It stays editable after the workout is locked, counts toward cardio minutes, and a lunch-only day isn't counted as a gym day.
+- **Skip today:** each exercise has a *Skip today* button that hides it for that date only. The plan doesn't change; tap *Undo* to bring it back. If sets were already logged, it asks for a second tap before clearing them.
+
 ## Layout
 
 The bar along the bottom switches between **Workout** and **Food**. The tabs up top switch views inside each one: Workout has Today, Progress and History; Food has Today and History (daily totals vs your target, a 14-day chart, and every day's meals). The app reopens in the section you used last.
 
 ## Food & calories
 
-The **Food** tab tracks calories against a daily target range (2,500–3,000 to start; change it under *Calorie target & estimate settings*). It's free and works offline.
+The **Food** tab tracks calories against a daily target range. Under **Calorie target**, enter sex, age, height, weight and activity: the app works out your BMR (Mifflin-St Jeor) and TDEE and sets the range from extreme loss (TDEE − 1,000, about 2 lb/week) to mild loss (TDEE − 250, about ½ lb/week), never below 1,500 (men) / 1,200 (women). Leave weight blank and it follows your latest weigh-in. You can still type your own range. It's free and works offline.
 
 - **Menu:** search ("biscuit", "3 finger", "footlong") or pick a restaurant, then tap foods to build the meal and **Add**. The menu lives in `LiftLog/Web/menu.js` (Chick-fil-A, Raising Cane's, McDonald's, Subway, Firehouse Subs, with sources noted at the top). Edit it and push to add or fix foods.
 - **My foods:** anything not on the menu, tap **Enter it myself**, type the calories, and **☆ Save to My foods** so it shows up in search next time.

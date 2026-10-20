@@ -169,6 +169,9 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 /* cardio before & after the workout: same card, plus a second row for machine level and floors */
 .card.cardio .row+.row{gap:6px 10px}
 .card.cardio .reps{width:60px}
+.card.skipped{opacity:.7;border-style:dashed;padding:10px 12px}
+.card.skipped .name{font-size:15px}
+.skipbtn{margin-left:auto;color:var(--muted)}
 /* food: a day total against the target range, an add box that asks Claude for calories, and the day's entries */
 .calhead{display:flex;justify-content:space-between;align-items:flex-end;gap:10px}
 .calbig{font-family:var(--display);font-size:44px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
@@ -229,6 +232,19 @@ details.panel>summary{cursor:pointer;font-size:14px;font-weight:600;list-style-p
 .fset input{font:inherit;font-size:16px;height:40px;padding:0 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);min-width:0}
 .fset .two{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center}
 .keyok{color:var(--done);font-weight:600}
+.seg{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{font:inherit;font-weight:600;border:0;background:var(--bg);color:var(--ink);height:40px;cursor:pointer}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:10px}
+.grid2>div{display:flex;flex-direction:column;gap:8px}
+.grid2 .two{grid-template-columns:1fr auto 1fr}
+.tsel{font:inherit;font-size:16px;height:40px;padding:0 8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);min-width:0;width:100%}
+.ttab{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
+.ttab td{padding:6px 0;border-top:1px solid var(--line)}
+.ttab td:last-child{text-align:right;font-weight:600}
+.ttab tr.pick td{color:var(--done)}
+.ttab small{color:var(--muted);font-weight:400}
 @media (prefers-reduced-motion:no-preference){.set,.card{transition:background .12s,border-color .12s}}
 </style>
 </head>
@@ -250,6 +266,7 @@ details.panel>summary{cursor:pointer;font-size:14px;font-weight:600;list-style-p
     </div>
     <div class="daybar" id="daybar" role="group" aria-label="Workout day"></div>
     <div class="bw" id="bwRow"></div>
+    <div id="lunchRow"></div>
     <div class="dayhead"><h2 id="dayTitle"></h2><small id="dayCount"></small></div>
     <label class="plansel"><span>Workout</span><select id="planSel" aria-label="Workout for this day"></select></label>
     <div id="lockBanner" class="banner" hidden></div>
@@ -281,11 +298,39 @@ details.panel>summary{cursor:pointer;font-size:14px;font-weight:600;list-style-p
       <div class="note" id="fMsg" hidden></div>
     </div>
     <div class="hist" id="foodList"></div>
-    <details class="panel" id="fSet">
-      <summary>Calorie target &amp; estimate settings</summary>
+    <details class="panel" id="tSet">
+      <summary>Calorie target</summary>
+      <div class="fset" id="tCalc">
+        <div class="note">Your target comes from your TDEE, the calories you burn in a day. The range runs from extreme loss (about 2 lb a week) up to mild loss (about ½ lb a week).</div>
+        <label>Sex</label>
+        <div class="seg" id="tSex" role="group" aria-label="Sex"><button data-v="m">Male</button><button data-v="f">Female</button></div>
+        <div class="grid2">
+          <div><label for="tAge">Age</label><input id="tAge" inputmode="numeric" placeholder="years"></div>
+          <div><label>Height</label><div class="two"><input id="tFt" inputmode="numeric" placeholder="ft" aria-label="Height feet"><span class="unit">′</span><input id="tIn" inputmode="decimal" placeholder="in" aria-label="Height inches"></div></div>
+        </div>
+        <label for="tWt">Weight (lb)</label>
+        <input id="tWt" inputmode="decimal" placeholder="lb">
+        <div class="note" id="tWtNote"></div>
+        <label for="tAct">Activity</label>
+        <select id="tAct" class="tsel">
+          <option value="1.2">Sedentary: desk job, little exercise</option>
+          <option value="1.375">Light: exercise 1–3 days a week</option>
+          <option value="1.55">Moderate: exercise 3–5 days a week</option>
+          <option value="1.725">Active: hard exercise 6–7 days a week</option>
+          <option value="1.9">Very active: physical job plus training</option>
+        </select>
+        <div id="tOut"></div>
+        <button class="btn" id="tUse" style="margin-bottom:6px" hidden></button>
+      </div>
       <div class="fset">
-        <label for="fLo">Daily target (calories)</label>
+        <label>Daily target range (calories)</label>
         <div class="two"><input id="fLo" inputmode="numeric" aria-label="Target low"><span class="unit">to</span><input id="fHi" inputmode="numeric" aria-label="Target high"></div>
+        <div class="note" id="tMode"></div>
+      </div>
+    </details>
+    <details class="panel" id="fSet">
+      <summary>Claude estimates (optional)</summary>
+      <div class="fset">
         <label for="fKey">Anthropic API key</label>
         <div class="note" id="fKeyStatus"></div>
         <input id="fKey" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="sk-ant-…">
@@ -426,7 +471,7 @@ const ALT={
   shoulders:[{id:"dbshoulder",name:"Dumbbell shoulder press",c:1},{id:"arnold",name:"Arnold press",c:1}],
   sidedelts:[{id:"cablelat",name:"Cable lateral raise",step:2.5},{id:"machinelat",name:"Machine lateral raise"}],
   triceps:[{id:"ohtri",name:"Overhead triceps extension"},{id:"ropepush",name:"Rope pushdowns"},{id:"dipmachine",name:"Dip machine"},{id:"skull",name:"Skull crushers"}],
-  cardio:[{id:"stairs",name:"Stair climber",cardio:true},{id:"elliptical",name:"Elliptical",cardio:true}],
+  cardio:[{id:"stairs",name:"Stair climber",cardio:true},{id:"elliptical",name:"Elliptical",cardio:true},{id:"walk",name:"Walk",cardio:true},{id:"run",name:"Run",cardio:true}],
   abs:[{id:"cablecrunch",name:"Cable crunches"},{id:"abmachine",name:"Ab crunch machine"},{id:"legraise",name:"Hanging leg raises",w:0,hint:"0 = bodyweight"}],
   reardelts:[{id:"facepull",name:"Face pulls"},{id:"reardeltraise",name:"Rear delt dumbbell raise",step:2.5}],
   traps:[{id:"dbshrug",name:"Dumbbell shrugs"},{id:"shrugmachine",name:"Shrug machine"}],
@@ -470,7 +515,8 @@ let customNames=Object.assign({},BOOT.names||{});    // names for exercises brou
 let bodyweight=Object.assign({},BOOT.bodyweight||{}); // date -> body weight in lb (separate from workouts, never locked)
 let food=Object.assign({},BOOT.food||{});            // date -> [{id,t,text,items:[{name,cal,p}]}] (separate from workouts, never locked)
 let foodTarget=Object.assign({lo:2500,hi:3000},BOOT.foodTarget||{}); // daily calorie range
-let myFoods=Array.isArray(BOOT.myFoods)?BOOT.myFoods:[];  // foods you saved yourself: [{id,n,cal,p}]
+let myFoods=Array.isArray(BOOT.myFoods)?BOOT.myFoods:[];
+let foodProfile=Object.assign({sex:null,age:null,ft:null,inch:null,wt:null,act:1.55,auto:false},BOOT.foodProfile||{}); // for the TDEE calculator  // foods you saved yourself: [{id,n,cal,p}]
 // exercises that used to be in the plan, so older history still shows their names
 const RETIRED={dbcurl:"Dumbbell curls",facepull:"Face pulls",hammercurl:"Hammer curls",machinecurl:"Bicep curl machine",
   pecdeck:"Pec deck",machinelat:"Machine lateral raise",ohtri:"Overhead triceps extension"};
@@ -505,29 +551,34 @@ function lastFor(id, before){
    cardio:{pre:{ex,min,lvl,fl,done}, post:{…}}. The machine defaults to the stair climber and each card starts
    at what you did last time in that same spot. Level and floors are optional; floors only show for the stair climber.
    A card counts once you tap Log it. */
-const CSLOT={pre:"before",post:"after"};
+/* Lunch-break cardio is a third card that sits above the workout on every day. It's its own thing: it stays
+   editable after the workout is finished and locked, and a day with only lunch cardio isn't counted as a gym day. */
+const CSLOT={pre:"before",post:"after",lunch:"lunch"};
+const CLABEL={pre:"before workout",post:"after workout",lunch:"lunch break"};
+const CDEF={pre:{ex:"stairs",min:10},post:{ex:"stairs",min:15},lunch:{ex:"walk",min:20}};
 function cDone(c){return !!(c&&c.done&&c.min>0)}
-function sCardio(s){return ["pre","post"].map(k=>s&&s.cardio&&s.cardio[k]).filter(cDone)}
+function sCardio(s){return ["lunch","pre","post"].map(k=>s&&s.cardio&&s.cardio[k]).filter(cDone)}
+function gymCardio(s){return ["pre","post"].map(k=>s&&s.cardio&&s.cardio[k]).filter(cDone)}
 function lastCardio(slot,before){
   const ds=Object.keys(sessions).filter(d=>d<before&&cDone(sessions[d].cardio&&sessions[d].cardio[slot])).sort();
   return ds.length?{date:ds[ds.length-1],c:sessions[ds[ds.length-1]].cardio[slot]}:null}
 function cardioFor(slot){
   const c=cur.cardio&&cur.cardio[slot]; if(c)return c;
   const L=lastCardio(slot,date);
-  return L?{ex:L.c.ex,min:L.c.min,lvl:L.c.lvl??null,fl:null,_draft:true}:{ex:"stairs",min:slot==="pre"?10:15,lvl:null,fl:null,_draft:true}}
+  return L?{ex:L.c.ex,min:L.c.min,lvl:L.c.lvl??null,fl:null,_draft:true}:{...CDEF[slot],lvl:null,fl:null,_draft:true}}
 function fmtCardio(c,withName=true){
   return (withName?(NAMES[c.ex]||c.ex)+" · ":"")+c.min+" min"+(c.lvl?" · L"+c.lvl:"")+(c.fl?" · "+c.fl+" floors":"")}
 function cardioHTML(slot){
-  const c=cardioFor(slot), on=!c._draft&&cDone(c), L=lastCardio(slot,date), lbl=CSLOT[slot];
-  const last=L?`Last: ${fmtCardio(L.c,L.c.ex!==c.ex)} · ${nice(L.date,{month:"short",day:"numeric"})}`:(slot==="pre"?"Warm-up":"Cool-down")+" · optional";
+  const c=cardioFor(slot), on=!c._draft&&cDone(c), L=lastCardio(slot,date), lbl=CLABEL[slot];
+  const last=L?`Last: ${fmtCardio(L.c,L.c.ex!==c.ex)} · ${nice(L.date,{month:"short",day:"numeric"})}`:({pre:"Warm-up",post:"Cool-down",lunch:"On your lunch break"})[slot]+" · optional";
   const opts=(BYGROUP.cardio||[]).map(o=>`<option value="${o.id}"${o.id===c.ex?" selected":""}>${o.name}</option>`).join("");
   return `<div class="card cardio ${on?"complete":""}" data-cslot="${slot}">
-    <div class="top"><div><div class="cat">Cardio · ${lbl} workout</div><label class="exwrap"><select class="exsel" data-c="ex" aria-label="Cardio ${lbl} workout: machine">${opts}</select></label><div class="last">${last}</div></div><div class="target">MIN</div></div>
-    <div class="row"><div class="stepper"><button data-c="min-" aria-label="Less cardio time ${lbl} workout">−</button><input data-c="min" inputmode="numeric" aria-label="Cardio minutes ${lbl} workout" value="${c.min??""}"><button data-c="min+" aria-label="More cardio time ${lbl} workout">+</button></div>
+    <div class="top"><div><div class="cat">Cardio · ${lbl}</div><label class="exwrap"><select class="exsel" data-c="ex" aria-label="Cardio ${lbl}: machine">${opts}</select></label><div class="last">${last}</div></div><div class="target">MIN</div></div>
+    <div class="row"><div class="stepper"><button data-c="min-" aria-label="Less cardio time ${lbl}">−</button><input data-c="min" inputmode="numeric" aria-label="Cardio minutes ${lbl}" value="${c.min??""}"><button data-c="min+" aria-label="More cardio time ${lbl}">+</button></div>
       <span class="unit">minutes</span>
-      <button class="set ${on?"on":""}" data-c="done" aria-pressed="${on}" aria-label="Log cardio ${lbl} workout" style="margin-left:auto">${on?"Done ✓":"Log it"}</button></div>
-    <div class="row"><span class="unit">Level</span><div class="stepper small"><button data-c="lvl-" aria-label="Lower level">−</button><input data-c="lvl" inputmode="numeric" aria-label="Machine level ${lbl} workout" placeholder="—" value="${c.lvl??""}"><button data-c="lvl+" aria-label="Higher level">+</button></div>
-      ${c.ex==="stairs"?`<span class="unit">Floors</span><input class="reps" data-c="fl" inputmode="numeric" aria-label="Floors climbed ${lbl} workout" placeholder="—" value="${c.fl??""}">`:""}</div>
+      <button class="set ${on?"on":""}" data-c="done" aria-pressed="${on}" aria-label="Log cardio ${lbl}" style="margin-left:auto">${on?"Done ✓":"Log it"}</button></div>
+    ${c.ex==="walk"||c.ex==="run"?"":`<div class="row"><span class="unit">Level</span><div class="stepper small"><button data-c="lvl-" aria-label="Lower level">−</button><input data-c="lvl" inputmode="numeric" aria-label="Machine level ${lbl}" placeholder="—" value="${c.lvl??""}"><button data-c="lvl+" aria-label="Higher level">+</button></div>
+      ${c.ex==="stairs"?`<span class="unit">Floors</span><input class="reps" data-c="fl" inputmode="numeric" aria-label="Floors climbed ${lbl}" placeholder="—" value="${c.fl??""}">`:""}</div>`}
   </div>`;
 }
 function commitC(slot,c){delete c._draft;cur.cardio=Object.assign({},cur.cardio,{[slot]:c});markDirty()}
@@ -576,20 +627,21 @@ function render(){
   // Mon–Fri buttons are the actual dates of the selected week; each date has its own log and lock.
   const mon=weekStart(date);
   $("daybar").innerHTML=DAYS.map((d,i)=>{const ds=shift(mon,i),s=sessions[ds];
-    const mark=s&&s.locked?" ✓":(s&&logged(s)?" •":"");
+    const mark=s&&s.locked?" ✓":(s&&gymDay(s)?" •":"");
     return `<button data-date="${ds}" aria-pressed="${ds===date}" aria-label="${nice(ds,{weekday:"long",month:"short",day:"numeric"})}${s&&s.locked?", finished":""}"><b>${DAYNAME[d]}</b><span>${parse(ds).getDate()}${mark}</span></button>`}).join("");
   renderBW();
+  $("lunchRow").innerHTML=cardioHTML("lunch");
   $("planSel").value=cur.day; $("planSel").disabled=!!cur.locked;
   const plan=PLAN[cur.day];
   $("dayTitle").textContent=plan.label;
-  const items=dayItems();
-  const doneN=items.filter(i=>isComplete(i,cur.entries[i.id])).length;
-  $("dayCount").textContent=`${nice(date)} · ${doneN}/${items.length} done`;
+  const items=dayItems(), act=items.filter(i=>!isSkipped(i));
+  const doneN=act.filter(i=>isComplete(i,cur.entries[i.id])).length, skipN=items.length-act.length;
+  $("dayCount").textContent=`${nice(date)} · ${doneN}/${act.length} done${skipN?` · ${skipN} skipped`:""}`;
   $("logNote").hidden=!!cur.locked;
   if(cur.locked){renderLocked(items);return}
   $("lockBanner").hidden=true;
-  $("list").innerHTML=cardioHTML("pre")+items.map(i=>cardHTML(i,new Set(items.filter(x=>x.slot!==i.slot).map(x=>x.id)))).join("")+cardioHTML("post");
-  const any=Object.values(cur.entries).some(e=>e.min>0||setsDone(e).length)||sCardio(cur).length>0;
+  $("list").innerHTML=cardioHTML("pre")+items.map(i=>isSkipped(i)?skipHTML(i):cardHTML(i,new Set(items.filter(x=>x.slot!==i.slot).map(x=>x.id)))).join("")+cardioHTML("post");
+  const any=Object.values(cur.entries).some(e=>e.min>0||setsDone(e).length)||gymCardio(cur).length>0;
   $("finishBar").innerHTML=any
     ?`<button class="btn" id="finishBtn">Finish workout &amp; lock</button><span class="note">Locks today's entries so they can't be changed by accident. You can unlock later.</span>`
     :"";
@@ -600,6 +652,7 @@ let unlockArmed=false;
 function renderLocked(items){
   const done=[],skipped=[];let sets=0,vol=0,min=0;
   items.forEach(i=>{const e=cur.entries[i.id];
+    if(isSkipped(i)){skipped.push(i.name);return}
     if(i.cardio){if(e&&e.min>0){done.push([i.name,e.min+" min"]);min+=e.min}else skipped.push(i.name);return}
     const sd=setsDone(e);if(!sd.length){skipped.push(i.name);return}
     sets+=sd.length;sd.forEach(x=>vol+=(+x.w||0)*(x.reps||0));done.push([i.name,fmtSets(sd)]);});
@@ -625,6 +678,15 @@ $("finishBar").addEventListener("click",ev=>{if(!ev.target.closest("#finishBtn")
 $("lockBanner").addEventListener("click",ev=>{if(!ev.target.closest("#unlockBtn"))return;
   if(!unlockArmed){unlockArmed=true;render();setTimeout(()=>{if(unlockArmed){unlockArmed=false;if(cur.locked)render()}},4000);return}
   unlockArmed=false;cur.locked=false;delete cur.lockedAt;markDirty();render();});
+/* Skip today: hides an exercise for this one date only (kept on the session as skips:{slot:true}).
+   The plan is untouched, and next time the exercise comes back with its usual progression. */
+let skipArmed=null;
+function isSkipped(item){return !!(cur.skips&&cur.skips[item.slot])}
+function skipHTML(item){
+  return `<div class="card skipped" data-id="${item.id}" data-slot="${item.slot}"><div class="row">
+    <div style="flex:1;min-width:0"><div class="cat">${GLABEL[item.g]||""}</div><span class="name">${item.name}</span> <span class="note">· skipped today</span></div>
+    <button class="set addset" data-act="unskip" aria-label="Undo skip ${item.name}">Undo</button></div></div>`;
+}
 function isComplete(item,e){if(!e)return false;return item.cardio?e.min>0:(e.sets||[]).length>0&&e.sets.every(x=>x.done)}
 
 function exPick(item,taken){
@@ -643,7 +705,8 @@ function cardHTML(item,taken=new Set()){
       <div class="top"><div>${exPick(item,taken)}<div class="last">${lastTxt}</div></div><div class="target">MIN</div></div>
       <div class="row"><div class="stepper"><button data-act="min-" aria-label="Less time">−</button><input data-act="min" inputmode="numeric" aria-label="${item.name} minutes" value="${e.min??""}"><button data-act="min+" aria-label="More time">+</button></div>
       <span class="unit">minutes</span>
-      <button class="set ${comp?"on":""}" data-act="cardiodone" style="margin-left:auto">${comp?"Done ✓":"Log it"}</button></div></div>`;
+      <button class="set ${comp?"on":""}" data-act="cardiodone" style="margin-left:auto">${comp?"Done ✓":"Log it"}</button></div>
+      <div class="row">${skipBtn(item,e)}</div></div>`;
   }
   const adv=advice(item,last);
   const rows=e.sets.map((s,k)=>{const on=s.done&&!e._draft;return `<div class="srow ${on?"on":""}" data-k="${k}">
@@ -658,16 +721,27 @@ function cardHTML(item,taken=new Set()){
     ${goalHTML(item,e,adv)}
     <div class="shead"><span>Set</span><span>Weight (lb)</span><span>Reps</span><span>Done</span></div>
     <div class="srows">${rows}</div>
-    <div class="row"><button class="set addset" data-act="addset">+ Add set</button>${e.sets.length>1?`<button class="set addset" data-act="rmset">− Remove last</button>`:""}</div>
+    <div class="row"><button class="set addset" data-act="addset">+ Add set</button>${e.sets.length>1?`<button class="set addset" data-act="rmset">− Remove last</button>`:""}${skipBtn(item,e)}</div>
   </div>`;
 }
 
 function itemById(id){return dayItems().find(i=>i.id===id)}
+function hasWork(e){return !!e&&!e._draft&&(e.min>0||setsDone(e).length>0)}
+function skipBtn(item,e){const armed=skipArmed===item.slot;
+  return `<button class="set addset skipbtn" data-act="skip" aria-label="Skip ${item.name} today">${armed?"Tap again: skip & clear sets":"Skip today"}</button>`}
 
 $("list").addEventListener("click",ev=>{
   if(cur.locked||ev.target.closest("[data-cslot]"))return;
   const b=ev.target.closest("button[data-act]"); if(!b)return;
-  const card=b.closest(".card"), item=itemById(card.dataset.id), e=entryFor(item), act=b.dataset.act;
+  const card=b.closest(".card"), item=itemById(card.dataset.id), act=b.dataset.act;
+  if(act==="skip"||act==="unskip"){
+    if(act==="skip"&&hasWork(cur.entries[item.id])&&skipArmed!==item.slot){   // logged sets: ask once more before clearing them
+      skipArmed=item.slot;render();setTimeout(()=>{if(skipArmed===item.slot){skipArmed=null;if(!cur.locked)render()}},4000);return}
+    skipArmed=null;
+    const sk=Object.assign({},cur.skips);
+    if(act==="skip"){sk[item.slot]=true;delete cur.entries[item.id]}else delete sk[item.slot];
+    cur.skips=sk;markDirty();render();return}
+  const e=entryFor(item);
   const step=item.step||5, row=b.closest(".srow"), k=row?+row.dataset.k:-1, s=k>=0?e.sets[k]:null;
   if(act==="w-")setW(e,k,Math.max(0,(+s.w||0)-step));
   else if(act==="w+")setW(e,k,(+s.w||0)+step);
@@ -695,24 +769,26 @@ $("list").addEventListener("change",ev=>{
   else e.min=n||0;
   commit(item,e); render();
 });
-$("list").addEventListener("click",ev=>{
-  const card=ev.target.closest("[data-cslot]"), b=ev.target.closest("button[data-c]"); if(cur.locked||!card||!b)return;
+function cardioLocked(card){return cur.locked&&card.dataset.cslot!=="lunch"}
+function cardioClick(ev){
+  const card=ev.target.closest("[data-cslot]"), b=ev.target.closest("button[data-c]"); if(!card||!b||cardioLocked(card))return;
   const slot=card.dataset.cslot, c=cardioFor(slot), a=b.dataset.c;
   if(a==="min-")c.min=Math.max(0,(+c.min||0)-5);
   else if(a==="min+")c.min=(+c.min||0)+5;
   else if(a==="lvl-")c.lvl=Math.max(1,(+c.lvl||1)-1);
   else if(a==="lvl+")c.lvl=(+c.lvl||0)+1;
-  else if(a==="done"){if(!(c.min>0))c.min=slot==="pre"?10:15;c.done=!(c.done&&!c._draft)}
+  else if(a==="done"){if(!(c.min>0))c.min=CDEF[slot].min;c.done=!(c.done&&!c._draft)}
   commitC(slot,c); render();
-});
-$("list").addEventListener("change",ev=>{
-  const card=ev.target.closest("[data-cslot]"), f=ev.target.closest("[data-c]"); if(cur.locked||!card||!f)return;
+}
+function cardioChange(ev){
+  const card=ev.target.closest("[data-cslot]"), f=ev.target.closest("[data-c]"); if(!card||!f||cardioLocked(card))return;
   const slot=card.dataset.cslot, c=cardioFor(slot), a=f.dataset.c, v=f.value.trim();
-  if(a==="ex"){c.ex=v;if(v!=="stairs")c.fl=null}
+  if(a==="ex"){c.ex=v;if(v!=="stairs")c.fl=null;if(v==="walk"||v==="run")c.lvl=null}
   else{const n=v===""?null:Number(v);if(v!==""&&!(isFinite(n)&&n>=0))return render();
     c[a]=n==null?(a==="min"?0:null):Math.round(n)}
   commitC(slot,c); render();
-});
+}
+["list","lunchRow"].forEach(id=>{$(id).addEventListener("click",cardioClick);$(id).addEventListener("change",cardioChange)});
 /* Changing a set also updates the not-yet-done sets after it that matched its old value,
    so bumping your top set carries down the remaining top sets but never touches the warm-up above it. */
 function setW(e,k,v){const old=e.sets[k].w;e.sets[k].w=v;
@@ -723,7 +799,7 @@ $("daybar").addEventListener("click",ev=>{const b=ev.target.closest("button[data
   flush();date=b.dataset.date;unlockArmed=false;loadCur();render();});
 $("planSel").innerHTML=DAYS.map(d=>`<option value="${d}">${DAYNAME[d]} · ${PLAN[d].label}</option>`).join("");
 $("planSel").addEventListener("change",ev=>{if(cur.locked)return;
-  cur.day=ev.target.value; cur.swaps={}; if(Object.keys(cur.entries).length)markDirty(); render();});
+  cur.day=ev.target.value; cur.swaps={}; cur.skips={}; if(Object.keys(cur.entries).length)markDirty(); render();});
 $("dateInput").addEventListener("change",ev=>{if(ev.target.value){flush();date=ev.target.value;loadCur();render();}});
 $("prevDay").onclick=()=>{flush();date=shift(date,-1);loadCur();render()};
 $("nextDay").onclick=()=>{flush();date=shift(date,1);loadCur();render()};
@@ -757,14 +833,14 @@ function bwInput(){return $("bwRow").querySelector("input[data-bw]")}
 function bwSave(){
   const v=bwInput().value.trim(), n=Number(v);
   if(v===""||!(n>0&&n<1000)){bwErr="Enter a weight in lb, like 182.4";renderBW();bwInput().focus();return}
-  bodyweight[date]=r1(n);bwOpen=false;bwErr="";persist();renderBW();
+  bodyweight[date]=r1(n);bwOpen=false;bwErr="";applyAuto();persist();renderBW();
 }
 $("bwRow").addEventListener("click",ev=>{const b=ev.target.closest("button[data-bw]");if(!b)return;
   const a=b.dataset.bw;
   if(a==="open"){bwOpen=true;bwErr="";renderBW();const i=bwInput();if(!i.value)i.focus();return}
   if(a==="cancel"){bwOpen=false;bwErr="";renderBW();return}
   if(a==="save")return bwSave();
-  if(a==="x"){delete bodyweight[date];bwOpen=false;persist();renderBW();return}
+  if(a==="x"){delete bodyweight[date];bwOpen=false;applyAuto();persist();renderBW();return}
   const i=bwInput(), cur=Number(i.value);   // −/+ only change the box; nothing saves until Save
   if(!(cur>0)){i.focus();return}
   i.value=r1(cur+(a==="+"?BW_STEP:-BW_STEP));
@@ -792,7 +868,7 @@ $("bwRange").addEventListener("click",ev=>{const b=ev.target.closest("button[dat
 /* ---- saving ---- */
 const SAVED_LABEL=NATIVE?"Saved on this iPhone":"Saved in this browser";
 function persist(){
-  const payload={version:1,savedAt:Date.now(),names:customNames,sessions,bodyweight,food,foodTarget,myFoods};
+  const payload={version:1,savedAt:Date.now(),names:customNames,sessions,bodyweight,food,foodTarget,myFoods,foodProfile};
   try{
     if(NATIVE)window.webkit.messageHandlers.liftlog.postMessage({type:"save",json:JSON.stringify(payload)});
     else ls.set("ll.data",payload);
@@ -815,11 +891,12 @@ function renderHist(){
       const sd=setsDone(e); if(!sd.length)return "";
       return `<tr><td>${NAMES[id]||id}</td><td>${fmtSets(sd)}</td></tr>`}).join("");
     const crow=k=>{const c=s.cardio&&s.cardio[k];return cDone(c)?`<tr><td>Cardio ${CSLOT[k]} · ${NAMES[c.ex]||c.ex}</td><td>${fmtCardio(c,false)}</td></tr>`:""};
-    rows=crow("pre")+rows+crow("post");
+    rows=crow("lunch")+crow("pre")+rows+crow("post");
     const w=bodyweight[d];
     if(!rows&&w==null)return "";
     const bwRow=w!=null?`<tr class="bwh"><td>${BW_NAME}</td><td>${w} lb</td></tr>`:"";
-    const label=rows?(PLAN[s.day]?PLAN[s.day].label:""):"Weigh-in";
+    const gym=Object.values(s.entries||{}).some(e=>e.min>0||setsDone(e).length)||gymCardio(s).length>0;
+    const label=rows?(gym?(PLAN[s.day]?PLAN[s.day].label:""):"Lunch cardio"):"Weigh-in";
     const btn=rows?(s.locked?"Open":"Edit"):"Edit";
     return `<div class="hcard"><h3><span>${nice(d)} · ${label}${rows&&s.locked?'<span class="lockpill">Done</span>':""}</span><button data-open="${d}">${btn}</button></h3><table>${bwRow}${rows}</table></div>`}).join("");
   $("hist").innerHTML=html||`<div class="empty">Nothing logged yet. Log sets or your body weight on the Today tab and they'll show up here.</div>`;
@@ -858,6 +935,7 @@ let statEx=ls.get("gl.statEx",null);
 
 function weekStart(s){const d=parse(s);const w=(d.getDay()+6)%7;d.setDate(d.getDate()-w);return todayStr(d)}
 function logged(s){return Object.values(s.entries||{}).some(e=>e.min>0||setsDone(e).length)||sCardio(s).length>0}
+function gymDay(s){return Object.values(s.entries||{}).some(e=>e.min>0||setsDone(e).length)||gymCardio(s).length>0}
 /* One row per session: w = top-set weight, reps = fewest reps done at that weight. */
 function liftRows(id){
   return Object.keys(sessions).sort().map(d=>{const e=(sessions[d].entries||{})[id];
@@ -883,12 +961,12 @@ function renderStats(){
   if(!ds.length)return;
   const today=todayStr(), wk=weekStart(today), lastWk=shift(wk,-7);
   const byWeek={}; ds.forEach(d=>{const w=weekStart(d);(byWeek[w]=byWeek[w]||{days:0,vol:0,min:0});
-    byWeek[w].days++;byWeek[w].vol+=sessionVolume(sessions[d]);byWeek[w].min+=sessionMinutes(sessions[d]);});
+    if(gymDay(sessions[d]))byWeek[w].days++;byWeek[w].vol+=sessionVolume(sessions[d]);byWeek[w].min+=sessionMinutes(sessions[d]);});
   const cw=byWeek[wk]||{days:0,vol:0,min:0}, lw=byWeek[lastWk]||{days:0,vol:0,min:0};
   // streak of weeks with 3+ workouts, counting back from this week (this week counts once it hits 3)
   let streak=0,w=cw.days>=3?wk:lastWk; while((byWeek[w]||{}).days>=3){streak++;w=shift(w,-7)}
   const pct=lw.vol?Math.round((cw.vol-lw.vol)/lw.vol*100):null;
-  const month=today.slice(0,7), monthN=ds.filter(d=>d.startsWith(month)).length;
+  const month=today.slice(0,7), monthN=ds.filter(d=>d.startsWith(month)&&gymDay(sessions[d])).length;
   const monthName=parse(today).toLocaleDateString(undefined,{month:"long"});
   $("tiles").innerHTML=[
     ["This week",`${cw.days}<small style="font-size:18px;color:var(--muted)">/5</small>`,`Last week: ${lw.days} days`],
@@ -1004,8 +1082,8 @@ function csv(){
   days.forEach(d=>{const s=sessions[d]||{entries:{}};
     if(bodyweight[d]!=null)out.push([d,DAYNAME[s.day]||"",BW_NAME,"",bodyweight[d],"",""]);
     // before/after cardio: the Set column says "Before" or "After"
-    const crow=k=>{const c=s.cardio&&s.cardio[k];if(cDone(c))out.push([d,DAYNAME[s.day]||"",NAMES[c.ex]||c.ex,k==="pre"?"Before":"After","","",c.min,c.lvl??"",c.fl??""])};
-    crow("pre");
+    const crow=k=>{const c=s.cardio&&s.cardio[k];if(cDone(c))out.push([d,DAYNAME[s.day]||"",NAMES[c.ex]||c.ex,({pre:"Before",post:"After",lunch:"Lunch"})[k],"","",c.min,c.lvl??"",c.fl??""])};
+    crow("lunch");crow("pre");
     Object.entries(s.entries||{}).forEach(([id,e])=>{
       if(e.min!=null){if(e.min>0)out.push([d,DAYNAME[s.day]||"",NAMES[id]||id,"","","",e.min]);return}
       setsDone(e).forEach((x,i)=>out.push([d,DAYNAME[s.day]||"",NAMES[id]||id,i+1,x.w,x.reps,""]));});
@@ -1074,8 +1152,8 @@ function importCSV(text){
     const s=got[d]||(got[d]={date:d,day:PLAN[dk]?dk:defaultDay(d),entries:{}});
     const min=iM>=0?Number(r[iM]):NaN;
     const tag=iSet>=0?(r[iSet]||"").trim().toLowerCase():"";
-    if(min>0&&(tag==="before"||tag==="after")){const num=i=>{const t=i>=0?(r[i]||"").trim():"",n=Number(t);return t!==""&&n>0?n:null};
-      s.cardio=Object.assign({},s.cardio,{[tag==="before"?"pre":"post"]:{ex:id,min,lvl:num(iL),fl:num(iF),done:true}});return}
+    if(min>0&&(tag==="before"||tag==="after"||tag==="lunch")){const num=i=>{const t=i>=0?(r[i]||"").trim():"",n=Number(t);return t!==""&&n>0?n:null};
+      s.cardio=Object.assign({},s.cardio,{[({before:"pre",after:"post",lunch:"lunch"})[tag]]:{ex:id,min,lvl:num(iL),fl:num(iF),done:true}});return}
     if(min>0){s.entries[id]={min};return}
     const wRaw=iW>=0?(r[iW]||"").trim():"", w=wRaw===""?null:Number(wRaw), reps=iR>=0?Number(r[iR]):NaN;
     if(!(reps>0))return;
@@ -1135,6 +1213,7 @@ function dayP(d){return dayFood(d).reduce((a,e)=>a+entryP(e),0)}
 
 function renderFood(){
   $("fDate").value=fDate;
+  if(!calcTDEE()&&!renderFood.opened){$("tSet").open=true;renderFood.opened=true}
   renderCalSum(); renderDraft(); renderRecent(); renderMenu(); renderFoodList(); renderFoodSettings();
   $("fAiWrap").hidden=!hasKey;
   const m=$("fMsg"); m.hidden=!fMsg; m.textContent=fMsg; m.className="note"+(/^(Couldn|That|The estimate|Add your|Type)/.test(fMsg)?" down":"");
@@ -1219,6 +1298,7 @@ $("foodHist").addEventListener("click",ev=>{const b=ev.target.closest("button[da
 function renderFoodSettings(){
   if(document.activeElement!==$("fLo"))$("fLo").value=foodTarget.lo;
   if(document.activeElement!==$("fHi"))$("fHi").value=foodTarget.hi;
+  renderCalc();
   $("fKeyStatus").innerHTML=hasKey?`<span class="keyok">✓ Key saved ${NATIVE?"in this iPhone's Keychain":"in this browser"}</span>`:"No key yet. Create one at platform.claude.com → API keys, then paste it here.";
   $("fKeyDel").hidden=!hasKey;
   $("fPrivacy").textContent=`Optional: the menu, My foods and “Enter it myself” are free and never go online. A key adds a box for describing food in your own words. Estimates use Claude (${AI_MODEL}). Only what you type in the food box is sent, and only when you tap Estimate. The key never goes into your log or CSV exports. Each estimate costs a small fraction of a cent, billed to your API account.`;
@@ -1308,11 +1388,63 @@ $("fPrev").onclick=()=>goFood(shift(fDate,-1));
 $("fNext").onclick=()=>goFood(shift(fDate,1));
 $("fDate").addEventListener("change",ev=>{if(ev.target.value)goFood(ev.target.value)});
 $("fText").addEventListener("keydown",ev=>{if(ev.key==="Enter"&&!ev.shiftKey){ev.preventDefault();$("fText").blur();$("fEst").click()}});
-function saveTarget(){
+function saveTarget(){   // typing your own numbers switches off the automatic target
   let lo=Math.round(Number($("fLo").value)),hi=Math.round(Number($("fHi").value));
   if(!(lo>0))lo=foodTarget.lo; if(!(hi>0))hi=foodTarget.hi; if(hi<lo)[lo,hi]=[hi,lo];
+  if(lo!==foodTarget.lo||hi!==foodTarget.hi)foodProfile.auto=false;
   foodTarget={lo,hi};persist();renderFood();
 }
+
+/* ---- calorie target from TDEE ----
+   BMR by Mifflin-St Jeor: 10×kg + 6.25×cm − 5×age, +5 for men or −161 for women. TDEE = BMR × activity.
+   Weekly loss tiers, using ~3,500 cal per lb: mild ½ lb (−250/day), 1 lb (−500), extreme 2 lb (−1000).
+   The target range is extreme → mild. Nothing goes below 1,500 (men) or 1,200 (women) a day, the usual floor
+   without a doctor's supervision. With "auto" on, the range follows your latest weigh-in. */
+const TIERS=[["Maintain",0,"0 lb/wk"],["Mild loss",250,"½ lb/wk"],["Weight loss",500,"1 lb/wk"],["Extreme loss",1000,"2 lb/wk"]];
+const r10=n=>Math.round(n/10)*10;
+function latestBW(){const k=Object.keys(bodyweight).sort().pop();return k?{date:k,w:bodyweight[k]}:null}
+function calcWeight(){const L=latestBW();return foodProfile.wt>0?foodProfile.wt:(L?L.w:null)}
+function calcTDEE(pr=foodProfile){
+  const wt=pr.wt>0?pr.wt:(latestBW()||{}).w, inches=(+pr.ft||0)*12+(+pr.inch||0);
+  if(!(pr.sex&&pr.age>0&&inches>0&&wt>0))return null;
+  const bmr=10*wt*0.45359237+6.25*inches*2.54-5*pr.age+(pr.sex==="m"?5:-161);
+  const tdee=bmr*(+pr.act||1.2), floor=pr.sex==="m"?1500:1200;
+  const tier=d=>Math.max(floor,r10(tdee-d));
+  return {bmr:r10(bmr),tdee:r10(tdee),floor,tier,lo:tier(1000),hi:tier(250),wt};
+}
+function applyAuto(){if(!foodProfile.auto)return;const r=calcTDEE();if(r&&(r.lo!==foodTarget.lo||r.hi!==foodTarget.hi))foodTarget={lo:r.lo,hi:r.hi}}
+function renderCalc(){
+  const pr=foodProfile, act=document.activeElement, put=(id,v)=>{if(act!==$(id))$(id).value=v??""};
+  $("tSex").querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.v===pr.sex));
+  put("tAge",pr.age);put("tFt",pr.ft);put("tIn",pr.inch);put("tWt",pr.wt);
+  $("tAct").value=String(pr.act);
+  const L=latestBW();
+  $("tWtNote").textContent=pr.wt>0?(L?`Using what you typed. Clear it to use your latest weigh-in (${L.w} lb).`:"")
+    :(L?`Using your latest weigh-in: ${L.w} lb on ${md(L.date)}. Log a new weigh-in and the target follows.`:"Or leave it blank and log your weight on Workout › Today.");
+  const r=calcTDEE();
+  if(!r){$("tOut").innerHTML=`<div class="note">Fill in sex, age, height and weight to see your numbers.</div>`;
+    $("tUse").hidden=true;$("tMode").textContent="Set by hand.";return}
+  const rows=TIERS.map(([n,d,rate])=>{const v=r.tier(d),capped=v===r.floor&&r10(r.tdee-d)<r.floor;
+    return `<tr class="${d===1000||d===250?"pick":""}"><td>${n} <small>${rate}</small></td><td>${n0(v)}${capped?" <small>(floor)</small>":""}</td></tr>`}).join("");
+  const matches=foodTarget.lo===r.lo&&foodTarget.hi===r.hi;
+  $("tOut").innerHTML=`<div class="facts">${fact(n0(r.bmr),"BMR")}${fact(n0(r.tdee),"TDEE")}${fact(r.wt+" lb","weight")}</div>
+    <table class="ttab">${rows}</table>
+    ${r10(r.tdee-1000)<r.floor?`<div class="note">Extreme loss would fall under ${n0(r.floor)} a day, so it's held at ${n0(r.floor)}.</div>`:""}`;
+  // the button stays the same element (only its text changes), so a tap right after typing still lands on it
+  $("tUse").hidden=matches&&pr.auto; $("tUse").textContent=`Use ${n0(r.lo)}–${n0(r.hi)} as my target`;
+  $("tMode").innerHTML=pr.auto&&matches?`<span class="keyok">✓ Set from your TDEE</span> and updates when your weight changes. Typing your own numbers here switches that off.`:"Set by hand.";
+}
+function calcInput(){
+  const num=id=>{const v=$(id).value.trim(),n=Number(v);return v===""||!(n>0)?null:n};
+  foodProfile.age=num("tAge");foodProfile.ft=num("tFt");foodProfile.inch=$("tIn").value.trim()===""?null:Math.max(0,Number($("tIn").value)||0);
+  foodProfile.wt=num("tWt");foodProfile.act=Number($("tAct").value)||1.55;
+  applyAuto();persist();renderCalSum();renderCalc();
+}
+["tAge","tFt","tIn","tWt"].forEach(id=>{$(id).addEventListener("change",calcInput);$(id).addEventListener("input",calcInput)});
+$("tAct").addEventListener("change",calcInput);
+$("tSex").addEventListener("click",ev=>{const b=ev.target.closest("button[data-v]");if(!b)return;foodProfile.sex=b.dataset.v;applyAuto();persist();renderCalSum();renderCalc()});
+$("tUse").addEventListener("click",()=>{calcInput();const r=calcTDEE();if(!r)return;
+  foodTarget={lo:r.lo,hi:r.hi};foodProfile.auto=true;persist();renderFood();});
 $("fLo").addEventListener("change",saveTarget);$("fHi").addEventListener("change",saveTarget);
 $("fKeySave").onclick=()=>{const k=$("fKey").value.trim();if(!k){$("fKey").focus();return}
   $("fKey").value="";
