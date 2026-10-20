@@ -1,10 +1,10 @@
 # Lift Log
 
-An offline workout tracker for iPhone. Everything is saved in a file on the phone; nothing goes over the internet.
+A workout and calorie tracker for iPhone. Everything is saved in a file on the phone. The only thing that ever goes over the internet is a food description you type on the Food tab, and only when you tap **Estimate calories**.
 
 ## What's here
 
-- `LiftLog/Web/index.html`: the whole app screen (workouts, per-set logging, progressive overload, finish & lock, exercise swaps within each muscle group, cardio before and after every workout (stair climber by default, with minutes, level and floors), optional body-weight tracking, progress charts, history, CSV import/export). Open it in any browser to try it out; there it saves to the browser instead of the phone.
+- `LiftLog/Web/index.html`: the whole app screen (workouts, per-set logging, progressive overload, finish & lock, exercise swaps within each muscle group, cardio before and after every workout (stair climber by default, with minutes, level and floors), optional body-weight tracking, a Food tab for calorie tracking, progress charts, history, CSV import/export). Open it in any browser to try it out; there it saves to the browser instead of the phone.
 - `LiftLog/LiftLogApp.swift`: the small iPhone shell that shows the page and saves the log to `Documents/lift-log.json` (with a backup copy).
 - `LiftLogUITests/`: an automatic test on a simulated iPhone: logs a set, closes the app, reopens it, and checks the set is still there.
 - `project.yml`: the Xcode project definition (the build generates the `.xcodeproj` from it with XcodeGen).
@@ -16,6 +16,15 @@ An offline workout tracker for iPhone. Everything is saved in a file on the phon
 2. Check that it has a green check mark, then download **LiftLog-ipa** under *Artifacts* and unzip it to get `LiftLog.ipa`.
 3. The **screenshots** artifact shows the app running on a simulated iPhone.
 4. Install `LiftLog.ipa` with AltStore: **My Apps → + →** pick the file.
+
+## Food & calories
+
+The **Food** tab tracks calories against a daily target range (2,500–3,000 to start; change it under *Calorie target & estimate settings*).
+
+- Type what you ate in plain words ("Cane's 3 finger combo, diet coke") and tap **Estimate calories**. Claude (Haiku 5.5) splits it into items with calories and protein; fix any number, then **Add**.
+- **Enter it myself** skips Claude. The recent-food chips re-log something you've eaten before without asking again.
+- Estimates need an Anthropic API key from [platform.claude.com](https://platform.claude.com) (billed separately from a Claude subscription, about $0.0003 per estimate). Paste it in the settings on the Food tab; the app keeps it in the iPhone's Keychain, never in the log or CSV.
+- Food shows on the History tab and goes into CSV exports (Set column "Food 1", "Food 2"…, with Calories, Protein and Meal columns).
 
 ## Moving data
 
