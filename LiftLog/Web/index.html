@@ -41,7 +41,7 @@ h1{font-family:var(--display);font-weight:700;font-size:30px;letter-spacing:.01e
 .status.saving{color:var(--accent)} .status.off{color:var(--warn)} .status.ok{color:var(--done)}
 .tabs{display:flex;gap:6px}
 .tabs button,.daybar button{font:inherit;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;cursor:pointer}
-.tabs button{padding:6px 12px;font-weight:600;font-size:13px}
+.tabs button{padding:6px 10px;font-weight:600;font-size:13px}
 .tabs button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .datebar{display:flex;align-items:center;gap:8px}
 .datebar input{font:inherit;font-weight:600;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);flex:1;min-width:0}
@@ -169,6 +169,37 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 /* cardio before & after the workout: same card, plus a second row for machine level and floors */
 .card.cardio .row+.row{gap:6px 10px}
 .card.cardio .reps{width:60px}
+/* food: a day total against the target range, an add box that asks Claude for calories, and the day's entries */
+.calhead{display:flex;justify-content:space-between;align-items:flex-end;gap:10px}
+.calbig{font-family:var(--display);font-size:44px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+.calbig small{font-family:var(--body);font-size:13px;font-weight:500;color:var(--muted);margin-left:4px}
+.calsub{font-size:13px;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
+.calsub.up{color:var(--done);font-weight:600} .calsub.down{color:var(--warn);font-weight:600}
+.calbar{position:relative;height:12px;border-radius:999px;background:var(--bg);border:1px solid var(--line);overflow:hidden}
+.calbar .band{position:absolute;top:0;bottom:0;background:var(--done);opacity:.22}
+.calbar .fill{position:absolute;left:0;top:0;bottom:0;background:var(--accent);border-radius:999px}
+.calbar .fill.up{background:var(--done)} .calbar .fill.down{background:var(--warn)}
+.ftext{font:inherit;font-size:16px;width:100%;min-height:64px;resize:vertical;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+.fbtns{display:flex;gap:8px;flex-wrap:wrap}
+.fbtns .btn{flex:1;min-width:0}
+.btn:disabled{opacity:.55;cursor:default}
+.frow{display:grid;grid-template-columns:minmax(0,1fr) 72px 26px 36px;gap:6px;align-items:center}
+.frow input{font:inherit;font-size:16px;height:40px;padding:0 8px;border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--ink);min-width:0}
+.frow input.fcal{text-align:right;font-family:var(--display);font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
+.fx{width:36px;height:40px;border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--muted);font-size:18px;cursor:pointer;padding:0}
+.ftot{display:flex;justify-content:space-between;font-weight:600;font-variant-numeric:tabular-nums;border-top:1px solid var(--line);padding-top:8px}
+.fentry h3{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.fentry h3 .t{font-family:var(--body);font-size:12.5px;color:var(--muted);text-transform:none;letter-spacing:0;font-weight:500}
+.fentry .q{font-size:13px;color:var(--muted);margin-bottom:4px}
+.fentry .acts{display:flex;gap:14px;margin-top:6px}
+.fentry .acts button{font:inherit;font-size:13px;border:0;background:none;color:var(--accent);cursor:pointer;padding:4px 0}
+.fentry .acts button.del{color:var(--warn)}
+details.panel>summary{cursor:pointer;font-size:14px;font-weight:600;list-style-position:inside}
+.fset{display:flex;flex-direction:column;gap:8px}
+.fset label{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600}
+.fset input{font:inherit;font-size:16px;height:40px;padding:0 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);min-width:0}
+.fset .two{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center}
+.keyok{color:var(--done);font-weight:600}
 @media (prefers-reduced-motion:no-preference){.set,.card{transition:background .12s,border-color .12s}}
 </style>
 </head>
@@ -181,6 +212,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
     </div>
     <div class="tabs" role="group" aria-label="View">
       <button id="tabLog" aria-pressed="true">Today</button>
+      <button id="tabFood" aria-pressed="false">Food</button>
       <button id="tabStats" aria-pressed="false">Progress</button>
       <button id="tabHist" aria-pressed="false">History</button>
     </div>
@@ -200,6 +232,41 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
     <div class="list" id="list"></div>
     <div id="finishBar" class="finish"></div>
     <p class="note" id="logNote">Each set has its own weight and reps, so log a lighter warm-up and your top sets separately. Sets start at what you did last time. Tap ✓ when a set is done. Log your warm-up and cool-down cardio in the cards above and below the lifts. Everything saves on your phone as you go.</p>
+  </section>
+
+  <section id="foodView" class="wrap" style="gap:12px" hidden>
+    <div class="datebar">
+      <button id="fPrev" class="btn ghost" aria-label="Previous day">‹</button>
+      <input id="fDate" type="date" aria-label="Food date">
+      <button id="fNext" class="btn ghost" aria-label="Next day">›</button>
+    </div>
+    <div class="panel" id="calSum"></div>
+    <div class="panel">
+      <h3>What did you eat?</h3>
+      <textarea id="fText" class="ftext" rows="2" enterkeyhint="done" placeholder="Cane's 3 finger combo, diet coke" aria-label="What you ate"></textarea>
+      <div class="fbtns"><button class="btn" id="fEst">Estimate calories</button><button class="btn ghost" id="fManual">Enter it myself</button></div>
+      <div class="note" id="fMsg" hidden></div>
+      <div id="fDraft" class="wrap" style="gap:8px" hidden></div>
+      <div id="fRecentWrap" hidden><div class="cat">Eat this a lot? Tap to log it again</div><div class="chips" id="fRecent" role="group" aria-label="Recent foods"></div></div>
+    </div>
+    <div class="hist" id="foodList"></div>
+    <div class="panel">
+      <h3>Last 14 days</h3>
+      <div class="chart" id="calChart"></div>
+      <div class="facts" id="calFacts"></div>
+    </div>
+    <details class="panel" id="fSet">
+      <summary>Calorie target &amp; estimate settings</summary>
+      <div class="fset">
+        <label for="fLo">Daily target (calories)</label>
+        <div class="two"><input id="fLo" inputmode="numeric" aria-label="Target low"><span class="unit">to</span><input id="fHi" inputmode="numeric" aria-label="Target high"></div>
+        <label for="fKey">Anthropic API key</label>
+        <div class="note" id="fKeyStatus"></div>
+        <input id="fKey" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="sk-ant-…">
+        <div class="fbtns"><button class="btn" id="fKeySave">Save key</button><button class="btn ghost" id="fKeyDel">Remove key</button></div>
+        <div class="note" id="fPrivacy"></div>
+      </div>
+    </details>
   </section>
 
   <section id="statsView" class="wrap" style="gap:12px" hidden>
@@ -356,6 +423,8 @@ const BOOT=NATIVE?(window.__LIFTLOG__||{}):ls.get("ll.data",{});
 let sessions=normAll(BOOT.sessions||{});            // date -> session
 let customNames=Object.assign({},BOOT.names||{});    // names for exercises brought in by CSV import
 let bodyweight=Object.assign({},BOOT.bodyweight||{}); // date -> body weight in lb (separate from workouts, never locked)
+let food=Object.assign({},BOOT.food||{});            // date -> [{id,t,text,items:[{name,cal,p}]}] (separate from workouts, never locked)
+let foodTarget=Object.assign({lo:2500,hi:3000},BOOT.foodTarget||{}); // daily calorie range
 // exercises that used to be in the plan, so older history still shows their names
 const RETIRED={dbcurl:"Dumbbell curls",facepull:"Face pulls",hammercurl:"Hammer curls",machinecurl:"Bicep curl machine",
   pecdeck:"Pec deck",machinelat:"Machine lateral raise",ohtri:"Overhead triceps extension"};
@@ -677,7 +746,7 @@ $("bwRange").addEventListener("click",ev=>{const b=ev.target.closest("button[dat
 /* ---- saving ---- */
 const SAVED_LABEL=NATIVE?"Saved on this iPhone":"Saved in this browser";
 function persist(){
-  const payload={version:1,savedAt:Date.now(),names:customNames,sessions,bodyweight};
+  const payload={version:1,savedAt:Date.now(),names:customNames,sessions,bodyweight,food,foodTarget};
   try{
     if(NATIVE)window.webkit.messageHandlers.liftlog.postMessage({type:"save",json:JSON.stringify(payload)});
     else ls.set("ll.data",payload);
@@ -693,7 +762,7 @@ document.addEventListener("visibilitychange",()=>{if(document.hidden)flush()});
 /* ---- history ---- */
 function renderHist(){
   // every day with logged sets, cardio or a weigh-in; rest days with only a weigh-in get their own card
-  const days=[...new Set([...Object.keys(sessions),...Object.keys(bodyweight)])].sort().reverse();
+  const days=[...new Set([...Object.keys(sessions),...Object.keys(bodyweight),...Object.keys(food).filter(d=>dayFood(d).length)])].sort().reverse();
   const html=days.map(d=>{const s=sessions[d]||{entries:{}};
     let rows=Object.entries(s.entries||{}).map(([id,e])=>{
       if(e.min!=null)return e.min>0?`<tr><td>${NAMES[id]||id}</td><td>${e.min} min</td></tr>`:"";
@@ -701,23 +770,28 @@ function renderHist(){
       return `<tr><td>${NAMES[id]||id}</td><td>${fmtSets(sd)}</td></tr>`}).join("");
     const crow=k=>{const c=s.cardio&&s.cardio[k];return cDone(c)?`<tr><td>Cardio ${CSLOT[k]} · ${NAMES[c.ex]||c.ex}</td><td>${fmtCardio(c,false)}</td></tr>`:""};
     rows=crow("pre")+rows+crow("post");
-    const w=bodyweight[d];
-    if(!rows&&w==null)return "";
+    const w=bodyweight[d], fl=dayFood(d);
+    if(!rows&&w==null&&!fl.length)return "";
     const bwRow=w!=null?`<tr class="bwh"><td>${BW_NAME}</td><td>${w} lb</td></tr>`:"";
-    const label=rows?(PLAN[s.day]?PLAN[s.day].label:""):"Weigh-in";
+    const fRow=fl.length?`<tr class="bwh"><td>Food · ${fl.length} ${fl.length>1?"entries":"entry"}</td><td>${n0(dayCal(d))} cal</td></tr>`:"";
+    const label=rows?(PLAN[s.day]?PLAN[s.day].label:""):(w!=null?"Weigh-in":"Food");
     const btn=rows?(s.locked?"Open":"Edit"):"Edit";
-    return `<div class="hcard"><h3><span>${nice(d)} · ${label}${rows&&s.locked?'<span class="lockpill">Done</span>':""}</span><button data-open="${d}">${btn}</button></h3><table>${bwRow}${rows}</table></div>`}).join("");
-  $("hist").innerHTML=html||`<div class="empty">Nothing logged yet. Log sets or your body weight on the Today tab and they'll show up here.</div>`;
+    const open=rows||w!=null?`data-open="${d}"`:`data-openfood="${d}"`;
+    return `<div class="hcard"><h3><span>${nice(d)} · ${label}${rows&&s.locked?'<span class="lockpill">Done</span>':""}</span><button ${open}>${btn}</button></h3><table>${bwRow}${fRow}${rows}</table></div>`}).join("");
+  $("hist").innerHTML=html||`<div class="empty">Nothing logged yet. Log sets or your body weight on the Today tab, or food on the Food tab, and they'll show up here.</div>`;
 }
-$("hist").addEventListener("click",ev=>{const b=ev.target.closest("button[data-open]");if(!b)return;
+$("hist").addEventListener("click",ev=>{const f=ev.target.closest("button[data-openfood]");
+  if(f){fDate=f.dataset.openfood;fDraft=null;showView("food");return}
+  const b=ev.target.closest("button[data-open]");if(!b)return;
   date=b.dataset.open;loadCur();showView("log");});
 let view="log";
 function showView(v){view=v;
-  $("logView").hidden=v!=="log";$("histView").hidden=v!=="hist";$("statsView").hidden=v!=="stats";
-  $("tabLog").setAttribute("aria-pressed",v==="log");$("tabHist").setAttribute("aria-pressed",v==="hist");$("tabStats").setAttribute("aria-pressed",v==="stats");
-  if(v==="hist")renderHist();else if(v==="stats")renderStats();else render();}
-function rerender(){if(view==="hist")renderHist();else if(view==="stats")renderStats();else render();}
+  $("logView").hidden=v!=="log";$("histView").hidden=v!=="hist";$("statsView").hidden=v!=="stats";$("foodView").hidden=v!=="food";
+  $("tabLog").setAttribute("aria-pressed",v==="log");$("tabHist").setAttribute("aria-pressed",v==="hist");$("tabStats").setAttribute("aria-pressed",v==="stats");$("tabFood").setAttribute("aria-pressed",v==="food");
+  rerender();}
+function rerender(){if(view==="hist")renderHist();else if(view==="stats")renderStats();else if(view==="food")renderFood();else render();}
 $("tabLog").onclick=()=>showView("log");
+$("tabFood").onclick=()=>{flush();showView("food")};
 $("tabHist").onclick=()=>{flush();showView("hist")};
 $("tabStats").onclick=()=>{flush();showView("stats")};
 
@@ -853,24 +927,24 @@ function lineChart(el,pts,unit,overlay){
     ${lab(0,pts.length===1?"middle":"start")}${pts.length>1?lab(pts.length-1,"end"):""}</svg>`;
   hover(el,pts,xs,ys);
 }
-function barChart(el,pts){
-  const max=Math.max(...pts.map(p=>p.v),1),{lo,hi,s}=niceRange(0,max);
+function barChart(el,pts,o={}){
+  const max=Math.max(...pts.map(p=>p.v),1,o.band?o.band[1]:0),{lo,hi,s}=niceRange(0,max);
   const y=v=>PT+(1-(v-0)/(hi-0))*(H-PT-PB),base=H-PB;
   const bw=(W-PL-PR)/pts.length,barW=Math.max(6,bw-8);
   const xs=pts.map((p,i)=>PL+i*bw+bw/2);
   const rect=(p,i)=>{const top=y(p.v),h=base-top;if(h<=0)return"";const r=Math.min(4,h);
     const x0=xs[i]-barW/2,x1=xs[i]+barW/2;
     return `<path class="bar${p.now?" now":""}" d="M${x0},${base}V${top+r}Q${x0},${top} ${x0+r},${top}H${x1-r}Q${x1},${top} ${x1},${top+r}V${base}Z"/>`};
-  el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Weekly volume, last 8 weeks">${yAxis(0,hi,s,y)}
+  el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${o.label||"Weekly volume, last 8 weeks"}">${o.band?`<rect x="${PL}" width="${W-PL-PR}" y="${y(Math.min(o.band[1],hi))}" height="${Math.max(0,y(Math.min(o.band[0],hi))-y(Math.min(o.band[1],hi)))}" fill="var(--done)" opacity=".15"/>`:""}${yAxis(0,hi,s,y)}
     ${pts.map(rect).join("")}
-    ${pts.map((p,i)=>i%2===1||i===pts.length-1?`<text class="axis" x="${xs[i]}" y="${H-6}" text-anchor="middle">${p.now?"This wk":p.label}</text>`:"").join("")}</svg>`;
+    ${pts.map((p,i)=>i%2===1||i===pts.length-1?`<text class="axis" x="${xs[i]}" y="${H-6}" text-anchor="middle">${p.now?(o.now||"This wk"):p.label}</text>`:"").join("")}</svg>`;
   hover(el,pts,xs,pts.map(p=>Math.min(y(p.v),base-4)));
 }
 
 function csv(){
   const q=v=>{v=v==null?"":String(v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
-  const out=[["Date","Day","Exercise","Set","Weight (lb)","Reps","Minutes","Level","Floors"]];
-  const days=[...new Set([...Object.keys(sessions),...Object.keys(bodyweight)])].sort();
+  const out=[["Date","Day","Exercise","Set","Weight (lb)","Reps","Minutes","Level","Floors","Calories","Protein (g)","Meal"]];
+  const days=[...new Set([...Object.keys(sessions),...Object.keys(bodyweight),...Object.keys(food)])].sort();
   days.forEach(d=>{const s=sessions[d]||{entries:{}};
     if(bodyweight[d]!=null)out.push([d,DAYNAME[s.day]||"",BW_NAME,"",bodyweight[d],"",""]);
     // before/after cardio: the Set column says "Before" or "After"
@@ -879,7 +953,9 @@ function csv(){
     Object.entries(s.entries||{}).forEach(([id,e])=>{
       if(e.min!=null){if(e.min>0)out.push([d,DAYNAME[s.day]||"",NAMES[id]||id,"","","",e.min]);return}
       setsDone(e).forEach((x,i)=>out.push([d,DAYNAME[s.day]||"",NAMES[id]||id,i+1,x.w,x.reps,""]));});
-    crow("post");});
+    crow("post");
+    // food: one row per item; Set says "Food 1", "Food 2"… per entry and Meal holds what was typed, so entries regroup on import
+    dayFood(d).forEach((e,k)=>e.items.forEach(x=>out.push([d,DAYNAME[s.day]||"",x.name,"Food "+(k+1),"","","","","",x.cal,x.p??"",e.text])));});
   return out.map(r=>r.map(q).join(",")).join("\n");
 }
 /* ---- export: the iPhone share sheet in the app, a plain download in a browser ---- */
@@ -917,15 +993,22 @@ function importCSV(text){
   const rows=parseCSV(text.replace(/^﻿/,"")).filter(r=>r.some(c=>c.trim()));
   if(!rows.length)throw new Error("empty");
   const head=rows.shift().map(h=>h.trim().toLowerCase()), col=n=>head.findIndex(h=>h.startsWith(n));
-  const iD=col("date"),iDay=col("day"),iEx=col("exercise"),iW=col("weight"),iR=col("reps"),iM=col("min"),iSet=col("set"),iL=col("level"),iF=col("floor");
+  const iD=col("date"),iDay=col("day"),iEx=col("exercise"),iW=col("weight"),iR=col("reps"),iM=col("min"),iSet=col("set"),iL=col("level"),iF=col("floor"),iC=col("cal"),iP=col("protein"),iMeal=col("meal");
   if(iD<0||iEx<0)throw new Error("header");
   const byName={};Object.entries(NAMES).forEach(([id,n])=>byName[n.toLowerCase()]=id);
-  const got={};let bwN=0;
+  const got={};let bwN=0;const gotFood={};
   rows.forEach(r=>{
     const d=(r[iD]||"").trim(), name=(r[iEx]||"").trim();
     if(!/^\d{4}-\d{2}-\d{2}$/.test(d)||!name)return;
     if(name.toLowerCase()===BW_NAME.toLowerCase()){const w=Number((r[iW]||"").trim());
       if(w>0){bodyweight[d]=r1(w);bwN++}return}
+    const ftag=iSet>=0?(r[iSet]||"").trim().toLowerCase():"";
+    if(/^food\b/.test(ftag)){
+      const cal=Number((r[iC]||"").trim()),p=Number((r[iP]||"").trim()),meal=iMeal>=0?(r[iMeal]||"").trim():"";
+      if(!(cal>=0))return;
+      const day=gotFood[d]||(gotFood[d]={}),key=ftag+"|"+(meal||name);
+      (day[key]||(day[key]={text:meal||name,items:[]})).items.push({name,cal:Math.round(cal),p:p>=0&&(r[iP]||"").trim()!==""?Math.round(p):null});
+      return}
     let id=byName[name.toLowerCase()];
     if(!id){id="x-"+name.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
       customNames[id]=name;NAMES[id]=name;byName[name.toLowerCase()]=id;}
@@ -940,8 +1023,14 @@ function importCSV(text){
     if(!(reps>0))return;
     (s.entries[id]||(s.entries[id]={sets:[]})).sets.push({w:Number.isFinite(w)?w:null,reps,done:true});
   });
-  const ds=Object.keys(got), bwMsg=bwN?` and ${bwN} weigh-in${bwN>1?"s":""}`:"";
-  if(!ds.length){if(bwN){persist();rerender();return `Imported ${bwN} weigh-in${bwN>1?"s":""}.`}return "No workouts found in that file."}
+  // food: skip entries already on that day (same text and total), so importing the same file twice doesn't double up
+  let fN=0;Object.entries(gotFood).forEach(([d,byMeal])=>{const had=dayFood(d).slice();Object.values(byMeal).forEach(e=>{
+    const tot=e.items.reduce((a,x)=>a+x.cal,0), k=had.findIndex(x=>x.text===e.text&&entryCal(x)===tot);
+    if(k>=0){had.splice(k,1);return}
+    food[d]=[...dayFood(d),{id:newId(),t:parse(d).getTime()+12*36e5,text:e.text,items:e.items}];fN++})});
+  const ds=Object.keys(got), bwMsg=(bwN?` and ${bwN} weigh-in${bwN>1?"s":""}`:"")+(fN?` and ${fN} food entr${fN>1?"ies":"y"}`:"");
+  if(!ds.length){if(bwN||fN){persist();rerender();return `Imported${bwMsg.replace(/^ and/,"")}.`}
+    return Object.keys(gotFood).length?"Everything in that file is already logged.":"No workouts found in that file."}
   let merged=0; const today=todayStr();
   ds.forEach(d=>{
     if(sessions[d]){merged++;Object.assign(sessions[d].entries,got[d].entries);
@@ -951,6 +1040,202 @@ function importCSV(text){
   persist(); loadCur(); rerender();
   return `Imported ${ds.length} workout${ds.length>1?"s":""}${merged?` (${merged} added to days you already had)`:""}${bwMsg}.`;
 }
+
+/* ---- food & calories ----
+   Type what you ate; "Estimate calories" sends only that text to Claude (Haiku), which splits it into items
+   with calories and protein. You can fix any number before adding it. "Enter it myself" skips Claude entirely,
+   and the recent-foods chips re-log something you've eaten before without asking again.
+   In the iPhone app the request goes through the native side, which keeps the API key in the Keychain;
+   in a plain browser (the test site) the key stays in that browser's storage. */
+const AI_MODEL="claude-haiku-5-5";
+const FOOD_SYSTEM=`You estimate the calories and protein in food someone says they ate.
+Split the description into separate items: each sandwich, entree, side, sauce and drink gets its own item.
+For chain restaurant menu items, use that chain's published nutrition numbers for the standard size unless a size or count is given. A "meal" or "combo" includes its usual side and drink.
+For home-made or generic food, assume one typical portion unless amounts are given.
+Diet sodas, water, unsweetened tea and black coffee are 0 calories.
+Round calories to the nearest 10 and protein to the nearest gram.
+Give each item a short name that includes the restaurant (if any) and the portion.
+Always answer by calling log_food.`;
+const FOOD_TOOL={name:"log_food",description:"Record the estimated calories and protein for each food item eaten.",
+  input_schema:{type:"object",properties:{
+    items:{type:"array",items:{type:"object",properties:{
+      name:{type:"string",description:"Short name with portion, e.g. \"Chick-fil-A chicken biscuit\" or \"Medium fries\""},
+      calories:{type:"integer"},protein:{type:"integer",description:"grams of protein"}},required:["name","calories","protein"]}},
+    note:{type:"string",description:"One short sentence about any portion or size you had to assume, or an empty string."}},
+    required:["items","note"]}};
+
+let fDate=todayStr(), fDraft=null, fBusy=false, fMsg="", fDelArmed=null;
+let hasKey=NATIVE?!!window.__LIFTLOG_KEY__:!!ls.get("ll.apikey","");
+const esc=v=>String(v??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const n0=n=>Math.round(n||0).toLocaleString();
+const newId=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+function dayFood(d){return food[d]||[]}
+function entryCal(e){return e.items.reduce((a,x)=>a+(+x.cal||0),0)}
+function entryP(e){return e.items.reduce((a,x)=>a+(+x.p||0),0)}
+function dayCal(d){return dayFood(d).reduce((a,e)=>a+entryCal(e),0)}
+function dayP(d){return dayFood(d).reduce((a,e)=>a+entryP(e),0)}
+
+function renderFood(){
+  $("fDate").value=fDate;
+  renderCalSum(); renderDraft(); renderRecent(); renderFoodList(); renderCalChart(); renderFoodSettings();
+  const m=$("fMsg"); m.hidden=!fMsg; m.textContent=fMsg; m.className="note"+(/^(Couldn|That|The estimate|Add your|Type)/.test(fMsg)?" down":"");
+  $("fEst").disabled=fBusy; $("fManual").disabled=fBusy; $("fEst").textContent=fBusy?"Estimating…":"Estimate calories";
+}
+function renderCalSum(){
+  const eaten=dayCal(fDate), p=dayP(fDate), n=dayFood(fDate).length, {lo,hi}=foodTarget;
+  let sub,cls="";
+  if(!n)sub=`Target ${n0(lo)}–${n0(hi)} cal`;
+  else if(eaten<lo)sub=`${n0(lo-eaten)}–${n0(hi-eaten)} cal to go`;
+  else if(eaten<=hi){sub=`In your range · ${n0(hi-eaten)} left at most`;cls="up"}
+  else{sub=`${n0(eaten-hi)} over your target`;cls="down"}
+  const max=Math.max(hi*1.15,eaten,1), pct=v=>Math.min(100,v/max*100).toFixed(1);
+  const when=fDate===todayStr()?"Today":nice(fDate);
+  $("calSum").innerHTML=`<div class="calhead"><div><div class="cat">${when}</div><div class="calbig">${n0(eaten)}<small>cal</small></div></div>
+      <div class="calsub ${cls}">${sub}<br>${n?`${n0(p)} g protein`:""}</div></div>
+    <div class="calbar" role="img" aria-label="${n0(eaten)} of ${n0(lo)} to ${n0(hi)} calories"><div class="band" style="left:${pct(lo)}%;width:${(pct(hi)-pct(lo)).toFixed(1)}%"></div><div class="fill ${cls}" style="width:${pct(eaten)}%"></div></div>`;
+}
+function renderDraft(){
+  const el=$("fDraft");
+  if(!fDraft){el.hidden=true;el.innerHTML="";return}
+  el.hidden=false;
+  const rows=fDraft.items.map((x,k)=>`<div class="frow" data-k="${k}"><input data-f="name" aria-label="Item ${k+1} name" placeholder="Food" value="${esc(x.name)}"><input class="fcal" data-f="cal" inputmode="numeric" aria-label="Item ${k+1} calories" placeholder="0" value="${x.cal??""}"><span class="unit">cal</span><button class="fx" data-f="rm" aria-label="Remove item ${k+1}">×</button></div>`).join("");
+  el.innerHTML=`<div class="cat">${fDraft.edit?"Editing entry":"Check the numbers, then add it"}</div>${rows}
+    <div class="row"><button class="set addset" data-f="add">+ Item</button></div>
+    ${fDraft.note?`<div class="note">${esc(fDraft.note)}</div>`:""}
+    <div class="ftot"><span>Total</span><span id="fDraftTot">${n0(entryCal(fDraft))} cal</span></div>
+    <div class="fbtns"><button class="btn" data-f="save">${fDraft.edit?"Save changes":"Add to "+(fDate===todayStr()?"today":nice(fDate))}</button><button class="btn ghost" data-f="cancel">${fDraft.edit?"Cancel":"Discard"}</button></div>`;
+}
+function recentFoods(){
+  const from=shift(todayStr(),-60), seen={};
+  Object.keys(food).filter(d=>d>=from).sort().forEach(d=>dayFood(d).forEach(e=>{const k=e.text.trim().toLowerCase();if(!k)return;
+    const r=seen[k]||(seen[k]={n:0,e});r.n++;r.e=e}));   // later entries win, so a fixed-up number sticks
+  return Object.values(seen).sort((a,b)=>b.n-a.n||b.e.t-a.e.t).slice(0,8).map(r=>r.e);
+}
+function renderRecent(){
+  const rs=recentFoods(); $("fRecentWrap").hidden=!rs.length||!!fDraft;
+  $("fRecent").innerHTML=rs.map(e=>`<button data-rid="${e.id}">${esc(e.text.length>32?e.text.slice(0,30)+"…":e.text)} · ${n0(entryCal(e))}</button>`).join("");
+}
+function renderFoodList(){
+  const es=dayFood(fDate).slice().sort((a,b)=>a.t-b.t);
+  if(!es.length){$("foodList").innerHTML=`<div class="empty">Nothing logged ${fDate===todayStr()?"today":"on this day"}. Type what you ate above, like “Chick-fil-A chicken biscuit meal, diet coke”.</div>`;return}
+  $("foodList").innerHTML=es.map(e=>{
+    const time=todayStr(new Date(e.t))===fDate?new Date(e.t).toLocaleTimeString([],{hour:"numeric",minute:"2-digit"}):"";
+    const rows=e.items.map(x=>`<tr><td>${esc(x.name)}</td><td>${n0(x.cal)} cal</td></tr>`).join("");
+    const same=e.items.length===1&&e.items[0].name.trim().toLowerCase()===e.text.trim().toLowerCase();
+    return `<div class="hcard fentry" data-eid="${e.id}"><h3><span>${n0(entryCal(e))} cal${entryP(e)?` · ${n0(entryP(e))} g protein`:""}</span><span class="t">${time}</span></h3>
+      ${same?"":`<div class="q">${esc(e.text)}</div>`}<table>${rows}</table>
+      <div class="acts"><button data-fe="edit">Edit</button><button data-fe="del" class="del">${fDelArmed===e.id?"Tap again to delete":"Delete"}</button></div></div>`}).join("");
+}
+function renderCalChart(){
+  const today=todayStr(), ds=[];for(let i=13;i>=0;i--)ds.push(shift(today,-i));
+  const pts=ds.map(d=>({label:nice(d,{month:"numeric",day:"numeric"}),v:dayCal(d),now:d===today,
+    tip:`${nice(d,{weekday:"short",month:"short",day:"numeric"})}: ${dayFood(d).length?n0(dayCal(d))+" cal":"nothing logged"}`}));
+  if(!pts.some(p=>p.v)){$("calChart").innerHTML=`<div class="note">Your daily totals show up here as you log food.</div>`;$("calFacts").innerHTML="";return}
+  barChart($("calChart"),pts,{label:"Calories per day, last 14 days",now:"Today",band:[foodTarget.lo,foodTarget.hi]});
+  // averages use days with food logged, so a skipped log doesn't look like a zero-calorie day
+  const wk=ds.slice(-7).filter(d=>dayFood(d).length), avg=wk.length?wk.reduce((a,d)=>a+dayCal(d),0)/wk.length:0;
+  const inR=wk.filter(d=>{const c=dayCal(d);return c>=foodTarget.lo&&c<=foodTarget.hi}).length;
+  const pAvg=wk.length?wk.reduce((a,d)=>a+dayP(d),0)/wk.length:0;
+  $("calFacts").innerHTML=fact(wk.length?n0(avg):"—","7-day avg cal")+fact(`${inR}/${wk.length}`,"days in range")+fact(wk.length?n0(pAvg)+" g":"—","avg protein");
+}
+function renderFoodSettings(){
+  if(document.activeElement!==$("fLo"))$("fLo").value=foodTarget.lo;
+  if(document.activeElement!==$("fHi"))$("fHi").value=foodTarget.hi;
+  $("fKeyStatus").innerHTML=hasKey?`<span class="keyok">✓ Key saved ${NATIVE?"in this iPhone's Keychain":"in this browser"}</span>`:"No key yet. Create one at platform.claude.com → API keys, then paste it here.";
+  $("fKeyDel").hidden=!hasKey;
+  $("fPrivacy").textContent=`Estimates use Claude (${AI_MODEL}). Only what you type in the food box is sent, and only when you tap Estimate. The key never goes into your log or CSV exports. Each estimate costs a small fraction of a cent. “Enter it myself” and the recent-food chips never go online.`;
+}
+
+/* talking to Claude: native app → Swift does the request; browser → fetch directly */
+const AI_WAIT={}; let aiSeq=0;
+window.__aiResult=r=>{const f=AI_WAIT[r.id];if(f){delete AI_WAIT[r.id];f(r)}};
+window.__keyStatus=v=>{hasKey=!!v;if(view==="food")renderFoodSettings()};
+function aiRequest(body){
+  if(NATIVE)return new Promise(res=>{const id=++aiSeq;AI_WAIT[id]=res;
+    window.webkit.messageHandlers.liftlog.postMessage({type:"ai",id,body})});
+  return fetch("https://api.anthropic.com/v1/messages",{method:"POST",body,headers:{"content-type":"application/json",
+      "x-api-key":ls.get("ll.apikey",""),"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"}})
+    .then(async r=>({status:r.status,body:await r.text()})).catch(()=>({status:0,body:""}));
+}
+async function estimateFood(text){
+  const res=await aiRequest(JSON.stringify({model:AI_MODEL,max_tokens:1024,system:FOOD_SYSTEM,tools:[FOOD_TOOL],
+    tool_choice:{type:"tool",name:"log_food"},messages:[{role:"user",content:text}]}));
+  if(res.status===0)throw new Error(res.body||"Couldn't reach Claude. Check your connection, or tap Enter it myself.");
+  if(res.status===401||res.status===403)throw new Error("That API key was turned down. Check it in the settings below.");
+  if(res.status!==200){let m="";try{m=JSON.parse(res.body).error.message}catch(e){}
+    throw new Error(`The estimate failed (${res.status})${m?": "+m:""}. Try again, or tap Enter it myself.`)}
+  let tu=null;try{tu=JSON.parse(res.body).content.find(c=>c.type==="tool_use")}catch(e){}
+  const items=((tu&&tu.input&&tu.input.items)||[]).map(x=>({name:String(x.name||"").trim(),cal:Math.max(0,Math.round(+x.calories||0)),p:Math.max(0,Math.round(+x.protein||0))})).filter(x=>x.name);
+  if(!items.length)throw new Error("Couldn't find any food in that. Try naming each thing you ate.");
+  return {items,note:String(tu.input.note||"").trim()};
+}
+
+$("fEst").onclick=async()=>{
+  const text=$("fText").value.trim();
+  if(!text){fMsg="Type what you ate first.";renderFood();$("fText").focus();return}
+  if(!hasKey){fMsg="Add your Anthropic API key in the settings below first, or tap Enter it myself.";$("fSet").open=true;renderFood();return}
+  fBusy=true;fMsg="";renderFood();
+  try{const r=await estimateFood(text);fDraft={text,items:r.items,note:r.note};fMsg=""}
+  catch(e){fMsg=e.message}
+  fBusy=false;renderFood();
+};
+$("fManual").onclick=()=>{const text=$("fText").value.trim();
+  fDraft={text,items:[{name:text,cal:null,p:null}],note:""};fMsg="";renderFood();
+  const c=$("fDraft").querySelector("input.fcal");if(c)c.focus();};
+$("fDraft").addEventListener("input",ev=>{const i=ev.target.closest("input[data-f]");if(!i||!fDraft)return;
+  const x=fDraft.items[+i.closest(".frow").dataset.k];
+  if(i.dataset.f==="name")x.name=i.value;
+  else{const n=Number(i.value.trim());x.cal=i.value.trim()===""||!isFinite(n)?null:Math.max(0,Math.round(n));x.p=null}  // a hand-edited number drops Claude's protein guess for that item
+  $("fDraftTot").textContent=n0(entryCal(fDraft))+" cal";});
+$("fDraft").addEventListener("click",ev=>{const b=ev.target.closest("button[data-f]");if(!b||!fDraft)return;const a=b.dataset.f;
+  if(a==="rm"){fDraft.items.splice(+b.closest(".frow").dataset.k,1);if(!fDraft.items.length)fDraft.items.push({name:"",cal:null,p:null})}
+  else if(a==="add")fDraft.items.push({name:"",cal:null,p:null});
+  else if(a==="cancel"){fDraft=null;fMsg=""}
+  else if(a==="save"){
+    const items=fDraft.items.map(x=>({name:x.name.trim(),cal:x.cal||0,p:x.p}))
+      .filter(x=>x.name||x.cal).map(x=>({...x,name:x.name||"Food"}));
+    if(!items.length){fMsg="Add at least one item with calories.";renderFood();return}
+    const text=fDraft.text||items.map(x=>x.name).join(", ");
+    if(fDraft.edit){food[fDate]=dayFood(fDate).map(e=>e.id===fDraft.edit?{...e,text,items}:e)}
+    else{const now=new Date(),t=fDate===todayStr()?now.getTime():parse(fDate).getTime()+12*36e5;
+      food[fDate]=[...dayFood(fDate),{id:newId(),t,text,items}];$("fText").value=""}
+    fDraft=null;fMsg="";persist();
+  }
+  renderFood();
+  if(a==="add"){const ns=$("fDraft").querySelectorAll("input[data-f=name]");ns[ns.length-1].focus()}
+});
+$("fRecent").addEventListener("click",ev=>{const b=ev.target.closest("button[data-rid]");if(!b)return;
+  let e=null;Object.values(food).forEach(es=>es.forEach(x=>{if(x.id===b.dataset.rid)e=x}));if(!e)return;
+  fDraft={text:e.text,items:e.items.map(x=>({...x})),note:""};fMsg="";renderFood();});
+$("foodList").addEventListener("click",ev=>{const b=ev.target.closest("button[data-fe]");if(!b)return;
+  const id=b.closest("[data-eid]").dataset.eid, e=dayFood(fDate).find(x=>x.id===id);if(!e)return;
+  if(b.dataset.fe==="edit"){fDraft={edit:id,text:e.text,items:e.items.map(x=>({...x})),note:""};fDelArmed=null;renderFood();
+    window.scrollTo({top:$("fText").getBoundingClientRect().top+scrollY-80,behavior:"smooth"});return}
+  if(fDelArmed!==id){fDelArmed=id;renderFoodList();setTimeout(()=>{if(fDelArmed===id){fDelArmed=null;if(view==="food")renderFoodList()}},4000);return}
+  fDelArmed=null;food[fDate]=dayFood(fDate).filter(x=>x.id!==id);if(!food[fDate].length)delete food[fDate];
+  if(fDraft&&fDraft.edit===id)fDraft=null;persist();renderFood();});
+function goFood(d){fDate=d;fDraft=null;fMsg="";fDelArmed=null;renderFood()}
+$("fPrev").onclick=()=>goFood(shift(fDate,-1));
+$("fNext").onclick=()=>goFood(shift(fDate,1));
+$("fDate").addEventListener("change",ev=>{if(ev.target.value)goFood(ev.target.value)});
+$("fText").addEventListener("keydown",ev=>{if(ev.key==="Enter"&&!ev.shiftKey){ev.preventDefault();$("fText").blur();$("fEst").click()}});
+function saveTarget(){
+  let lo=Math.round(Number($("fLo").value)),hi=Math.round(Number($("fHi").value));
+  if(!(lo>0))lo=foodTarget.lo; if(!(hi>0))hi=foodTarget.hi; if(hi<lo)[lo,hi]=[hi,lo];
+  foodTarget={lo,hi};persist();renderFood();
+}
+$("fLo").addEventListener("change",saveTarget);$("fHi").addEventListener("change",saveTarget);
+$("fKeySave").onclick=()=>{const k=$("fKey").value.trim();if(!k){$("fKey").focus();return}
+  $("fKey").value="";
+  if(NATIVE)window.webkit.messageHandlers.liftlog.postMessage({type:"setKey",key:k});
+  else{ls.set("ll.apikey",k);hasKey=true}
+  if(/^Add your/.test(fMsg))fMsg="";renderFood();};
+$("fKeyDel").onclick=()=>{
+  if(NATIVE)window.webkit.messageHandlers.liftlog.postMessage({type:"setKey",key:""});
+  else{try{localStorage.removeItem("ll.apikey")}catch(e){}hasKey=false}
+  renderFood();};
+// a new day rolls the Food tab forward when the app comes back from the background
+document.addEventListener("visibilitychange",()=>{if(!document.hidden&&view==="food"&&fDate!==todayStr()&&!fDraft&&fDate===shift(todayStr(),-1))goFood(todayStr())});
 
 /* ---- boot ---- */
 loadCur(); render(); status(SAVED_LABEL,"ok");

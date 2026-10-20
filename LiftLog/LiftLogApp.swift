@@ -1,3 +1,4 @@
+import Security
 import SwiftUI
 import UIKit
 import WebKit
@@ -68,6 +69,60 @@ enum Store {
     }
 }
 
+/// The Anthropic API key for food estimates, kept in the iPhone's Keychain (never in the log file or exports).
+enum KeyStore {
+    private static let base: [String: Any] = [
+        kSecClass as String: kSecClassGenericPassword,
+        kSecAttrService as String: "com.lsims6.liftlog.anthropic",
+        kSecAttrAccount as String: "api-key",
+    ]
+
+    static func get() -> String? {
+        var query = base
+        query[kSecReturnData as String] = true
+        query[kSecMatchLimit as String] = kSecMatchLimitOne
+        var out: CFTypeRef?
+        guard SecItemCopyMatching(query as CFDictionary, &out) == errSecSuccess,
+              let data = out as? Data, let key = String(data: data, encoding: .utf8), !key.isEmpty else { return nil }
+        return key
+    }
+
+    static func set(_ key: String) {
+        SecItemDelete(base as CFDictionary)
+        guard !key.isEmpty else { return }
+        var item = base
+        item[kSecValueData as String] = Data(key.utf8)
+        item[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
+        SecItemAdd(item as CFDictionary, nil)
+    }
+
+    static var hasKey: Bool { get() != nil }
+}
+
+/// Sends a food-estimate request to the Claude API. The page builds the request body; this side only adds the
+/// key and always posts to the same fixed address, so the page can't send the key anywhere else.
+enum ClaudeAPI {
+    static let url = URL(string: "https://api.anthropic.com/v1/messages")!
+
+    static func send(body: String, done: @escaping (_ status: Int, _ body: String) -> Void) {
+        guard let key = KeyStore.get() else {
+            done(0, "Add your Anthropic API key in the settings below first, or tap Enter it myself.")
+            return
+        }
+        var req = URLRequest(url: url, timeoutInterval: 45)
+        req.httpMethod = "POST"
+        req.setValue("application/json", forHTTPHeaderField: "content-type")
+        req.setValue(key, forHTTPHeaderField: "x-api-key")
+        req.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
+        req.httpBody = Data(body.utf8)
+        URLSession.shared.dataTask(with: req) { data, response, _ in
+            let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+            let text = data.flatMap { String(data: $0, encoding: .utf8) } ?? ""
+            DispatchQueue.main.async { done(status, text) }
+        }.resume()
+    }
+}
+
 struct LiftLogWebView: UIViewControllerRepresentable {
     func makeUIViewController(context: Context) -> WebViewController { WebViewController() }
     func updateUIViewController(_ controller: WebViewController, context: Context) {}
@@ -99,7 +154,7 @@ final class WebViewController: UIViewController, WKScriptMessageHandler, WKNavig
     /// so a reloaded page always starts from what is on disk now, never from a stale copy.
     private func installBootScript(on content: WKUserContentController) {
         content.removeAllUserScripts()
-        let boot = "window.__LIFTLOG__ = \(Store.load());"
+        let boot = "window.__LIFTLOG__ = \(Store.load()); window.__LIFTLOG_KEY__ = \(KeyStore.hasKey);"
         content.addUserScript(WKUserScript(source: boot, injectionTime: .atDocumentStart, forMainFrameOnly: true))
     }
 
@@ -112,7 +167,8 @@ final class WebViewController: UIViewController, WKScriptMessageHandler, WKNavig
         webView.loadFileURL(index, allowingReadAccessTo: index.deletingLastPathComponent())
     }
 
-    // Messages from the page: {type: "save", json} and {type: "export", filename, csv}.
+    // Messages from the page: {type: "save", json}, {type: "export", filename, csv},
+    // {type: "setKey", key} (empty removes it) and {type: "ai", id, body} for a food estimate.
     func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage) {
         guard let body = message.body as? [String: Any], let type = body["type"] as? String else { return }
         switch type {
@@ -122,9 +178,25 @@ final class WebViewController: UIViewController, WKScriptMessageHandler, WKNavig
             guard let csv = body["csv"] as? String else { return }
             let name = (body["filename"] as? String).flatMap { $0.isEmpty ? nil : $0 } ?? "lift-log.csv"
             share(csv: csv, filename: name)
+        case "setKey":
+            KeyStore.set(((body["key"] as? String) ?? "").trimmingCharacters(in: .whitespacesAndNewlines))
+            callPage("__keyStatus", KeyStore.hasKey)
+        case "ai":
+            guard let request = body["body"] as? String else { return }
+            let id = body["id"] ?? 0
+            ClaudeAPI.send(body: request) { [weak self] status, text in
+                self?.callPage("__aiResult", ["id": id, "status": status, "body": text])
+            }
         default:
             break
         }
+    }
+
+    /// Calls window.<name>(value) on the page, passing the value as JSON.
+    private func callPage(_ name: String, _ value: Any) {
+        guard let data = try? JSONSerialization.data(withJSONObject: [value], options: [.fragmentsAllowed]),
+              let json = String(data: data, encoding: .utf8) else { return }
+        webView.evaluateJavaScript("window.\(name) && window.\(name)(...\(json))", completionHandler: nil)
     }
 
     private func share(csv: String, filename: String) {
