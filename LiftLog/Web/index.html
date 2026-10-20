@@ -263,7 +263,8 @@ const PLAN = {
     {id:"pulldown",name:"Pull downs",sets:2,reps:10,w:95},
     {id:"backext",name:"Back extensions",sets:2,reps:10,w:0,hint:"0 = bodyweight"},
     {id:"lowbackmachine",name:"Lower back machine",sets:2,reps:10,w:null,hint:"seated back extension, slow and controlled"},
-    {id:"ezbar",name:"EZ curl bar",sets:2,reps:10,w:40}]},
+    {id:"ezbar",name:"EZ curl bar",sets:2,reps:10,w:40},
+    {id:"machinecurl",name:"Bicep curl machine",sets:2,reps:10,w:null}]},
   wed:{label:"Chest, Shoulders & Tris", items:[
     {id:"bench",name:"Bench press",sets:2,reps:10,w:80},
     {id:"shoulder",name:"Shoulder press",sets:2,reps:10,w:95},
@@ -292,7 +293,7 @@ const NAMES={}; DAYS.forEach(d=>PLAN[d].items.forEach(i=>NAMES[i.id]=i.name));
    same group, so a day's categories never change. Each exercise keeps its own history and progression.
    c:1 marks compound lifts (8–12 reps); everything else is isolation (6–15). */
 const GROUP={hack:"quads",hipthrust:"glutes",hamcurl:"hams",legext:"quadiso",calf:"calves",
-  rows:"rows",pulldown:"vert",backext:"lowback",lowbackmachine:"lowback",ezbar:"biceps",
+  rows:"rows",pulldown:"vert",backext:"lowback",lowbackmachine:"lowback",ezbar:"biceps",machinecurl:"biceps",
   bench:"chest",shoulder:"shoulders",latraise:"sidedelts",pushdown:"triceps",
   treadmill:"cardio",bike:"cardio",rower:"cardio",hangcrunch:"abs",wcrunch:"abs",
   revpecdeck:"reardelts",kelso:"traps",straightpd:"lats"};
