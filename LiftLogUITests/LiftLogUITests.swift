@@ -27,11 +27,11 @@ final class LiftLogUITests: XCTestCase {
         web.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH 'Monday'")).firstMatch
     }
 
-    /// Scrolls down until the element is on screen and clear of the Workout | Food bar at the bottom;
-    /// returns whether it was found.
-    private func scrollTo(_ element: XCUIElement, in app: XCUIApplication, maxSwipes: Int = 10) -> Bool {
+    /// Scrolls down until the element is on screen and (unless `belowBar` is false, for screens without it)
+    /// clear of the Workout | Food bar at the bottom; returns whether it was found.
+    private func scrollTo(_ element: XCUIElement, in app: XCUIApplication, maxSwipes: Int = 10, belowBar: Bool = true) -> Bool {
         func clear() -> Bool {
-            element.exists && element.isHittable && element.frame.maxY < app.frame.maxY - 140
+            element.exists && element.isHittable && (!belowBar || element.frame.maxY < app.frame.maxY - 140)
         }
         for _ in 0..<maxSwipes {
             if clear() { return true }
@@ -55,7 +55,7 @@ final class LiftLogUITests: XCTestCase {
         template.tap()
         let start = control(web, "Use 5-day split")
         XCTAssertTrue(start.waitForExistence(timeout: 10), "The setup screen's start button didn't appear")
-        XCTAssertTrue(scrollTo(start, in: app), "The setup screen's start button wasn't reachable")
+        XCTAssertTrue(scrollTo(start, in: app, belowBar: false), "The setup screen's start button wasn't reachable")
         start.tap()
 
         // Go to Monday (legs), whose first exercise sits near the top of the screen.
