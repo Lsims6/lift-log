@@ -40,6 +40,36 @@ header{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;
 .gear svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .gear[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .tabs button.back{border:0;background:none;color:var(--accent);padding-left:0}
+.tlist{display:flex;flex-direction:column;gap:10px}
+.tcard{font:inherit;text-align:left;background:var(--surface);border:1.5px solid var(--line);border-radius:10px;padding:12px;color:var(--ink);cursor:pointer;display:flex;flex-direction:column;gap:4px}
+.tcard b{font-family:var(--display);font-size:20px;text-transform:uppercase;letter-spacing:.02em}
+.tcard span{font-size:13px;color:var(--muted)}
+.tcard[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+.tcard[aria-pressed="true"] b{color:var(--accent)}
+.wkgrid{display:grid;grid-template-columns:56px minmax(0,1fr);gap:8px;align-items:center}
+.wkgrid span{font-weight:600}
+.psum{list-style:none;margin:0;padding:0;font-size:14px}
+.psum li{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-top:1px solid var(--line)}
+.psum li:first-child{border-top:0}
+.psum em{font-style:normal;color:var(--muted)}
+.wkname{font:inherit;font-family:var(--display);font-size:22px;font-weight:700;text-transform:uppercase;letter-spacing:.02em;width:100%;border:1px solid transparent;border-bottom-color:var(--line);background:transparent;color:var(--ink);padding:4px 2px}
+.wkname:focus{border-color:var(--accent);border-radius:6px}
+.wkdays{font-size:12.5px;color:var(--muted)}
+.perow{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:6px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
+.perow .nm{min-width:0}
+.perow .nm small{display:block;font-size:11.5px;color:var(--muted)}
+.perow .ord{display:flex;gap:2px}
+.ib{width:34px;height:36px;border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--ink);font-size:15px;cursor:pointer;padding:0}
+.ib:disabled{opacity:.3}
+.ib.x{color:var(--warn)}
+.perow .stepper button{width:32px;height:36px;font-size:18px}
+.perow .stepper span{min-width:44px;text-align:center;font-size:13px;font-variant-numeric:tabular-nums}
+.pick{display:flex;flex-direction:column;gap:8px;border:1px dashed var(--line);border-radius:10px;padding:10px}
+.pick .mlist{max-height:320px;overflow-y:auto}
+.mkx{display:grid;gap:8px}
+.wkact{display:flex;gap:8px;flex-wrap:wrap}
+.wkact .del{color:var(--warn);border-color:var(--line)}
+.btn.ghost.del{color:var(--warn);border-color:var(--line)}
 .calsum-link{font:inherit;font-size:12.5px;border:0;background:none;color:var(--accent);cursor:pointer;padding:2px 0;text-align:left}
 h1{font-family:var(--display);font-weight:700;font-size:30px;letter-spacing:.01em;margin:0;line-height:1;text-transform:uppercase}
 .status{font-size:12px;color:var(--muted);letter-spacing:.04em;text-transform:uppercase;font-weight:600}
@@ -318,8 +348,34 @@ details.panel>summary{cursor:pointer;font-size:14px;font-weight:600;list-style-p
     <div class="hist" id="foodHist"></div>
   </section>
 
+  <section id="setupView" class="wrap" style="gap:12px" hidden>
+    <h2 class="sec" style="margin:0" id="setupTitle">Welcome</h2>
+    <p class="note" id="setupLead" style="margin:0">Lift Log tracks your lifts with progressive overload, your cardio, body weight and food. Everything stays on your phone. Pick a plan to start with; you can change every workout, exercise and day later.</p>
+    <div class="tlist" id="tList"></div>
+    <button class="btn" id="tStart" disabled>Choose a plan</button>
+    <button class="btn ghost" id="tCancel" hidden>Cancel</button>
+  </section>
+
+  <section id="planView" class="wrap" style="gap:12px" hidden>
+    <h2 class="sec" style="margin:0">Workout plan</h2>
+    <div class="panel">
+      <h3>Your week</h3>
+      <div class="note">Pick a workout for each day, or leave it as a rest day. The same workout can go on more than one day.</div>
+      <div class="wkgrid" id="pWeek"></div>
+    </div>
+    <div class="wrap" style="gap:12px" id="pWorkouts"></div>
+    <button class="btn ghost" id="pNew">+ New workout</button>
+    <button class="btn ghost" id="pTemplate">Start over from a template…</button>
+    <p class="note">Changes save as you go. Your logged workouts are never touched: removing an exercise or workout only changes what shows up from now on.</p>
+  </section>
+
   <section id="settingsView" class="wrap" style="gap:12px" hidden>
     <h2 class="sec" style="margin:0">Settings</h2>
+    <div class="panel" id="pSet">
+      <h3>Workout plan</h3>
+      <div id="pSum"></div>
+      <button class="btn" id="pEdit">Edit workouts &amp; schedule</button>
+    </div>
     <div class="panel" id="tSet">
       <h3>Calorie target</h3>
       <div class="fset" id="tCalc">
@@ -342,6 +398,7 @@ details.panel>summary{cursor:pointer;font-size:14px;font-weight:600;list-style-p
           <option value="1.9">Very active: physical job plus training</option>
         </select>
         <div id="tOut"></div>
+        <div class="note">These are estimates from a standard formula (Mifflin-St Jeor), not medical advice. Everyone burns calories a little differently, so adjust if your weight isn't moving the way you expect. Check with your doctor before starting a diet, especially an aggressive one or if you have a health condition.</div>
         <button class="btn" id="tUse" style="margin-bottom:6px" hidden></button>
       </div>
       <div class="fset">
@@ -374,6 +431,13 @@ details.panel>summary{cursor:pointer;font-size:14px;font-weight:600;list-style-p
       <div class="fbtns"><button id="exportBtn" class="btn">Export CSV</button><button id="importBtn" class="btn ghost">Import CSV</button></div>
       <input id="importFile" type="file" accept=".csv,text/csv,text/comma-separated-values,text/plain" hidden>
       <div id="exportMsg" class="note" hidden></div>
+    </div>
+    <div class="panel" id="xSet">
+      <h3>Privacy</h3>
+      <div class="note">Lift Log has no account, no ads and no tracking. Your log stays on this phone. The only thing that ever leaves it is what you choose to send: a CSV you export, or, if you add a Claude key, the food you type for an estimate.</div>
+      <a class="btn ghost" id="privacyLink" href="https://lsims6.github.io/lift-log/privacy.html" target="_blank" rel="noopener" style="text-align:center;text-decoration:none">Read the privacy policy</a>
+      <button class="btn ghost del" id="eraseBtn">Erase all data</button>
+      <div class="note" id="eraseNote" hidden>This deletes every workout, weigh-in, food entry, your plan and settings from this phone. It can't be undone; export a CSV first if you want a copy.</div>
     </div>
     <div class="note" id="aboutLine" style="text-align:center"></div>
   </section>
@@ -425,83 +489,93 @@ details.panel>summary{cursor:pointer;font-size:14px;font-weight:600;list-style-p
 </nav>
 <script src="menu.js"></script>
 <script>
-const PLAN = {
-  mon:{label:"Legs", items:[
-    {id:"hack",name:"Hack squats",sets:2,reps:8,w:90},
-    {id:"hamcurl",name:"Hamstring curls",sets:2,reps:10,w:170},
-    {id:"legext",name:"Leg extensions",sets:2,reps:10,w:null,hint:"max"},
-    {id:"calf",name:"Calf raises",sets:2,reps:10,w:230}]},
-  tue:{label:"Back & Biceps", items:[
-    {id:"rows",name:"Weighted rows",sets:2,reps:10,w:90},
-    {id:"pulldown",name:"Pull downs",sets:2,reps:10,w:95},
-    {id:"backext",name:"Back extensions",sets:2,reps:10,w:0,hint:"0 = bodyweight"},
-    {id:"lowbackmachine",name:"Lower back machine",sets:2,reps:10,w:null,hint:"seated back extension, slow and controlled"},
-    {id:"ezbar",name:"EZ curl bar",sets:2,reps:10,w:40},
-    {id:"machinecurl",name:"Bicep curl machine",sets:2,reps:10,w:null}]},
-  wed:{label:"Chest, Shoulders & Tris", items:[
-    {id:"bench",name:"Bench press",sets:2,reps:10,w:80},
-    {id:"shoulder",name:"Shoulder press",sets:2,reps:10,w:95},
-    {id:"latraise",name:"Lat raise",sets:2,reps:10,w:17.5,step:2.5},
-    {id:"pushdown",name:"Cable pushdowns",sets:2,reps:10,w:75}]},
-  thu:{label:"Cardio + Abs", items:[
-    {id:"treadmill",name:"Treadmill",cardio:true},
-    {id:"bike",name:"Bike",cardio:true},
-    {id:"rower",name:"Row machine",cardio:true},
-    {id:"hangcrunch",name:"Hanging crunches",sets:2,reps:10,w:0,hint:"optional"},
-    {id:"wcrunch",name:"Weighted crunches",sets:2,reps:10,w:null,hint:"optional"}]},
-  fri:{label:"Legs + Pull", items:[
-    {id:"hipthrust",name:"Hip thrust machine",sets:2,reps:8,w:null,hint:"start light, add weight as you learn it"},
-    {id:"hamcurl",name:"Hamstring curls",sets:2,reps:10,w:170},
-    {id:"legext",name:"Leg extensions",sets:2,reps:10,w:null,hint:"max"},
-    {id:"calf",name:"Calf raises",sets:2,reps:10,w:230},
-    {id:"revpecdeck",name:"Reverse pec deck",sets:2,reps:10,w:null,hint:"face the pad, pull handles back with straight arms"},
-    {id:"kelso",name:"Kelso shrugs",sets:2,reps:10,w:null,hint:"row machine, arms straight, squeeze shoulder blades"},
-    {id:"straightpd",name:"Straight-arm pulldown",sets:2,reps:10,w:null,hint:"cable, arms straight, pull bar to thighs"}]}
-};
-const DAYS=["mon","tue","wed","thu","fri"], DAYNAME={mon:"Mon",tue:"Tue",wed:"Wed",thu:"Thu",fri:"Fri"};
-const NAMES={}; DAYS.forEach(d=>PLAN[d].items.forEach(i=>NAMES[i.id]=i.name));
-
-/* ---- exercise swaps ----
-   Every slot in a day belongs to a muscle group, and its dropdown only offers exercises from that
-   same group, so a day's categories never change. Each exercise keeps its own history and progression.
-   c:1 marks compound lifts (8–12 reps); everything else is isolation (6–15). */
-const GROUP={hack:"quads",hipthrust:"glutes",hamcurl:"hams",legext:"quadiso",calf:"calves",
-  rows:"rows",pulldown:"vert",backext:"lowback",lowbackmachine:"lowback",ezbar:"biceps",machinecurl:"biceps",
-  bench:"chest",shoulder:"shoulders",latraise:"sidedelts",pushdown:"triceps",
-  treadmill:"cardio",bike:"cardio",rower:"cardio",hangcrunch:"abs",wcrunch:"abs",
-  revpecdeck:"reardelts",kelso:"traps",straightpd:"lats"};
+/* ---- exercise library ----
+   Every exercise belongs to a muscle group. A workout slot's dropdown only offers exercises from that same
+   group, so a day's categories never change. Each exercise keeps its own history and progression.
+   c:1 marks compound lifts (8–12 reps); everything else is isolation (6–15). step is the weight jump (default 5 lb). */
 const GLABEL={quads:"Quads",glutes:"Glutes",hams:"Hamstrings",quadiso:"Quads (isolation)",calves:"Calves",
   rows:"Back · row",vert:"Back · pulldown",lowback:"Lower back",biceps:"Biceps",chest:"Chest",shoulders:"Shoulders",
-  sidedelts:"Side delts",triceps:"Triceps",cardio:"Cardio",abs:"Abs",reardelts:"Rear delts",traps:"Traps",lats:"Lats"};
-const ALT={
-  quads:[{id:"legpress",name:"Leg press",c:1,step:10},{id:"smithsquat",name:"Smith machine squat",c:1},{id:"pendulum",name:"Pendulum squat",c:1},{id:"goblet",name:"Goblet squat",c:1}],
-  glutes:[{id:"bbhipthrust",name:"Barbell hip thrust",c:1},{id:"glutekick",name:"Glute kickback machine"},{id:"abductor",name:"Hip abductor machine"}],
-  hams:[{id:"seatedcurl",name:"Seated leg curl"},{id:"lyingcurl",name:"Lying leg curl"},{id:"rdl",name:"Romanian deadlift",c:1}],
-  quadiso:[{id:"slext",name:"Single-leg extensions"}],
-  calves:[{id:"seatedcalf",name:"Seated calf raises"},{id:"lpcalf",name:"Leg press calf raises"}],
-  rows:[{id:"cablerow",name:"Seated cable row",c:1},{id:"chestrow",name:"Chest-supported row machine",c:1},{id:"tbar",name:"T-bar row",c:1},{id:"dbrow",name:"One-arm dumbbell row",c:1}],
-  vert:[{id:"closepd",name:"Close-grip pulldown",c:1},{id:"machinepd",name:"Machine pulldown",c:1}],
-  lowback:[{id:"goodmorning",name:"Good mornings",c:1}],
-  biceps:[{id:"dbcurl",name:"Dumbbell curls"},{id:"hammercurl",name:"Hammer curls"},{id:"machinecurl",name:"Bicep curl machine"},{id:"cablecurl",name:"Cable curls"},{id:"preacher",name:"Preacher curls"}],
-  chest:[{id:"inclinebench",name:"Incline bench press",c:1},{id:"chestpress",name:"Chest press machine",c:1},{id:"dbbench",name:"Dumbbell bench press",c:1},{id:"inclinedb",name:"Incline dumbbell press",c:1},{id:"pecdeck",name:"Pec deck"}],
-  shoulders:[{id:"dbshoulder",name:"Dumbbell shoulder press",c:1},{id:"arnold",name:"Arnold press",c:1}],
-  sidedelts:[{id:"cablelat",name:"Cable lateral raise",step:2.5},{id:"machinelat",name:"Machine lateral raise"}],
-  triceps:[{id:"ohtri",name:"Overhead triceps extension"},{id:"ropepush",name:"Rope pushdowns"},{id:"dipmachine",name:"Dip machine"},{id:"skull",name:"Skull crushers"}],
-  cardio:[{id:"stairs",name:"Stair climber",cardio:true},{id:"elliptical",name:"Elliptical",cardio:true},{id:"walk",name:"Walk",cardio:true},{id:"run",name:"Run",cardio:true}],
-  abs:[{id:"cablecrunch",name:"Cable crunches"},{id:"abmachine",name:"Ab crunch machine"},{id:"legraise",name:"Hanging leg raises",w:0,hint:"0 = bodyweight"}],
-  reardelts:[{id:"facepull",name:"Face pulls"},{id:"reardeltraise",name:"Rear delt dumbbell raise",step:2.5}],
-  traps:[{id:"dbshrug",name:"Dumbbell shrugs"},{id:"shrugmachine",name:"Shrug machine"}],
-  lats:[{id:"dbpullover",name:"Dumbbell pullover"},{id:"machinepullover",name:"Machine pullover"}]};
-const LIB={};   // every exercise by id: the plan's own first, then the alternatives
-DAYS.forEach(d=>PLAN[d].items.forEach(i=>{i.g=GROUP[i.id];if(!LIB[i.id])LIB[i.id]=i}));
-Object.entries(ALT).forEach(([g,xs])=>xs.forEach(x=>{if(!LIB[x.id])LIB[x.id]=x.cardio?{...x,g}:{sets:2,reps:10,w:null,...x,g};NAMES[x.id]=x.name}));
-const BYGROUP={}; Object.values(LIB).forEach(i=>(BYGROUP[i.g]=BYGROUP[i.g]||[]).push(i));
-// which exercise fills a slot: what you picked for this date, else what you picked last time for this day, else the plan's
+  sidedelts:"Side delts",triceps:"Triceps",cardio:"Cardio",abs:"Abs",reardelts:"Rear delts",traps:"Traps",lats:"Lats",other:"Other"};
+const BASE={
+  quads:[{id:"hack",name:"Hack squats",c:1},{id:"legpress",name:"Leg press",c:1,step:10},{id:"smithsquat",name:"Smith machine squat",c:1},{id:"pendulum",name:"Pendulum squat",c:1},{id:"goblet",name:"Goblet squat",c:1}],
+  glutes:[{id:"hipthrust",name:"Hip thrust machine",c:1},{id:"bbhipthrust",name:"Barbell hip thrust",c:1},{id:"glutekick",name:"Glute kickback machine"},{id:"abductor",name:"Hip abductor machine"}],
+  hams:[{id:"hamcurl",name:"Hamstring curls"},{id:"seatedcurl",name:"Seated leg curl"},{id:"lyingcurl",name:"Lying leg curl"},{id:"rdl",name:"Romanian deadlift",c:1}],
+  quadiso:[{id:"legext",name:"Leg extensions"},{id:"slext",name:"Single-leg extensions"}],
+  calves:[{id:"calf",name:"Calf raises"},{id:"seatedcalf",name:"Seated calf raises"},{id:"lpcalf",name:"Leg press calf raises"}],
+  rows:[{id:"rows",name:"Weighted rows",c:1},{id:"cablerow",name:"Seated cable row",c:1},{id:"chestrow",name:"Chest-supported row machine",c:1},{id:"tbar",name:"T-bar row",c:1},{id:"dbrow",name:"One-arm dumbbell row",c:1}],
+  vert:[{id:"pulldown",name:"Pull downs",c:1},{id:"closepd",name:"Close-grip pulldown",c:1},{id:"machinepd",name:"Machine pulldown",c:1}],
+  lowback:[{id:"backext",name:"Back extensions",hint:"0 = bodyweight"},{id:"lowbackmachine",name:"Lower back machine",hint:"seated back extension, slow and controlled"},{id:"goodmorning",name:"Good mornings",c:1}],
+  biceps:[{id:"ezbar",name:"EZ curl bar"},{id:"machinecurl",name:"Bicep curl machine"},{id:"dbcurl",name:"Dumbbell curls"},{id:"hammercurl",name:"Hammer curls"},{id:"cablecurl",name:"Cable curls"},{id:"preacher",name:"Preacher curls"}],
+  chest:[{id:"bench",name:"Bench press",c:1},{id:"inclinebench",name:"Incline bench press",c:1},{id:"chestpress",name:"Chest press machine",c:1},{id:"dbbench",name:"Dumbbell bench press",c:1},{id:"inclinedb",name:"Incline dumbbell press",c:1},{id:"pecdeck",name:"Pec deck"}],
+  shoulders:[{id:"shoulder",name:"Shoulder press",c:1},{id:"dbshoulder",name:"Dumbbell shoulder press",c:1},{id:"arnold",name:"Arnold press",c:1}],
+  sidedelts:[{id:"latraise",name:"Lat raise",step:2.5},{id:"cablelat",name:"Cable lateral raise",step:2.5},{id:"machinelat",name:"Machine lateral raise"}],
+  triceps:[{id:"pushdown",name:"Cable pushdowns"},{id:"ohtri",name:"Overhead triceps extension"},{id:"ropepush",name:"Rope pushdowns"},{id:"dipmachine",name:"Dip machine"},{id:"skull",name:"Skull crushers"}],
+  cardio:[{id:"treadmill",name:"Treadmill",cardio:true},{id:"bike",name:"Bike",cardio:true},{id:"rower",name:"Row machine",cardio:true},{id:"stairs",name:"Stair climber",cardio:true},{id:"elliptical",name:"Elliptical",cardio:true},{id:"walk",name:"Walk",cardio:true},{id:"run",name:"Run",cardio:true}],
+  abs:[{id:"hangcrunch",name:"Hanging crunches",w:0,hint:"0 = bodyweight"},{id:"wcrunch",name:"Weighted crunches"},{id:"cablecrunch",name:"Cable crunches"},{id:"abmachine",name:"Ab crunch machine"},{id:"legraise",name:"Hanging leg raises",w:0,hint:"0 = bodyweight"}],
+  reardelts:[{id:"revpecdeck",name:"Reverse pec deck",hint:"face the pad, pull handles back with straight arms"},{id:"facepull",name:"Face pulls"},{id:"reardeltraise",name:"Rear delt dumbbell raise",step:2.5}],
+  traps:[{id:"kelso",name:"Kelso shrugs",hint:"row machine, arms straight, squeeze shoulder blades"},{id:"dbshrug",name:"Dumbbell shrugs"},{id:"shrugmachine",name:"Shrug machine"}],
+  lats:[{id:"straightpd",name:"Straight-arm pulldown",hint:"cable, arms straight, pull bar to thighs"},{id:"dbpullover",name:"Dumbbell pullover"},{id:"machinepullover",name:"Machine pullover"}]};
+const LIB={}, BYGROUP={}, NAMES={};   // filled by rebuildLib(): the built-in exercises plus any you've made
+function rebuildLib(){
+  [LIB,BYGROUP].forEach(o=>Object.keys(o).forEach(k=>delete o[k]));
+  const add=(x,g)=>{LIB[x.id]=x.cardio?{...x,g}:{sets:2,w:null,...x,g};NAMES[x.id]=x.name;(BYGROUP[g]=BYGROUP[g]||[]).push(LIB[x.id])};
+  Object.entries(BASE).forEach(([g,xs])=>xs.forEach(x=>add(x,g)));
+  ((plan&&plan.custom)||[]).forEach(x=>add({...x,mine:true},x.g||"other"));
+}
+
+/* ---- your workout plan ----
+   plan = {workouts:{id:{label,items:[{id,sets,w,hint}]}}, order:[ids], schedule:{mon…sun: workout id or null}, custom:[exercises]}.
+   It's saved with the log. Sessions remember which workout they were (session.day = workout id) and its name.
+   The original 5-day split keeps the ids mon…fri so older logs line up with it. */
+const WD=["mon","tue","wed","thu","fri","sat","sun"], WDNAME={mon:"Mon",tue:"Tue",wed:"Wed",thu:"Thu",fri:"Fri",sat:"Sat",sun:"Sun"};
+const WDLONG={mon:"Monday",tue:"Tuesday",wed:"Wednesday",thu:"Thursday",fri:"Friday",sat:"Saturday",sun:"Sunday"};
+const it=(id,sets=2,more={})=>({id,sets,...more});
+function split5(withWeights){const w=n=>withWeights?{w:n}:{};return {
+  mon:{label:"Legs",items:[it("hack",2,w(90)),it("hamcurl",2,w(170)),it("legext",2,{hint:"max"}),it("calf",2,w(230))]},
+  tue:{label:"Back & Biceps",items:[it("rows",2,w(90)),it("pulldown",2,w(95)),it("backext",2,{w:0}),it("lowbackmachine"),it("ezbar",2,w(40)),it("machinecurl")]},
+  wed:{label:"Chest, Shoulders & Tris",items:[it("bench",2,w(80)),it("shoulder",2,w(95)),it("latraise",2,w(17.5)),it("pushdown",2,w(75))]},
+  thu:{label:"Cardio + Abs",items:[it("treadmill"),it("bike"),it("rower"),it("hangcrunch",2,{w:0,hint:"optional"}),it("wcrunch",2,{hint:"optional"})]},
+  fri:{label:"Legs + Pull",items:[it("hipthrust",2,{hint:"start light, add weight as you learn it"}),it("hamcurl",2,w(170)),it("legext",2,{hint:"max"}),it("calf",2,w(230)),it("revpecdeck"),it("kelso"),it("straightpd")]}}}
+const TEMPLATES={
+  split5:{name:"5-day split",about:"Legs · Back & biceps · Chest, shoulders & tris · Cardio & abs · Legs & pull",
+    make:()=>({workouts:split5(false),order:["mon","tue","wed","thu","fri"],schedule:{mon:"mon",tue:"tue",wed:"wed",thu:"thu",fri:"fri",sat:null,sun:null}})},
+  ppl:{name:"Push / Pull / Legs",about:"3 days: Mon push, Wed pull, Fri legs",
+    make:()=>({workouts:{
+      push:{label:"Push",items:[it("bench"),it("shoulder"),it("inclinedb"),it("latraise"),it("pushdown")]},
+      pull:{label:"Pull",items:[it("rows"),it("pulldown"),it("facepull"),it("ezbar"),it("hammercurl")]},
+      legs:{label:"Legs",items:[it("legpress"),it("rdl"),it("legext"),it("hamcurl"),it("calf")]}},
+      order:["push","pull","legs"],schedule:{mon:"push",tue:null,wed:"pull",thu:null,fri:"legs",sat:null,sun:null}})},
+  ul:{name:"Upper / Lower",about:"4 days: Mon & Thu upper, Tue & Fri lower",
+    make:()=>({workouts:{
+      upper:{label:"Upper",items:[it("bench"),it("rows"),it("shoulder"),it("pulldown"),it("ezbar"),it("pushdown")]},
+      lower:{label:"Lower",items:[it("legpress"),it("rdl"),it("legext"),it("hamcurl"),it("calf"),it("cablecrunch")]}},
+      order:["upper","lower"],schedule:{mon:"upper",tue:"lower",wed:null,thu:"upper",fri:"lower",sat:null,sun:null}})},
+  full:{name:"Full body",about:"3 days: Mon, Wed & Fri, the same workout",
+    make:()=>({workouts:{full:{label:"Full body",items:[it("legpress"),it("bench"),it("rows"),it("shoulder"),it("hamcurl"),it("cablecrunch")]}},
+      order:["full"],schedule:{mon:"full",tue:null,wed:"full",thu:null,fri:"full",sat:null,sun:null}})},
+  blank:{name:"Start from scratch",about:"Build your own in the plan editor",
+    make:()=>({workouts:{},order:[],schedule:{mon:null,tue:null,wed:null,thu:null,fri:null,sat:null,sun:null}})}};
+let plan=null;
+const PLAN={}, DAYS=[];   // PLAN[workout id] = {label, items with library details}; DAYS = workout ids in order
+function rebuildPlan(){
+  rebuildLib();
+  Object.keys(PLAN).forEach(k=>delete PLAN[k]); DAYS.length=0;
+  if(!plan)return;
+  plan.order=plan.order.filter(id=>plan.workouts[id]);
+  plan.order.forEach(id=>{const W=plan.workouts[id];DAYS.push(id);
+    PLAN[id]={label:W.label||"Workout",items:W.items.filter(o=>LIB[o.id]).map(o=>{const L=LIB[o.id];
+      return L.cardio?{...L}:{...L,sets:o.sets||L.sets||2,w:o.w!==undefined?o.w:L.w,hint:o.hint!==undefined?o.hint:L.hint}})}});
+}
+function wdOf(s){return WD[(parse(s).getDay()+6)%7]}
+function wdsFor(id){return WD.filter(d=>plan&&plan.schedule[d]===id)}
+function workoutName(id,s){return PLAN[id]?PLAN[id].label:(s&&s.label)||""}
+// which exercise fills a slot: what you picked for this date, else what you picked last time for this workout, else the plan's
 function lastSwap(day,slot,before){
   const ds=Object.keys(sessions).filter(d=>d<before&&sessions[d].day===day&&sessions[d].swaps&&LIB[sessions[d].swaps[slot]]).sort();
   return ds.length?sessions[ds[ds.length-1]].swaps[slot]:null}
 function pick(slot){const s=cur.swaps&&cur.swaps[slot];return s&&LIB[s]?s:(lastSwap(cur.day,slot,date)||slot)}
-function dayItems(){return PLAN[cur.day].items.map(o=>({...LIB[pick(o.id)],slot:o.id,g:o.g}))}
+function dayItems(){const P=PLAN[cur.day];if(!P)return [];
+  return P.items.map(o=>{const id=pick(o.id);return {...(id===o.id?o:LIB[id]),slot:o.id,g:o.g}})}
 
 const $=id=>document.getElementById(id);
 const ls={get(k,f){try{const v=localStorage.getItem(k);return v?JSON.parse(v):f}catch(e){return f}},
@@ -533,16 +607,21 @@ let food=Object.assign({},BOOT.food||{});            // date -> [{id,t,text,item
 let foodTarget=Object.assign({lo:2500,hi:3000},BOOT.foodTarget||{}); // daily calorie range
 let myFoods=Array.isArray(BOOT.myFoods)?BOOT.myFoods:[];
 let foodProfile=Object.assign({sex:null,age:null,ft:null,inch:null,wt:null,act:1.55,auto:false,goal:null},BOOT.foodProfile||{}); // for the TDEE calculator  // foods you saved yourself: [{id,n,cal,p}]
-// exercises that used to be in the plan, so older history still shows their names
-const RETIRED={dbcurl:"Dumbbell curls",facepull:"Face pulls",hammercurl:"Hammer curls",machinecurl:"Bicep curl machine",
-  pecdeck:"Pec deck",machinelat:"Machine lateral raise",ohtri:"Overhead triceps extension"};
-Object.entries({...RETIRED,...customNames}).forEach(([k,v])=>{if(!NAMES[k])NAMES[k]=v});
+// The plan: saved with the log. A log from before plans were editable gets the original 5-day split with its
+// starting weights; a brand-new install has none yet and opens the setup screen to pick one.
+plan=BOOT.plan||null;
+if(!plan&&(Object.keys(sessions).length||Object.keys(bodyweight).length||Object.keys(food).length)){
+  plan={workouts:split5(true),order:["mon","tue","wed","thu","fri"],schedule:{mon:"mon",tue:"tue",wed:"wed",thu:"thu",fri:"fri",sat:null,sun:null}};
+}
+if(plan){plan.custom=plan.custom||[];plan.schedule=Object.assign({mon:null,tue:null,wed:null,thu:null,fri:null,sat:null,sun:null},plan.schedule)}
+rebuildPlan();
+Object.entries(customNames).forEach(([k,v])=>{if(!NAMES[k])NAMES[k]=v});   // exercises brought in by CSV import
 let date=todayStr(), cur=null, dirty=false;
 
 function todayStr(d=new Date()){const z=n=>String(n).padStart(2,"0");return d.getFullYear()+"-"+z(d.getMonth()+1)+"-"+z(d.getDate())}
 function parse(s){const [y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d)}
 function shift(s,n){const d=parse(s);d.setDate(d.getDate()+n);return todayStr(d)}
-function defaultDay(s){const w=parse(s).getDay();return w>=1&&w<=5?DAYS[w-1]:"mon"}
+function defaultDay(s){return plan&&plan.schedule[wdOf(s)]&&PLAN[plan.schedule[wdOf(s)]]?plan.schedule[wdOf(s)]:""}   // "" = rest day
 function nice(s,opts={weekday:"short",month:"short",day:"numeric"}){return parse(s).toLocaleDateString(undefined,opts)}
 function fmtW(w){return w==null||w===""?"—":(w===0?"BW":String(w))}
 
@@ -603,8 +682,7 @@ function commitC(slot,c){delete c._draft;cur.cardio=Object.assign({},cur.cardio,
    Compound lifts work in 8–12 reps, isolation in 6–15. Working sets are the sets at your top weight.
    Each session aims for one more rep than last time; once every working set reaches the top of the
    range, the next session adds weight and drops back to the bottom of the range. Warm-up sets stay as they were. */
-const COMPOUND=new Set(["hack","hipthrust","rows","pulldown","bench","shoulder"]);
-function repRange(item){return COMPOUND.has(item.id)||item.c?[8,12]:[6,15]}
+function repRange(item){return item.c?[8,12]:[6,15]}
 function advice(item,last){
   const [lo,hi]=repRange(item), step=item.step||5;
   const sd=last?setsDone(last.e):[];
@@ -640,22 +718,28 @@ function commit(item,e){delete e._draft;cur.entries[item.id]=e;markDirty()}
 
 function render(){
   $("dateInput").value=date;
-  // Mon–Fri buttons are the actual dates of the selected week; each date has its own log and lock.
-  const mon=weekStart(date);
-  $("daybar").innerHTML=DAYS.map((d,i)=>{const ds=shift(mon,i),s=sessions[ds];
+  // one button per training day in your schedule, showing this week's dates; each date has its own log and lock
+  const mon=weekStart(date), tdays=WD.map((d,i)=>[d,i]).filter(([d])=>plan.schedule[d]&&PLAN[plan.schedule[d]]);
+  $("daybar").style.gridTemplateColumns=`repeat(${Math.max(tdays.length,1)},1fr)`;
+  $("daybar").hidden=!tdays.length;
+  $("daybar").innerHTML=tdays.map(([d,i])=>{const ds=shift(mon,i),s=sessions[ds];
     const mark=s&&s.locked?" ✓":(s&&gymDay(s)?" •":"");
-    return `<button data-date="${ds}" aria-pressed="${ds===date}" aria-label="${nice(ds,{weekday:"long",month:"short",day:"numeric"})}${s&&s.locked?", finished":""}"><b>${DAYNAME[d]}</b><span>${parse(ds).getDate()}${mark}</span></button>`}).join("");
+    return `<button data-date="${ds}" aria-pressed="${ds===date}" aria-label="${nice(ds,{weekday:"long",month:"short",day:"numeric"})}${s&&s.locked?", finished":""}"><b>${WDNAME[d]}</b><span>${parse(ds).getDate()}${mark}</span></button>`}).join("");
   renderBW();
   $("lunchRow").innerHTML=cardioHTML("lunch");
-  $("planSel").value=cur.day; $("planSel").disabled=!!cur.locked;
-  const plan=PLAN[cur.day];
-  $("dayTitle").textContent=plan.label;
+  renderPlanSel();
+  const W=PLAN[cur.day];
+  $("dayTitle").textContent=W?W.label:(cur.day&&cur.label?cur.label:"Rest day");
   const items=dayItems(), act=items.filter(i=>!isSkipped(i));
   const doneN=act.filter(i=>isComplete(i,cur.entries[i.id])).length, skipN=items.length-act.length;
   $("dayCount").textContent=`${nice(date)} · ${doneN}/${act.length} done${skipN?` · ${skipN} skipped`:""}`;
   $("logNote").hidden=!!cur.locked;
   if(cur.locked){renderLocked(items);return}
   $("lockBanner").hidden=true;
+  if(!W){   // rest day (or a workout you've since removed from your plan)
+    $("dayCount").textContent=nice(date);
+    $("list").innerHTML=`<div class="empty">${DAYS.length?"Rest day. Training anyway? Pick a workout above.":"Your plan has no workouts yet. Add one in Settings › Workout plan."}</div>`;
+    $("finishBar").innerHTML="";return}
   $("list").innerHTML=cardioHTML("pre")+items.map(i=>isSkipped(i)?skipHTML(i):cardHTML(i,new Set(items.filter(x=>x.slot!==i.slot).map(x=>x.id)))).join("")+cardioHTML("post");
   const any=Object.values(cur.entries).some(e=>e.min>0||setsDone(e).length)||gymCardio(cur).length>0;
   $("finishBar").innerHTML=any
@@ -813,7 +897,12 @@ function setR(e,k,v){const old=e.sets[k].reps;e.sets[k].reps=v;
   for(let i=k+1;i<e.sets.length;i++){const s=e.sets[i];if(s.done||s.reps!==old)break;s.reps=v}}
 $("daybar").addEventListener("click",ev=>{const b=ev.target.closest("button[data-date]");if(!b||b.dataset.date===date)return;
   flush();date=b.dataset.date;unlockArmed=false;loadCur();render();});
-$("planSel").innerHTML=DAYS.map(d=>`<option value="${d}">${DAYNAME[d]} · ${PLAN[d].label}</option>`).join("");
+function renderPlanSel(){
+  const opts=DAYS.map(id=>{const ds=wdsFor(id).map(d=>WDNAME[d]).join(", ");return `<option value="${id}">${esc(PLAN[id].label)}${ds?` (${ds})`:""}</option>`});
+  if(cur.day&&!PLAN[cur.day])opts.push(`<option value="${cur.day}">${esc(cur.label||"Removed workout")}</option>`);
+  $("planSel").innerHTML=opts.join("")+`<option value="">Rest day</option>`;
+  $("planSel").value=cur.day||""; $("planSel").disabled=!!cur.locked;
+}
 $("planSel").addEventListener("change",ev=>{if(cur.locked)return;
   cur.day=ev.target.value; cur.swaps={}; cur.skips={}; if(Object.keys(cur.entries).length)markDirty(); render();});
 $("dateInput").addEventListener("change",ev=>{if(ev.target.value){flush();date=ev.target.value;loadCur();render();}});
@@ -886,7 +975,7 @@ $("bwRange").addEventListener("click",ev=>{const b=ev.target.closest("button[dat
 /* ---- saving ---- */
 const SAVED_LABEL=NATIVE?"Saved on this iPhone":"Saved in this browser";
 function persist(){
-  const payload={version:1,savedAt:Date.now(),names:customNames,sessions,bodyweight,food,foodTarget,myFoods,foodProfile};
+  const payload={version:1,savedAt:Date.now(),names:customNames,sessions,bodyweight,food,foodTarget,myFoods,foodProfile,plan};
   try{
     if(NATIVE)window.webkit.messageHandlers.liftlog.postMessage({type:"save",json:JSON.stringify(payload)});
     else ls.set("ll.data",payload);
@@ -894,7 +983,8 @@ function persist(){
   }catch(e){status("Couldn't save. Try again.","off")}
 }
 // Every change is written right away: the file is small, and it means nothing is lost if the app is closed mid-set.
-function markDirty(){const sw={};PLAN[cur.day].items.forEach(o=>sw[o.id]=pick(o.id));cur.swaps=sw;cur.updatedAt=Date.now(); sessions[cur.date]=JSON.parse(JSON.stringify(cur)); dirty=true; persist();}
+function markDirty(){const sw={};(PLAN[cur.day]?PLAN[cur.day].items:[]).forEach(o=>sw[o.id]=pick(o.id));cur.swaps=sw;
+  if(PLAN[cur.day])cur.label=PLAN[cur.day].label;cur.updatedAt=Date.now(); sessions[cur.date]=JSON.parse(JSON.stringify(cur)); dirty=true; persist();}
 function flush(){if(dirty)persist()}
 addEventListener("pagehide",flush);
 document.addEventListener("visibilitychange",()=>{if(document.hidden)flush()});
@@ -914,7 +1004,7 @@ function renderHist(){
     if(!rows&&w==null)return "";
     const bwRow=w!=null?`<tr class="bwh"><td>${BW_NAME}</td><td>${w} lb</td></tr>`:"";
     const gym=Object.values(s.entries||{}).some(e=>e.min>0||setsDone(e).length)||gymCardio(s).length>0;
-    const label=rows?(gym?(PLAN[s.day]?PLAN[s.day].label:""):"Lunch cardio"):"Weigh-in";
+    const label=rows?(gym?workoutName(s.day,s):"Lunch cardio"):"Weigh-in";
     const btn=rows?(s.locked?"Open":"Edit"):"Edit";
     return `<div class="hcard"><h3><span>${nice(d)} · ${label}${rows&&s.locked?'<span class="lockpill">Done</span>':""}</span><button data-open="${d}">${btn}</button></h3><table>${bwRow}${rows}</table></div>`}).join("");
   $("hist").innerHTML=html||`<div class="empty">Nothing logged yet. Log sets or your body weight on the Today tab and they'll show up here.</div>`;
@@ -928,7 +1018,8 @@ $("hist").addEventListener("click",ev=>{
 const SECTIONS={
   workout:{tabs:[["log","Today"],["stats","Progress"],["hist","History"]]},
   food:{tabs:[["food","Today"],["fhist","History"]]}};
-const VIEWS={log:"logView",stats:"statsView",hist:"histView",food:"foodView",fhist:"foodHistView",settings:"settingsView"};
+const VIEWS={log:"logView",stats:"statsView",hist:"histView",food:"foodView",fhist:"foodHistView",settings:"settingsView",plan:"planView",setup:"setupView"};
+const OVERLAY=new Set(["settings","plan","setup"]);   // screens outside the two sections
 const SEC_OF=v=>v==="food"||v==="fhist"?"food":"workout";
 let backTo="log";   // where the Settings screen's Back button returns
 let section=ls.get("ll.section","workout"); if(!SECTIONS[section])section="workout";
@@ -936,32 +1027,49 @@ const lastTab={workout:"log",food:"food"};
 let view=section==="food"?"food":"log";
 function showView(v){
   flush();
-  if(v==="settings"){if(view!=="settings")backTo=view}
-  else{section=SEC_OF(v);lastTab[section]=v;ls.set("ll.section",section)}
+  if(!plan&&v!=="setup")v="setup";   // nothing works without a plan: a new install starts here
+  if(v==="settings"){if(!OVERLAY.has(view))backTo=view}
+  else if(!OVERLAY.has(v)){section=SEC_OF(v);lastTab[section]=v;ls.set("ll.section",section)}
   view=v;
   Object.entries(VIEWS).forEach(([k,id])=>$(id).hidden=k!==v);
-  $("subTabs").innerHTML=v==="settings"
-    ?`<button class="back" data-view="${backTo}">‹ Back</button>`
+  const firstRun=v==="setup"&&!plan;
+  $("subTabs").innerHTML=firstRun?""
+    :v==="settings"?`<button class="back" data-view="${backTo}">‹ Back</button>`
+    :v==="plan"||v==="setup"?`<button class="back" data-view="settings">‹ Settings</button>`
     :SECTIONS[section].tabs.map(([k,l])=>`<button data-view="${k}" aria-pressed="${k===v}">${l}</button>`).join("");
-  $("navbar").querySelectorAll("button[data-sec]").forEach(b=>b.setAttribute("aria-pressed",v!=="settings"&&b.dataset.sec===section));
-  $("gearBtn").setAttribute("aria-pressed",v==="settings");
+  $("navbar").hidden=firstRun; $("gearBtn").hidden=firstRun;
+  $("navbar").querySelectorAll("button[data-sec]").forEach(b=>b.setAttribute("aria-pressed",!OVERLAY.has(v)&&b.dataset.sec===section));
+  $("gearBtn").setAttribute("aria-pressed",OVERLAY.has(v));
   rerender(); window.scrollTo(0,0);}
 function rerender(){
-  if(view==="settings")renderSettings();else if(view==="hist")renderHist();else if(view==="stats")renderStats();else if(view==="food")renderFood();else if(view==="fhist")renderFoodHist();else render();}
+  if(view==="settings")renderSettings();else if(view==="plan")renderPlanEditor();else if(view==="setup")renderSetup();else if(view==="hist")renderHist();else if(view==="stats")renderStats();else if(view==="food")renderFood();else if(view==="fhist")renderFoodHist();else render();}
 $("subTabs").addEventListener("click",ev=>{const b=ev.target.closest("button[data-view]");if(b&&b.dataset.view!==view)showView(b.dataset.view)});
 $("navbar").addEventListener("click",ev=>{const b=ev.target.closest("button[data-sec]");if(!b)return;
   const sec=b.dataset.sec;
-  showView(sec===section&&view!=="settings"?SECTIONS[sec].tabs[0][0]:lastTab[sec]);});
-$("gearBtn").onclick=()=>showView(view==="settings"?backTo:"settings");
+  showView(sec===section&&!OVERLAY.has(view)?SECTIONS[sec].tabs[0][0]:lastTab[sec]);});
+$("gearBtn").onclick=()=>showView(OVERLAY.has(view)?backTo:"settings");
+// in the app, links to the web open in Safari (the shell sends any non-local address there), so drop the new-tab hint
+if(NATIVE)$("privacyLink").removeAttribute("target");
+let eraseArmed=false;
+$("eraseBtn").onclick=()=>{
+  if(!eraseArmed){eraseArmed=true;$("eraseBtn").textContent="Tap again to erase everything";$("eraseNote").hidden=false;
+    setTimeout(()=>{if(eraseArmed){eraseArmed=false;$("eraseBtn").textContent="Erase all data";$("eraseNote").hidden=true}},5000);return}
+  eraseArmed=false;
+  sessions={};customNames={};bodyweight={};food={};myFoods=[];foodTarget={lo:2500,hi:3000};
+  foodProfile={sex:null,age:null,ft:null,inch:null,wt:null,act:1.55,auto:false,goal:null};plan=null;
+  try{["ll.data","ll.apikey","ll.section","ll.mChain","ll.bwRange","gl.statEx"].forEach(k=>localStorage.removeItem(k))}catch(e){}
+  if(NATIVE)window.webkit.messageHandlers.liftlog.postMessage({type:"setKey",key:""});else hasKey=false;
+  rebuildPlan();persist();loadCur();$("eraseBtn").textContent="Erase all data";$("eraseNote").hidden=true;showView("setup");
+};
 function renderSettings(){
-  renderFoodSettings(); renderGoal();
+  renderFoodSettings(); renderGoal(); renderPlanSum();
   const v=window.__LIFTLOG_VERSION__;
   $("aboutLine").textContent=v?`Lift Log ${v}`:"Lift Log · test site (saves in this browser)";
 }   // tapping the section you're in goes back to its Today
 
 /* ---- progress & stats ---- */
 const ITEMS=LIB;
-const ORDER=Object.keys(ITEMS);
+let ORDER=[];   // refreshed each time Progress is drawn, so exercises you add show up
 let statEx=ls.get("gl.statEx",null);
 
 function weekStart(s){const d=parse(s);const w=(d.getDay()+6)%7;d.setDate(d.getDate()-w);return todayStr(d)}
@@ -986,6 +1094,7 @@ function sessionMinutes(s){let m=0;Object.values(s.entries||{}).forEach(e=>{if(e
 function kfmt(n){return n>=10000?(n/1000).toFixed(0)+"k":n>=1000?(n/1000).toFixed(1)+"k":String(Math.round(n))}
 
 function renderStats(){
+  ORDER=Object.keys(ITEMS);
   renderBWStats();
   const ds=Object.keys(sessions).filter(d=>logged(sessions[d])).sort();
   $("statsEmpty").hidden=ds.length>0; $("statsBody").hidden=!ds.length;
@@ -1000,7 +1109,7 @@ function renderStats(){
   const month=today.slice(0,7), monthN=ds.filter(d=>d.startsWith(month)&&gymDay(sessions[d])).length;
   const monthName=parse(today).toLocaleDateString(undefined,{month:"long"});
   $("tiles").innerHTML=[
-    ["This week",`${cw.days}<small style="font-size:18px;color:var(--muted)">/5</small>`,`Last week: ${lw.days} days`],
+    ["This week",`${cw.days}<small style="font-size:18px;color:var(--muted)">/${WD.filter(d=>plan.schedule[d]).length||"—"}</small>`,`Last week: ${lw.days} days`],
     ["Volume this week",kfmt(cw.vol),pct==null?"No lifts logged last week":`<span class="${pct>=0?"up":"down"}">${pct>=0?"▲":"▼"} ${Math.abs(pct)}%</span> vs last week`],
     ["Week streak",String(streak),"weeks in a row with 3+ workouts"],
     ["Cardio this week",`${cw.min}<small style="font-size:18px;color:var(--muted)"> min</small>`,`${monthN} workouts in ${monthName}`]
@@ -1112,16 +1221,16 @@ function csv(){
   const out=[["Date","Day","Exercise","Set","Weight (lb)","Reps","Minutes","Level","Floors","Calories","Protein (g)","Meal"]];
   const days=[...new Set([...Object.keys(sessions),...Object.keys(bodyweight),...Object.keys(food)])].sort();
   days.forEach(d=>{const s=sessions[d]||{entries:{}};
-    if(bodyweight[d]!=null)out.push([d,DAYNAME[s.day]||"",BW_NAME,"",bodyweight[d],"",""]);
+    if(bodyweight[d]!=null)out.push([d,workoutName(s.day,s),BW_NAME,"",bodyweight[d],"",""]);
     // before/after cardio: the Set column says "Before" or "After"
-    const crow=k=>{const c=s.cardio&&s.cardio[k];if(cDone(c))out.push([d,DAYNAME[s.day]||"",NAMES[c.ex]||c.ex,({pre:"Before",post:"After",lunch:"Lunch"})[k],"","",c.min,c.lvl??"",c.fl??""])};
+    const crow=k=>{const c=s.cardio&&s.cardio[k];if(cDone(c))out.push([d,workoutName(s.day,s),NAMES[c.ex]||c.ex,({pre:"Before",post:"After",lunch:"Lunch"})[k],"","",c.min,c.lvl??"",c.fl??""])};
     crow("lunch");crow("pre");
     Object.entries(s.entries||{}).forEach(([id,e])=>{
-      if(e.min!=null){if(e.min>0)out.push([d,DAYNAME[s.day]||"",NAMES[id]||id,"","","",e.min]);return}
-      setsDone(e).forEach((x,i)=>out.push([d,DAYNAME[s.day]||"",NAMES[id]||id,i+1,x.w,x.reps,""]));});
+      if(e.min!=null){if(e.min>0)out.push([d,workoutName(s.day,s),NAMES[id]||id,"","","",e.min]);return}
+      setsDone(e).forEach((x,i)=>out.push([d,workoutName(s.day,s),NAMES[id]||id,i+1,x.w,x.reps,""]));});
     crow("post");
     // food: one row per item; Set says "Food 1", "Food 2"… per entry and Meal holds what was typed, so entries regroup on import
-    dayFood(d).forEach((e,k)=>e.items.forEach(x=>out.push([d,DAYNAME[s.day]||"",x.name,"Food "+(k+1),"","","","","",x.cal,x.p??"",e.text])));});
+    dayFood(d).forEach((e,k)=>e.items.forEach(x=>out.push([d,workoutName(s.day,s),x.name,"Food "+(k+1),"","","","","",x.cal,x.p??"",e.text])));});
   return out.map(r=>r.map(q).join(",")).join("\n");
 }
 /* ---- export: the iPhone share sheet in the app, a plain download in a browser ---- */
@@ -1180,7 +1289,8 @@ function importCSV(text){
     if(!id){id="x-"+name.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
       customNames[id]=name;NAMES[id]=name;byName[name.toLowerCase()]=id;}
     const dk=iDay>=0?(r[iDay]||"").trim().toLowerCase():"";
-    const s=got[d]||(got[d]={date:d,day:PLAN[dk]?dk:defaultDay(d),entries:{}});
+    const dayId=PLAN[dk]?dk:(DAYS.find(id=>PLAN[id].label.toLowerCase()===dk)||defaultDay(d));
+    const s=got[d]||(got[d]={date:d,day:dayId,entries:{}});
     const min=iM>=0?Number(r[iM]):NaN;
     const tag=iSet>=0?(r[iSet]||"").trim().toLowerCase():"";
     if(min>0&&(tag==="before"||tag==="after"||tag==="lunch")){const num=i=>{const t=i>=0?(r[i]||"").trim():"",n=Number(t);return t!==""&&n>0?n:null};
@@ -1480,7 +1590,7 @@ function renderGoal(){
     <table class="ttab"><tr><td>At extreme loss <small>2 lb/wk</small></td><td>${wk(2)} wk <small>· ${by(wk(2))}</small></td></tr>
     <tr><td>At weight loss <small>1 lb/wk</small></td><td>${wk(1)} wk <small>· ${by(wk(1))}</small></td></tr>
     <tr><td>At mild loss <small>½ lb/wk</small></td><td>${wk(.5)} wk <small>· ${by(wk(.5))}</small></td></tr></table>
-    <div class="note">Rough guide: real weekly loss swings with water weight, so watch the 7-day average on Progress.</div>`;
+    <div class="note">Rough guide, not medical advice: real weekly loss swings with water weight, so watch the 7-day average on Progress. Losing more than about 2 lb a week isn't recommended without a doctor's guidance.</div>`;
 }
 $("gWt").addEventListener("change",()=>{const v=$("gWt").value.trim(),n=Number(v);
   foodProfile.goal=v===""||!(n>0&&n<1000)?null:r1(n);persist();renderGoal();});
@@ -1567,7 +1677,116 @@ $("mResults").addEventListener("click",ev=>{
   fMsg="";renderCalSum();renderDraft();renderRecent();renderMenuResults();$("fMsg").hidden=true;
 });
 
+/* ---- first-run setup: pick a starting plan ----
+   Also reachable later from the plan editor ("Start over from a template"), which swaps the plan but keeps every log. */
+let tPick=null;
+function planDaysText(P){return WD.filter(d=>P.schedule[d]).map(d=>`${WDNAME[d]} ${P.workouts[P.schedule[d]].label}`).join(" · ")}
+function renderSetup(){
+  const again=!!plan;
+  $("setupTitle").textContent=again?"Start from a template":"Welcome";
+  $("setupLead").textContent=again
+    ?"This replaces your workouts and schedule with the template. Your logged workouts, weigh-ins and food stay exactly as they are."
+    :"Lift Log tracks your lifts with progressive overload, your cardio, body weight and food. Everything stays on your phone. Pick a plan to start with; you can change every workout, exercise and day later in Settings.";
+  $("tList").innerHTML=Object.entries(TEMPLATES).map(([k,T])=>{const P=T.make();
+    return `<button class="tcard" data-t="${k}" aria-pressed="${k===tPick}" aria-label="Plan: ${T.name}"><b>${T.name}</b><span>${T.about}</span>${P.order.length?`<span>${planDaysText(P)}</span>`:""}</button>`}).join("");
+  $("tStart").disabled=!tPick;
+  $("tStart").textContent=!tPick?"Choose a plan":tPick==="blank"?"Start empty and build my plan":`Use ${TEMPLATES[tPick].name}`;
+  $("tCancel").hidden=!again;
+}
+$("tList").addEventListener("click",ev=>{const b=ev.target.closest("button[data-t]");if(!b)return;tPick=b.dataset.t;renderSetup()});
+$("tCancel").onclick=()=>{tPick=null;showView("plan")};
+$("tStart").onclick=()=>{if(!tPick)return;
+  const keep=plan&&plan.custom||[], first=!plan;
+  plan={...TEMPLATES[tPick].make(),custom:keep};
+  const blank=tPick==="blank"; tPick=null;
+  rebuildPlan(); persist(); loadCur();
+  showView(blank?"plan":first?"log":"plan");
+};
+
+/* ---- plan editor ---- */
+let pPicker=null, pQ="", pDelArmed=null, pMake=false;
+const newPid=()=>"w"+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+function savePlan(){rebuildPlan();persist();if(cur&&!cur.locked&&!PLAN[cur.day]&&cur.day&&!sessions[date])cur.day=defaultDay(date);}
+function renderPlanSum(){
+  if(!plan){$("pSum").innerHTML="";return}
+  $("pSum").innerHTML=`<ul class="psum">${WD.map(d=>{const id=plan.schedule[d];
+    return `<li><span>${WDLONG[d]}</span>${id&&PLAN[id]?`<span>${esc(PLAN[id].label)} <em>· ${PLAN[id].items.length} exercises</em></span>`:`<em>Rest</em>`}</li>`}).join("")}</ul>`;
+}
+function exMeta(x){return `${GLABEL[x.g]||""}${x.cardio?"":x.c?" · 8–12 reps":" · 6–15 reps"}${x.mine?" · yours":""}`}
+function renderPlanEditor(){
+  const opt=(sel)=>`<option value="">Rest day</option>`+DAYS.map(id=>`<option value="${id}"${id===sel?" selected":""}>${esc(PLAN[id].label)}</option>`).join("");
+  $("pWeek").innerHTML=WD.map(d=>`<span>${WDNAME[d]}</span><select class="tsel" data-wd="${d}" aria-label="${WDLONG[d]} workout">${opt(plan.schedule[d])}</select>`).join("");
+  $("pWorkouts").innerHTML=plan.order.map((id,wi)=>{const W=plan.workouts[id], days=wdsFor(id).map(d=>WDLONG[d]);
+    const rows=W.items.filter(o=>LIB[o.id]).map((o,k,arr)=>{const x=LIB[o.id];
+      return `<div class="perow" data-k="${k}"><div class="nm">${esc(x.name)}<small>${exMeta(x)}</small></div>
+        ${x.cardio?"<span></span>":`<div class="stepper"><button data-p="s-" aria-label="Fewer sets of ${esc(x.name)}">−</button><span>${o.sets||2} sets</span><button data-p="s+" aria-label="More sets of ${esc(x.name)}">+</button></div>`}
+        <div class="ord"><button class="ib" data-p="up" aria-label="Move ${esc(x.name)} up"${k?"":" disabled"}>↑</button><button class="ib" data-p="dn" aria-label="Move ${esc(x.name)} down"${k<arr.length-1?"":" disabled"}>↓</button><button class="ib x" data-p="rm" aria-label="Remove ${esc(x.name)}">✕</button></div></div>`}).join("");
+    return `<div class="panel" data-w="${id}">
+      <input class="wkname" data-p="name" value="${esc(W.label)}" aria-label="Workout name" enterkeyhint="done">
+      <div class="wkdays">${days.length?days.join(", "):"Not on your schedule yet: pick it for a day above."}</div>
+      <div>${rows||`<div class="note">No exercises yet.</div>`}</div>
+      ${pPicker===id?pickerHTML(W):`<div class="wkact"><button class="btn" data-p="add">+ Add exercise</button><button class="btn ghost del" data-p="del">${pDelArmed===id?"Tap again to delete":"Delete workout"}</button></div>`}
+    </div>`}).join("")||`<div class="empty">No workouts yet. Tap “+ New workout” to make one.</div>`;
+  if(pPicker){const q=$("pWorkouts").querySelector("input[data-p=q]");if(q&&document.activeElement!==q&&pQ==="")q.focus()}
+}
+function pickerResults(W){
+  const have=new Set(W.items.map(o=>o.id)), ws=fnorm(pQ).split(" ").filter(Boolean);
+  const all=Object.values(LIB).filter(x=>!have.has(x.id)&&ws.every(w=>(" "+fnorm(x.name+" "+(GLABEL[x.g]||""))).includes(w.length>=3?w:" "+w)));
+  let g="",h="";all.sort((a,b)=>Object.keys(GLABEL).indexOf(a.g)-Object.keys(GLABEL).indexOf(b.g)).forEach(x=>{
+    if(x.g!==g){g=x.g;h+=`<div class="sec2">${GLABEL[g]||g}</div>`}
+    h+=`<div class="mrow"><button class="add" data-p="pick" data-x="${x.id}"><span class="nm">${esc(x.name)}<small>${exMeta(x)}</small></span><span class="cl">+</span></button></div>`});
+  return h||`<div class="mhint">No match. Make it below.</div>`;
+}
+function pickerHTML(W){
+  return `<div class="pick">
+    <input class="msearch" data-p="q" type="search" placeholder="Search exercises: curl, press, legs…" value="${esc(pQ)}" aria-label="Search exercises" autocomplete="off">
+    <div class="mlist" data-p="res">${pickerResults(W)}</div>
+    ${pMake?`<div class="mkx"><div class="cat">Make your own exercise</div>
+      <input class="msearch" data-p="mkn" placeholder="Name, like Incline cable fly" aria-label="New exercise name" value="${esc(pQ)}">
+      <select class="tsel" data-p="mkg" aria-label="Muscle group">${Object.entries(GLABEL).map(([k,l])=>`<option value="${k}">${l}</option>`).join("")}</select>
+      <select class="tsel" data-p="mkt" aria-label="Type"><option value="iso">Isolation (6–15 reps)</option><option value="comp">Compound (8–12 reps)</option><option value="cardio">Cardio (minutes)</option></select>
+      <button class="btn" data-p="mk">Add it</button></div>`
+    :`<button class="btn ghost" data-p="mkopen">Not listed? Make your own exercise</button>`}
+    <button class="btn ghost" data-p="close">Done adding</button></div>`;
+}
+$("pWeek").addEventListener("change",ev=>{const sel=ev.target.closest("select[data-wd]");if(!sel)return;
+  plan.schedule[sel.dataset.wd]=sel.value||null;savePlan();renderPlanEditor();});
+$("pNew").onclick=()=>{const id=newPid();plan.workouts[id]={label:"New workout",items:[]};plan.order.push(id);
+  pPicker=id;pQ="";pMake=false;savePlan();renderPlanEditor();
+  const n=$("pWorkouts").querySelector(`[data-w="${id}"] .wkname`);if(n){n.scrollIntoView({block:"center"});n.select()}};
+$("pTemplate").onclick=()=>{tPick=null;showView("setup")};
+$("pEdit").onclick=()=>showView("plan");
+$("pWorkouts").addEventListener("change",ev=>{const t=ev.target, box=t.closest("[data-w]");if(!box)return;const W=plan.workouts[box.dataset.w];
+  if(t.dataset.p==="name"){W.label=t.value.trim()||"Workout";savePlan();renderPlanEditor()}});
+$("pWorkouts").addEventListener("keydown",ev=>{if(ev.key==="Enter"&&ev.target.matches(".wkname,input[data-p=q],input[data-p=mkn]")){ev.preventDefault();ev.target.blur()}});
+$("pWorkouts").addEventListener("input",ev=>{const t=ev.target;if(t.dataset.p!=="q")return;
+  const box=t.closest("[data-w]");pQ=t.value;box.querySelector("[data-p=res]").innerHTML=pickerResults(plan.workouts[box.dataset.w]);
+  const mk=box.querySelector("input[data-p=mkn]");if(mk)mk.value=pQ;});
+$("pWorkouts").addEventListener("click",ev=>{const b=ev.target.closest("button[data-p]");if(!b)return;
+  const box=b.closest("[data-w]"),id=box.dataset.w,W=plan.workouts[id],a=b.dataset.p;
+  const live=W.items.filter(o=>LIB[o.id]), row=b.closest(".perow"), k=row?+row.dataset.k:-1, o=k>=0?live[k]:null;
+  if(a!=="del")pDelArmed=null;
+  if(a==="s-"||a==="s+"){o.sets=Math.max(1,Math.min(10,(o.sets||2)+(a==="s+"?1:-1)))}
+  else if(a==="up"||a==="dn"){const j=k+(a==="up"?-1:1);[live[k],live[j]]=[live[j],live[k]];W.items=live}
+  else if(a==="rm"){W.items=live.filter((_,i)=>i!==k)}
+  else if(a==="add"){pPicker=id;pQ="";pMake=false}
+  else if(a==="close"){pPicker=null;pQ="";pMake=false}
+  else if(a==="pick"){const x=LIB[b.dataset.x];W.items.push(x.cardio?{id:x.id}:{id:x.id,sets:2})}
+  else if(a==="mkopen"){pMake=true}
+  else if(a==="mk"){const name=box.querySelector("input[data-p=mkn]").value.trim();if(!name){box.querySelector("input[data-p=mkn]").focus();return}
+    const g=box.querySelector("select[data-p=mkg]").value,t=box.querySelector("select[data-p=mkt]").value;
+    const x={id:"cx-"+Date.now().toString(36),name,g:t==="cardio"?"cardio":g,...(t==="cardio"?{cardio:true}:t==="comp"?{c:1}:{})};
+    plan.custom.push(x);W.items.push(x.cardio?{id:x.id}:{id:x.id,sets:2});pMake=false;pQ=""}
+  else if(a==="del"){
+    if(pDelArmed!==id){pDelArmed=id;renderPlanEditor();setTimeout(()=>{if(pDelArmed===id){pDelArmed=null;if(view==="plan")renderPlanEditor()}},4000);return}
+    pDelArmed=null;delete plan.workouts[id];plan.order=plan.order.filter(x=>x!==id);WD.forEach(d=>{if(plan.schedule[d]===id)plan.schedule[d]=null});if(pPicker===id)pPicker=null}
+  savePlan();renderPlanEditor();
+  if(a==="pick"){const q=$("pWorkouts").querySelector("input[data-p=q]");if(q){q.value=pQ;}}
+  if(a==="mkopen"){const n=$("pWorkouts").querySelector("input[data-p=mkn]");if(n)n.focus()}
+});
+
 /* ---- boot ---- */
+if(plan&&!BOOT.plan)persist();   // an older log just got its plan: write it into the file now
 loadCur(); showView(view); status(SAVED_LABEL,"ok");
 </script>
 </body>
