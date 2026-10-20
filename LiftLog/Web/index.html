@@ -32,14 +32,14 @@ input,select{font-size:16px}
 [hidden]{display:none!important}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.4;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
-  padding-top:calc(env(safe-area-inset-top,0px) + 12px);padding-bottom:calc(env(safe-area-inset-bottom,0px) + 40px)}
+  padding-top:calc(env(safe-area-inset-top,0px) + 12px);padding-bottom:calc(env(safe-area-inset-bottom,0px) + 104px)}
 .wrap{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
 section.wrap{width:100%}
 header{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap}
 h1{font-family:var(--display);font-weight:700;font-size:30px;letter-spacing:.01em;margin:0;line-height:1;text-transform:uppercase}
 .status{font-size:12px;color:var(--muted);letter-spacing:.04em;text-transform:uppercase;font-weight:600}
 .status.saving{color:var(--accent)} .status.off{color:var(--warn)} .status.ok{color:var(--done)}
-.tabs{display:flex;gap:6px}
+.tabs{display:flex;gap:6px;flex-basis:100%}
 .tabs button,.daybar button{font:inherit;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;cursor:pointer}
 .tabs button{padding:6px 10px;font-weight:600;font-size:13px}
 .tabs button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
@@ -208,6 +208,21 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .mrow .in{font-size:11px;font-weight:700;color:var(--done);margin-left:6px}
 .mrow .rmf{font:inherit;font-size:12px;border:0;background:none;color:var(--warn);cursor:pointer;padding:8px 4px;white-space:nowrap}
 .mhint{font-size:13px;color:var(--muted);padding:6px 0}
+/* main sections live in a bar fixed to the bottom of the screen; the tabs up top switch views inside a section */
+.navbar{position:fixed;left:0;right:0;bottom:0;z-index:20;display:grid;grid-template-columns:1fr 1fr;
+  background:var(--surface);border-top:1px solid var(--line);
+  padding:6px max(16px,env(safe-area-inset-left,0px)) calc(env(safe-area-inset-bottom,0px) + 6px) max(16px,env(safe-area-inset-right,0px))}
+.navbar button{font:inherit;display:flex;flex-direction:column;align-items:center;gap:2px;border:0;background:none;color:var(--muted);
+  cursor:pointer;padding:6px 0;min-height:50px;font-size:11.5px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;border-radius:10px}
+.navbar svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.navbar button[aria-pressed="true"]{color:var(--accent)}
+.navbar button:active{background:var(--bg)}
+.fday h3 .r{font-family:var(--body);font-size:12px;text-transform:none;letter-spacing:0;font-weight:600}
+.fday .tot{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-variant-numeric:tabular-nums;margin-bottom:4px}
+.fday .tot b{font-family:var(--display);font-size:24px;font-weight:700}
+.fday .tot span{font-size:12.5px;color:var(--muted)}
+.fday .calbar{height:8px;margin-bottom:6px}
+.fday td:first-child{color:var(--ink)}
 details.panel>summary{cursor:pointer;font-size:14px;font-weight:600;list-style-position:inside}
 .fset{display:flex;flex-direction:column;gap:8px}
 .fset label{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600}
@@ -224,12 +239,7 @@ details.panel>summary{cursor:pointer;font-size:14px;font-weight:600;list-style-p
       <h1>Lift Log</h1>
       <div id="status" class="status">Loading…</div>
     </div>
-    <div class="tabs" role="group" aria-label="View">
-      <button id="tabLog" aria-pressed="true">Today</button>
-      <button id="tabFood" aria-pressed="false">Food</button>
-      <button id="tabStats" aria-pressed="false">Progress</button>
-      <button id="tabHist" aria-pressed="false">History</button>
-    </div>
+    <div class="tabs" id="subTabs" role="group" aria-label="View"></div>
   </header>
 
   <section id="logView" class="wrap" style="gap:12px">
@@ -271,11 +281,6 @@ details.panel>summary{cursor:pointer;font-size:14px;font-weight:600;list-style-p
       <div class="note" id="fMsg" hidden></div>
     </div>
     <div class="hist" id="foodList"></div>
-    <div class="panel">
-      <h3>Last 14 days</h3>
-      <div class="chart" id="calChart"></div>
-      <div class="facts" id="calFacts"></div>
-    </div>
     <details class="panel" id="fSet">
       <summary>Calorie target &amp; estimate settings</summary>
       <div class="fset">
@@ -288,6 +293,20 @@ details.panel>summary{cursor:pointer;font-size:14px;font-weight:600;list-style-p
         <div class="note" id="fPrivacy"></div>
       </div>
     </details>
+  </section>
+
+  <section id="foodHistView" class="wrap" style="gap:12px" hidden>
+    <div class="panel">
+      <h3>Last 14 days</h3>
+      <div class="chart" id="calChart"></div>
+      <div class="facts" id="calFacts"></div>
+    </div>
+    <div class="row" style="justify-content:space-between">
+      <h2 class="sec" style="margin:0">Food history</h2>
+      <button id="fExportBtn" class="btn ghost">Export CSV</button>
+    </div>
+    <div id="fExportMsg" class="note" hidden></div>
+    <div class="hist" id="foodHist"></div>
   </section>
 
   <section id="statsView" class="wrap" style="gap:12px" hidden>
@@ -339,6 +358,10 @@ details.panel>summary{cursor:pointer;font-size:14px;font-weight:600;list-style-p
   </section>
 </div>
 
+<nav class="navbar" id="navbar" aria-label="Section">
+  <button data-sec="workout" aria-pressed="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11"/></svg>Workout</button>
+  <button data-sec="food" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3v8M4.5 3v5a2.5 2.5 0 0 0 5 0V3M7 11v10M17 21V3c-2.2 1.2-3.5 3.6-3.5 7v4H17"/></svg>Food</button>
+</nav>
 <script src="menu.js"></script>
 <script>
 const PLAN = {
@@ -785,7 +808,7 @@ document.addEventListener("visibilitychange",()=>{if(document.hidden)flush()});
 /* ---- history ---- */
 function renderHist(){
   // every day with logged sets, cardio or a weigh-in; rest days with only a weigh-in get their own card
-  const days=[...new Set([...Object.keys(sessions),...Object.keys(bodyweight),...Object.keys(food).filter(d=>dayFood(d).length)])].sort().reverse();
+  const days=[...new Set([...Object.keys(sessions),...Object.keys(bodyweight)])].sort().reverse();
   const html=days.map(d=>{const s=sessions[d]||{entries:{}};
     let rows=Object.entries(s.entries||{}).map(([id,e])=>{
       if(e.min!=null)return e.min>0?`<tr><td>${NAMES[id]||id}</td><td>${e.min} min</td></tr>`:"";
@@ -793,30 +816,40 @@ function renderHist(){
       return `<tr><td>${NAMES[id]||id}</td><td>${fmtSets(sd)}</td></tr>`}).join("");
     const crow=k=>{const c=s.cardio&&s.cardio[k];return cDone(c)?`<tr><td>Cardio ${CSLOT[k]} · ${NAMES[c.ex]||c.ex}</td><td>${fmtCardio(c,false)}</td></tr>`:""};
     rows=crow("pre")+rows+crow("post");
-    const w=bodyweight[d], fl=dayFood(d);
-    if(!rows&&w==null&&!fl.length)return "";
+    const w=bodyweight[d];
+    if(!rows&&w==null)return "";
     const bwRow=w!=null?`<tr class="bwh"><td>${BW_NAME}</td><td>${w} lb</td></tr>`:"";
-    const fRow=fl.length?`<tr class="bwh"><td>Food · ${fl.length} ${fl.length>1?"entries":"entry"}</td><td>${n0(dayCal(d))} cal</td></tr>`:"";
-    const label=rows?(PLAN[s.day]?PLAN[s.day].label:""):(w!=null?"Weigh-in":"Food");
+    const label=rows?(PLAN[s.day]?PLAN[s.day].label:""):"Weigh-in";
     const btn=rows?(s.locked?"Open":"Edit"):"Edit";
-    const open=rows||w!=null?`data-open="${d}"`:`data-openfood="${d}"`;
-    return `<div class="hcard"><h3><span>${nice(d)} · ${label}${rows&&s.locked?'<span class="lockpill">Done</span>':""}</span><button ${open}>${btn}</button></h3><table>${bwRow}${fRow}${rows}</table></div>`}).join("");
-  $("hist").innerHTML=html||`<div class="empty">Nothing logged yet. Log sets or your body weight on the Today tab, or food on the Food tab, and they'll show up here.</div>`;
+    return `<div class="hcard"><h3><span>${nice(d)} · ${label}${rows&&s.locked?'<span class="lockpill">Done</span>':""}</span><button data-open="${d}">${btn}</button></h3><table>${bwRow}${rows}</table></div>`}).join("");
+  $("hist").innerHTML=html||`<div class="empty">Nothing logged yet. Log sets or your body weight on the Today tab and they'll show up here.</div>`;
 }
-$("hist").addEventListener("click",ev=>{const f=ev.target.closest("button[data-openfood]");
-  if(f){fDate=f.dataset.openfood;fDraft=null;showView("food");return}
+$("hist").addEventListener("click",ev=>{
   const b=ev.target.closest("button[data-open]");if(!b)return;
   date=b.dataset.open;loadCur();showView("log");});
-let view="log";
-function showView(v){view=v;
-  $("logView").hidden=v!=="log";$("histView").hidden=v!=="hist";$("statsView").hidden=v!=="stats";$("foodView").hidden=v!=="food";
-  $("tabLog").setAttribute("aria-pressed",v==="log");$("tabHist").setAttribute("aria-pressed",v==="hist");$("tabStats").setAttribute("aria-pressed",v==="stats");$("tabFood").setAttribute("aria-pressed",v==="food");
-  rerender();}
-function rerender(){if(view==="hist")renderHist();else if(view==="stats")renderStats();else if(view==="food")renderFood();else render();}
-$("tabLog").onclick=()=>showView("log");
-$("tabFood").onclick=()=>{flush();showView("food")};
-$("tabHist").onclick=()=>{flush();showView("hist")};
-$("tabStats").onclick=()=>{flush();showView("stats")};
+/* Two sections in the bottom bar, each with its own tabs up top:
+   Workout → Today · Progress · History, Food → Today · History.
+   Each section remembers the tab you were on; the app reopens in the section you used last. */
+const SECTIONS={
+  workout:{tabs:[["log","Today"],["stats","Progress"],["hist","History"]]},
+  food:{tabs:[["food","Today"],["fhist","History"]]}};
+const VIEWS={log:"logView",stats:"statsView",hist:"histView",food:"foodView",fhist:"foodHistView"};
+const SEC_OF=v=>v==="food"||v==="fhist"?"food":"workout";
+let section=ls.get("ll.section","workout"); if(!SECTIONS[section])section="workout";
+const lastTab={workout:"log",food:"food"};
+let view=section==="food"?"food":"log";
+function showView(v){
+  flush(); view=v; section=SEC_OF(v); lastTab[section]=v; ls.set("ll.section",section);
+  Object.entries(VIEWS).forEach(([k,id])=>$(id).hidden=k!==v);
+  $("subTabs").innerHTML=SECTIONS[section].tabs.map(([k,l])=>`<button data-view="${k}" aria-pressed="${k===v}">${l}</button>`).join("");
+  $("navbar").querySelectorAll("button[data-sec]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.sec===section));
+  rerender(); window.scrollTo(0,0);}
+function rerender(){
+  if(view==="hist")renderHist();else if(view==="stats")renderStats();else if(view==="food")renderFood();else if(view==="fhist")renderFoodHist();else render();}
+$("subTabs").addEventListener("click",ev=>{const b=ev.target.closest("button[data-view]");if(b&&b.dataset.view!==view)showView(b.dataset.view)});
+$("navbar").addEventListener("click",ev=>{const b=ev.target.closest("button[data-sec]");if(!b)return;
+  const sec=b.dataset.sec;
+  showView(sec===section?SECTIONS[sec].tabs[0][0]:lastTab[sec]);});   // tapping the section you're in goes back to its Today
 
 /* ---- progress & stats ---- */
 const ITEMS=LIB;
@@ -982,8 +1015,8 @@ function csv(){
   return out.map(r=>r.map(q).join(",")).join("\n");
 }
 /* ---- export: the iPhone share sheet in the app, a plain download in a browser ---- */
-$("exportBtn").onclick=()=>{
-  flush(); const msg=$("exportMsg"); msg.hidden=false;
+function exportCSV(msg){
+  flush(); msg.hidden=false;
   const name=`lift-log-${todayStr()}.csv`, data=csv();
   if(NATIVE){
     window.webkit.messageHandlers.liftlog.postMessage({type:"export",filename:name,csv:data});
@@ -991,7 +1024,9 @@ $("exportBtn").onclick=()=>{
   }
   const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([data],{type:"text/csv"}));
   a.download=name; document.body.appendChild(a); a.click(); a.remove(); msg.textContent="Downloaded "+name;
-};
+}
+$("exportBtn").onclick=()=>exportCSV($("exportMsg"));
+$("fExportBtn").onclick=()=>exportCSV($("fExportMsg"));   // same file: workouts, weigh-ins and food together
 
 /* ---- import: a CSV exported from Lift Log (web or app) ---- */
 $("importBtn").onclick=()=>$("importFile").click();
@@ -1100,7 +1135,7 @@ function dayP(d){return dayFood(d).reduce((a,e)=>a+entryP(e),0)}
 
 function renderFood(){
   $("fDate").value=fDate;
-  renderCalSum(); renderDraft(); renderRecent(); renderMenu(); renderFoodList(); renderCalChart(); renderFoodSettings();
+  renderCalSum(); renderDraft(); renderRecent(); renderMenu(); renderFoodList(); renderFoodSettings();
   $("fAiWrap").hidden=!hasKey;
   const m=$("fMsg"); m.hidden=!fMsg; m.textContent=fMsg; m.className="note"+(/^(Couldn|That|The estimate|Add your|Type)/.test(fMsg)?" down":"");
   $("fEst").disabled=fBusy; $("fManual").disabled=fBusy; $("fEst").textContent=fBusy?"Estimating…":"Estimate calories";
@@ -1163,6 +1198,24 @@ function renderCalChart(){
   const pAvg=wk.length?wk.reduce((a,d)=>a+dayP(d),0)/wk.length:0;
   $("calFacts").innerHTML=fact(wk.length?n0(avg):"—","7-day avg cal")+fact(`${inR}/${wk.length}`,"days in range")+fact(wk.length?n0(pAvg)+" g":"—","avg protein");
 }
+function calStatus(c){const {lo,hi}=foodTarget;
+  return c<lo?{cls:"",t:`${n0(lo-c)} under`}:c<=hi?{cls:"up",t:"In range"}:{cls:"down",t:`${n0(c-hi)} over`}}
+function renderFoodHist(){
+  renderCalChart();
+  const days=Object.keys(food).filter(d=>dayFood(d).length).sort().reverse(), {hi}=foodTarget;
+  if(!days.length){$("foodHist").innerHTML=`<div class="empty">Nothing logged yet. Add what you eat on the Food › Today tab and each day shows up here.</div>`;return}
+  $("foodHist").innerHTML=days.map(d=>{
+    const c=dayCal(d), p=dayP(d), st=calStatus(c), es=dayFood(d).slice().sort((a,b)=>a.t-b.t);
+    const max=Math.max(hi*1.15,c,1), pct=v=>Math.min(100,v/max*100).toFixed(1);
+    const rows=es.map(e=>{const one=e.items.length===1?e.items[0].name:(e.text||e.items.map(x=>x.name).join(", "));
+      return `<tr><td>${esc(one)}</td><td>${n0(entryCal(e))} cal</td></tr>`}).join("");
+    return `<div class="hcard fday"><h3><span>${nice(d)}${d===todayStr()?" · Today":""}</span><button data-fday="${d}">Open</button></h3>
+      <div class="tot"><b>${n0(c)} cal</b><span><span class="r ${st.cls}">${st.t}</span>${p?` · ${n0(p)} g protein`:""}</span></div>
+      <div class="calbar" aria-hidden="true"><div class="band" style="left:${pct(foodTarget.lo)}%;width:${(pct(hi)-pct(foodTarget.lo)).toFixed(1)}%"></div><div class="fill ${st.cls}" style="width:${pct(c)}%"></div></div>
+      <table>${rows}</table></div>`}).join("");
+}
+$("foodHist").addEventListener("click",ev=>{const b=ev.target.closest("button[data-fday]");if(!b)return;
+  fDate=b.dataset.fday;fDraft=null;fMsg="";showView("food");});
 function renderFoodSettings(){
   if(document.activeElement!==$("fLo"))$("fLo").value=foodTarget.lo;
   if(document.activeElement!==$("fHi"))$("fHi").value=foodTarget.hi;
@@ -1333,7 +1386,7 @@ $("mResults").addEventListener("click",ev=>{
 });
 
 /* ---- boot ---- */
-loadCur(); render(); status(SAVED_LABEL,"ok");
+loadCur(); showView(view); status(SAVED_LABEL,"ok");
 </script>
 </body>
 </html>

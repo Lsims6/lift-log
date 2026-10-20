@@ -17,6 +17,10 @@ A workout and calorie tracker for iPhone. Everything is saved in a file on the p
 3. The **screenshots** artifact shows the app running on a simulated iPhone.
 4. Install `LiftLog.ipa` with AltStore: **My Apps → + →** pick the file.
 
+## Layout
+
+The bar along the bottom switches between **Workout** and **Food**. The tabs up top switch views inside each one: Workout has Today, Progress and History; Food has Today and History (daily totals vs your target, a 14-day chart, and every day's meals). The app reopens in the section you used last.
+
 ## Food & calories
 
 The **Food** tab tracks calories against a daily target range (2,500–3,000 to start; change it under *Calorie target & estimate settings*). It's free and works offline.
