@@ -1,0 +1,824 @@
+Command line invocation:
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/xcodebuild test -project LiftLog.xcodeproj -scheme LiftLog -destination id=10B884BF-749F-4E8B-AFCD-26AB8F1DBD01 -derivedDataPath build/sim -resultBundlePath build/TestResults.xcresult CODE_SIGNING_ALLOWED=NO
+
+Build settings from command line:
+    CODE_SIGNING_ALLOWED = NO
+
+Writing result bundle at path:
+	/Users/runner/work/lift-log/lift-log/build/TestResults.xcresult
+
+--- xcodebuild: WARNING: Using the first of multiple matching destinations:
+{ platform:iOS Simulator, arch:arm64, id:10B884BF-749F-4E8B-AFCD-26AB8F1DBD01, OS:26.5, name:iPhone 17 }
+{ platform:iOS Simulator, arch:x86_64, id:10B884BF-749F-4E8B-AFCD-26AB8F1DBD01, OS:26.5, name:iPhone 17 }
+ComputePackagePrebuildTargetDependencyGraph
+
+Prepare packages
+
+CreateBuildRequest
+
+SendProjectDescription
+
+CreateBuildOperation
+
+ComputeTargetDependencyGraph
+note: Building targets in dependency order
+note: Target dependency graph (2 targets)
+    Target 'LiftLogUITests' in project 'LiftLog'
+        ➜ Explicit dependency on target 'LiftLog' in project 'LiftLog'
+    Target 'LiftLog' in project 'LiftLog' (no dependencies)
+
+GatherProvisioningInputs
+
+CreateBuildDescription
+
+ExecuteExternalTool /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/actool --print-asset-tag-combinations --output-format xml1 /Users/runner/work/lift-log/lift-log/LiftLog/Assets.xcassets
+
+ExecuteExternalTool /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc --version
+
+ExecuteExternalTool /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -v -E -dM -isysroot /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk -x c -c /dev/null
+
+ExecuteExternalTool /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld -version_details
+
+ExecuteExternalTool /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/actool --version --output-format xml1
+
+Build description signature: d5a23fe568fa566fa0bce48485c40178
+Build description path: /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/XCBuildData/d5a23fe568fa566fa0bce48485c40178.xcbuilddata
+CreateBuildDirectory /Users/runner/work/lift-log/lift-log/build/sim/Build/Products
+    cd /Users/runner/work/lift-log/lift-log/LiftLog.xcodeproj
+    builtin-create-build-directory /Users/runner/work/lift-log/lift-log/build/sim/Build/Products
+
+CreateBuildDirectory /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex
+    cd /Users/runner/work/lift-log/lift-log/LiftLog.xcodeproj
+    builtin-create-build-directory /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex
+
+ClangStatCache /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk /Users/runner/work/lift-log/lift-log/build/sim/SDKStatCaches.noindex/iphonesimulator26.5-23F81a-688ef53f1462e2c8f657fdc38a81448ff45c64a1807a658693f2a61704f17a36.sdkstatcache
+    cd /Users/runner/work/lift-log/lift-log/LiftLog.xcodeproj
+    /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk -o /Users/runner/work/lift-log/lift-log/build/sim/SDKStatCaches.noindex/iphonesimulator26.5-23F81a-688ef53f1462e2c8f657fdc38a81448ff45c64a1807a658693f2a61704f17a36.sdkstatcache
+
+WriteAuxiliaryFile /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog-c81a2b36567c26bb4b5b4e00adbcf31a-VFS-iphonesimulator/all-product-headers.yaml
+    cd /Users/runner/work/lift-log/lift-log/LiftLog.xcodeproj
+    write-file /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog-c81a2b36567c26bb4b5b4e00adbcf31a-VFS-iphonesimulator/all-product-headers.yaml
+
+CreateBuildDirectory /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator
+    cd /Users/runner/work/lift-log/lift-log/LiftLog.xcodeproj
+    builtin-create-build-directory /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator
+
+CreateBuildDirectory /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules
+    cd /Users/runner/work/lift-log/lift-log/LiftLog.xcodeproj
+    builtin-create-build-directory /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules
+
+CreateBuildDirectory /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/ExplicitPrecompiledModules
+    cd /Users/runner/work/lift-log/lift-log/LiftLog.xcodeproj
+    builtin-create-build-directory /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/ExplicitPrecompiledModules
+
+CreateBuildDirectory /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphonesimulator
+    cd /Users/runner/work/lift-log/lift-log/LiftLog.xcodeproj
+    builtin-create-build-directory /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphonesimulator
+
+WriteAuxiliaryFile /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/empty-LiftLogUITests.plist (in target 'LiftLogUITests' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    write-file /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/empty-LiftLogUITests.plist
+
+WriteAuxiliaryFile /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/ProductTypeInfoPlistAdditions.plist (in target 'LiftLogUITests' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    write-file /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/ProductTypeInfoPlistAdditions.plist
+
+WriteAuxiliaryFile /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/Objects-normal/arm64/LiftLogUITests_const_extract_protocols.json (in target 'LiftLogUITests' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    write-file /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/Objects-normal/arm64/LiftLogUITests_const_extract_protocols.json
+
+WriteAuxiliaryFile /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/Objects-normal/arm64/LiftLogUITests.SwiftFileList (in target 'LiftLogUITests' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    write-file /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/Objects-normal/arm64/LiftLogUITests.SwiftFileList
+
+WriteAuxiliaryFile /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/Objects-normal/arm64/LiftLogUITests.SwiftConstValuesFileList (in target 'LiftLogUITests' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    write-file /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/Objects-normal/arm64/LiftLogUITests.SwiftConstValuesFileList
+
+WriteAuxiliaryFile /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/Objects-normal/arm64/LiftLogUITests.LinkFileList (in target 'LiftLogUITests' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    write-file /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/Objects-normal/arm64/LiftLogUITests.LinkFileList
+
+WriteAuxiliaryFile /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/Objects-normal/arm64/LiftLogUITests-OutputFileMap.json (in target 'LiftLogUITests' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    write-file /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/Objects-normal/arm64/LiftLogUITests-OutputFileMap.json
+
+WriteAuxiliaryFile /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/LiftLogUITests.hmap (in target 'LiftLogUITests' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    write-file /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/LiftLogUITests.hmap
+
+WriteAuxiliaryFile /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/LiftLogUITests.DependencyStaticMetadataFileList (in target 'LiftLogUITests' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    write-file /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/LiftLogUITests.DependencyStaticMetadataFileList
+
+WriteAuxiliaryFile /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/LiftLogUITests.DependencyMetadataFileList (in target 'LiftLogUITests' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    write-file /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/LiftLogUITests.DependencyMetadataFileList
+
+WriteAuxiliaryFile /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/LiftLogUITests-project-headers.hmap (in target 'LiftLogUITests' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    write-file /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/LiftLogUITests-project-headers.hmap
+
+WriteAuxiliaryFile /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/LiftLogUITests-own-target-headers.hmap (in target 'LiftLogUITests' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    write-file /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/LiftLogUITests-own-target-headers.hmap
+
+WriteAuxiliaryFile /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/LiftLogUITests-generated-files.hmap (in target 'LiftLogUITests' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    write-file /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/LiftLogUITests-generated-files.hmap
+
+WriteAuxiliaryFile /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/LiftLogUITests-all-target-headers.hmap (in target 'LiftLogUITests' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    write-file /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/LiftLogUITests-all-target-headers.hmap
+
+WriteAuxiliaryFile /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/LiftLogUITests-all-non-framework-target-headers.hmap (in target 'LiftLogUITests' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    write-file /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/LiftLogUITests-all-non-framework-target-headers.hmap
+
+WriteAuxiliaryFile /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/Objects-normal/arm64/LiftLog_const_extract_protocols.json (in target 'LiftLog' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    write-file /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/Objects-normal/arm64/LiftLog_const_extract_protocols.json
+
+WriteAuxiliaryFile /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/Objects-normal/arm64/LiftLog.SwiftFileList (in target 'LiftLog' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    write-file /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/Objects-normal/arm64/LiftLog.SwiftFileList
+
+WriteAuxiliaryFile /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/Objects-normal/arm64/LiftLog.SwiftConstValuesFileList (in target 'LiftLog' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    write-file /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/Objects-normal/arm64/LiftLog.SwiftConstValuesFileList
+
+WriteAuxiliaryFile /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/Objects-normal/arm64/LiftLog.LinkFileList (in target 'LiftLog' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    write-file /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/Objects-normal/arm64/LiftLog.LinkFileList
+
+WriteAuxiliaryFile /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/Objects-normal/arm64/LiftLog-OutputFileMap.json (in target 'LiftLog' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    write-file /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/Objects-normal/arm64/LiftLog-OutputFileMap.json
+
+WriteAuxiliaryFile /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/LiftLog.hmap (in target 'LiftLog' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    write-file /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/LiftLog.hmap
+
+WriteAuxiliaryFile /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/LiftLog.DependencyStaticMetadataFileList (in target 'LiftLog' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    write-file /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/LiftLog.DependencyStaticMetadataFileList
+
+WriteAuxiliaryFile /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/LiftLog.DependencyMetadataFileList (in target 'LiftLog' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    write-file /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/LiftLog.DependencyMetadataFileList
+
+WriteAuxiliaryFile /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/LiftLog-project-headers.hmap (in target 'LiftLog' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    write-file /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/LiftLog-project-headers.hmap
+
+WriteAuxiliaryFile /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/LiftLog-own-target-headers.hmap (in target 'LiftLog' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    write-file /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/LiftLog-own-target-headers.hmap
+
+WriteAuxiliaryFile /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/LiftLog-generated-files.hmap (in target 'LiftLog' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    write-file /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/LiftLog-generated-files.hmap
+
+WriteAuxiliaryFile /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/LiftLog-all-target-headers.hmap (in target 'LiftLog' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    write-file /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/LiftLog-all-target-headers.hmap
+
+WriteAuxiliaryFile /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/LiftLog-all-non-framework-target-headers.hmap (in target 'LiftLog' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    write-file /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/LiftLog-all-non-framework-target-headers.hmap
+
+WriteAuxiliaryFile /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/LiftLog-DebugDylibPath-normal-arm64.txt (in target 'LiftLog' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    write-file /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/LiftLog-DebugDylibPath-normal-arm64.txt
+
+WriteAuxiliaryFile /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/LiftLog-DebugDylibInstallName-normal-arm64.txt (in target 'LiftLog' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    write-file /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/LiftLog-DebugDylibInstallName-normal-arm64.txt
+
+MkDir /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLogUITests-Runner.app/PlugIns/LiftLogUITests.xctest (in target 'LiftLogUITests' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    /bin/mkdir -p /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLogUITests-Runner.app/PlugIns/LiftLogUITests.xctest
+
+MkDir /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLog.app (in target 'LiftLog' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    /bin/mkdir -p /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLog.app
+
+Ld /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLog.app/__preview.dylib normal (in target 'LiftLog' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target arm64-apple-ios16.0-simulator -dynamiclib -isysroot /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk -O0 -L/Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator -F/Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator -install_name @rpath/LiftLog.debug.dylib -Xlinker -dead_strip -rdynamic -Xlinker -no_deduplicate -Xlinker -objc_abi_version -Xlinker 2 -Xlinker -dependency_info -Xlinker /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/Objects-normal/arm64/LiftLog_dependency_info.dat -o /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLog.app/__preview.dylib
+
+MkDir /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/assetcatalog_output/unthinned (in target 'LiftLog' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    /bin/mkdir -p /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/assetcatalog_output/unthinned
+
+MkDir /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/assetcatalog_output/thinned (in target 'LiftLog' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    /bin/mkdir -p /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/assetcatalog_output/thinned
+
+GenerateAssetSymbols /Users/runner/work/lift-log/lift-log/LiftLog/Assets.xcassets (in target 'LiftLog' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/actool /Users/runner/work/lift-log/lift-log/LiftLog/Assets.xcassets --compile /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLog.app --output-format human-readable-text --notices --warnings --export-dependency-info /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/assetcatalog_dependencies --output-partial-info-plist /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/assetcatalog_generated_info.plist --app-icon AppIcon --compress-pngs --enable-on-demand-resources YES --development-region en --target-device iphone --minimum-deployment-target 16.0 --platform iphonesimulator --bundle-identifier com.lsims6.liftlog --generate-swift-asset-symbol-extensions NO --generate-swift-asset-symbols /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/DerivedSources/GeneratedAssetSymbols.swift --generate-objc-asset-symbols /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/DerivedSources/GeneratedAssetSymbols.h --generate-asset-symbol-index /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/DerivedSources/GeneratedAssetSymbols-Index.plist
+/* com.apple.actool.compilation-results */
+/Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/DerivedSources/GeneratedAssetSymbols-Index.plist
+/Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/DerivedSources/GeneratedAssetSymbols.h
+/Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/DerivedSources/GeneratedAssetSymbols.swift
+
+
+CpResource /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLog.app/Web /Users/runner/work/lift-log/lift-log/LiftLog/Web (in target 'LiftLog' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks /Users/runner/work/lift-log/lift-log/LiftLog/Web /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLog.app
+
+CompileAssetCatalogVariant thinned /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLog.app /Users/runner/work/lift-log/lift-log/LiftLog/Assets.xcassets (in target 'LiftLog' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/actool /Users/runner/work/lift-log/lift-log/LiftLog/Assets.xcassets --compile /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/assetcatalog_output/thinned --output-format human-readable-text --notices --warnings --export-dependency-info /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/assetcatalog_dependencies_thinned --output-partial-info-plist /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/assetcatalog_generated_info.plist_thinned --app-icon AppIcon --compress-pngs --enable-on-demand-resources YES --filter-for-thinning-device-configuration iPhone18,3 --filter-for-device-os-version 26.5 --development-region en --target-device iphone --minimum-deployment-target 16.0 --platform iphonesimulator
+/* com.apple.actool.compilation-results */
+/Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/assetcatalog_generated_info.plist_thinned
+/Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/assetcatalog_output/thinned/AppIcon60x60@2x.png
+/Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/assetcatalog_output/thinned/AppIcon76x76@2x~ipad.png
+/Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/assetcatalog_output/thinned/Assets.car
+
+
+SwiftDriver LiftLog normal arm64 com.apple.xcode.tools.swift.compiler (in target 'LiftLog' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    builtin-SwiftDriver -- /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name LiftLog -Onone @/Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/Objects-normal/arm64/LiftLog.SwiftFileList -DDEBUG -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk -target arm64-apple-ios16.0-simulator -g -module-cache-path /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex -Xfrontend -serialize-debugging-options -enable-testing -index-store-path /Users/runner/work/lift-log/lift-log/build/sim/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator -F /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator -c -j3 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /Users/runner/work/lift-log/lift-log/build/sim/SDKStatCaches.noindex/iphonesimulator26.5-23F81a-688ef53f1462e2c8f657fdc38a81448ff45c64a1807a658693f2a61704f17a36.sdkstatcache -output-file-map /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/Objects-normal/arm64/LiftLog-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex -sdk-module-cache-path /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/Objects-normal/arm64/LiftLog.swiftmodule -validate-clang-modules-once -clang-build-session-file /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex/Session.modulevalidation -Xcc -I/Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/Objects-normal/arm64/LiftLog_const_extract_protocols.json -Xcc -iquote -Xcc /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/LiftLog-generated-files.hmap -Xcc -I/Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/LiftLog-own-target-headers.hmap -Xcc -I/Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/LiftLog-all-target-headers.hmap -Xcc -iquote -Xcc /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/LiftLog-project-headers.hmap -Xcc -I/Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/include -Xcc -I/Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/DerivedSources-normal/arm64 -Xcc -I/Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/DerivedSources/arm64 -Xcc -I/Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/Objects-normal/arm64/LiftLog-Swift.h -working-directory /Users/runner/work/lift-log/lift-log -experimental-emit-module-separately -disable-cmo
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex/_SwiftConcurrencyShims-9F5LAENQCRZ1ZGAY57OAJ1EHY.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex/_Builtin_stdbool-977J3XLQK3VPDAD1ECS58S2M6.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex/_AvailabilityInternal-6CHCJYQQK8KSXY75GSABB67A5.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex/_Builtin_stdarg-D36L7WZ7Q30WEZ544J4YYCW6W.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex/DeveloperToolsSupport-96CC8447XO6N2NP6QVHU8TD4R.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex/_Builtin_stddef-A0BULWPEVLR1VI9M62I3RUHF4.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex/ptrauth-93XLEEYL4OJSS5AYDBN5DRTFO.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex/ptrcheck-7IA0E635Y2M7YF6L5K57HQ19G.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex/SwiftShims-7BYL269CD6RDZK4EK83I05DBX.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex/_DarwinFoundation1-723PV7DH77P6WWLVVAX9ENTYC.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex/_Builtin_float-AV750G1P5VZ1VVGHIJL0S8Q31.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex/_DarwinFoundation2-23WCV4DV9UUF5IXQDYMYPW8Z.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex/_Builtin_limits-EQNQ19CE479J6GBRVZ5DGDHST.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex/sys_types-CNY5ZUL3LM3P8CS0GSYATC4ZF.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex/_Builtin_stdint-9E5BP2WVSF40NFRBBAI03RW6Y.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex/_Builtin_tgmath-AN7UE6OK5YU4GD94FMX8CD9XM.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex/_DarwinFoundation3-5ET9MRUIEKIRNJJVIQ0BF6Z7G.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex/_Builtin_stdatomic-17EISHBLVDHEE680L8PTWIR9I.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex/_Builtin_intrinsics-4EL7ST1QHZKR3YSJ7IN4UG8G6.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex/_Builtin_inttypes-E20UOXV1WQA45XT87GQULXXKK.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex/Darwin-C4CCBYX073SRIKCBBI2GYTYQP.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex/simd-F5FYUXT2I05OG5PD1RHUYWKJ9.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex/ObjectiveC-A2M9BEUEIMWDOPH3LOWYHRGWN.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex/MachO-E4KV2BNWPVUFIOLL7UW7C1F2I.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex/os_object-DH5ISDYPLYT50EINEZ2EMGYJK.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex/Spatial-AY4K2KI4P0V3L4FCHQ90YF6ZL.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex/os_workgroup-7ZCBAKHQ8XIE9N07RTUU3GB31.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex/Dispatch-2KFETN1TZDECHC5WR8HJ9HN3L.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex/XPC-BVGXQG7RAF2X8H81DSZAA0KQU.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex/CoreFoundation-86DUIV3ETZ3YCN4VO6HYVUBMO.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex/dnssd-32WMQ0IYDJMXPVN6RZVA2SG4Y.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex/os-18ULBNAU9ZY3AK9LX0GBL5APG.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex/CFNetwork-DSU87UABNMER7Y9BX88TUBKV1.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex/CoreGraphics-550CGP0OGGRY31AY4REY9Z1HR.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex/Security-ABQEC2TSO2PVRYFQER865AEMS.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex/ImageIO-ERLMVFX0XVL3342J0KDPHKABF.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex/CoreText-CAL3KYM5W3TAJ3YD66Z2AOX11.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex/Foundation-6CO7XYC9LOWIU3F0YBJ6QRCLV.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex/OpenGLES-AKOQWQG1JB2PMSCXV78A91ZS8.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex/OSLog-DPZLT8OLYMJTOVVCVVRJ26ESK.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex/Accessibility-8TNVXQR90YRV14KBL45KLY1P8.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex/Symbols-60FIL2PEGY0R0DH2CIBBQF6S3.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex/Network-2C4XJLPER3DU9GYGD8SUSQP1P.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex/CoreTransferable-49K2EP4BDZIYN4D2NUFU0XU63.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex/IOSurface-8GJU963TWGW1OAYAK2QDHZVTZ.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex/CoreData-6NWS1P2OIC82E2C88DW14DNRV.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex/DataDetection-82PVFIEA0Q30J8PFC1JD0DJ2U.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex/Metal-9I4GJYDLOIA75I1OJGWIKDO78.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex/UIUtilities-WRC6QP1V1ZF6V38ZRAI7O6D3.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex/UserNotifications-93C7DTBI9U3ARE8OM56IFNUEU.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex/UniformTypeIdentifiers-7T6EXPEWDMVPEKIS0F6SHWXVV.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex/FileProvider-2ES0EP7D1A3OKAWJSDPUZSB9O.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex/CoreVideo-2GHVORZYIVCOUUX71F89BL9PQ.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex/CoreImage-5B2AUI1XA59R5T97D4E9Q3PLF.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex/QuartzCore-5JGFC7TOTZ6N8ODZS9I9ZEPA8.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex/SwiftUICore-EVVP41N0VP52KI3RM248JDMNA.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex/UIKit-3NNN0RZLO3ZO8EZJ7G01Z34QH.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex/WebKit-7A1TB3X3RN2BAY90D8CXTD4ZR.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex/SwiftUI-6ZOJ8IK4ODGIMVQN6K935BDCO.pcm
+
+SwiftCompile normal arm64 Compiling\ GeneratedAssetSymbols.swift /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/DerivedSources/GeneratedAssetSymbols.swift (in target 'LiftLog' from project 'LiftLog')
+
+SwiftCompile normal arm64 /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/DerivedSources/GeneratedAssetSymbols.swift (in target 'LiftLog' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    
+
+SwiftEmitModule normal arm64 Emitting\ module\ for\ LiftLog (in target 'LiftLog' from project 'LiftLog')
+
+EmitSwiftModule normal arm64 (in target 'LiftLog' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    
+
+SwiftCompile normal arm64 Compiling\ LiftLogApp.swift /Users/runner/work/lift-log/lift-log/LiftLog/LiftLogApp.swift (in target 'LiftLog' from project 'LiftLog')
+
+SwiftCompile normal arm64 /Users/runner/work/lift-log/lift-log/LiftLog/LiftLogApp.swift (in target 'LiftLog' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    
+
+SwiftDriverJobDiscovery normal arm64 Emitting module for LiftLog (in target 'LiftLog' from project 'LiftLog')
+
+SwiftDriverJobDiscovery normal arm64 Compiling GeneratedAssetSymbols.swift (in target 'LiftLog' from project 'LiftLog')
+
+SwiftDriver\ Compilation\ Requirements LiftLog normal arm64 com.apple.xcode.tools.swift.compiler (in target 'LiftLog' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    builtin-Swift-Compilation-Requirements -- /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name LiftLog -Onone @/Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/Objects-normal/arm64/LiftLog.SwiftFileList -DDEBUG -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk -target arm64-apple-ios16.0-simulator -g -module-cache-path /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex -Xfrontend -serialize-debugging-options -enable-testing -index-store-path /Users/runner/work/lift-log/lift-log/build/sim/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator -F /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator -c -j3 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /Users/runner/work/lift-log/lift-log/build/sim/SDKStatCaches.noindex/iphonesimulator26.5-23F81a-688ef53f1462e2c8f657fdc38a81448ff45c64a1807a658693f2a61704f17a36.sdkstatcache -output-file-map /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/Objects-normal/arm64/LiftLog-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex -sdk-module-cache-path /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/Objects-normal/arm64/LiftLog.swiftmodule -validate-clang-modules-once -clang-build-session-file /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex/Session.modulevalidation -Xcc -I/Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/Objects-normal/arm64/LiftLog_const_extract_protocols.json -Xcc -iquote -Xcc /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/LiftLog-generated-files.hmap -Xcc -I/Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/LiftLog-own-target-headers.hmap -Xcc -I/Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/LiftLog-all-target-headers.hmap -Xcc -iquote -Xcc /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/LiftLog-project-headers.hmap -Xcc -I/Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/include -Xcc -I/Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/DerivedSources-normal/arm64 -Xcc -I/Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/DerivedSources/arm64 -Xcc -I/Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/Objects-normal/arm64/LiftLog-Swift.h -working-directory /Users/runner/work/lift-log/lift-log -experimental-emit-module-separately -disable-cmo
+
+SwiftMergeGeneratedHeaders /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/DerivedSources/LiftLog-Swift.h /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/Objects-normal/arm64/LiftLog-Swift.h (in target 'LiftLog' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    builtin-swiftHeaderTool -arch arm64 /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/Objects-normal/arm64/LiftLog-Swift.h -o /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/DerivedSources/LiftLog-Swift.h
+
+SwiftDriverJobDiscovery normal arm64 Compiling LiftLogApp.swift (in target 'LiftLog' from project 'LiftLog')
+
+Copy /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLog.swiftmodule/arm64-apple-ios-simulator.swiftmodule /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/Objects-normal/arm64/LiftLog.swiftmodule (in target 'LiftLog' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/Objects-normal/arm64/LiftLog.swiftmodule /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLog.swiftmodule/arm64-apple-ios-simulator.swiftmodule
+
+Copy /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLog.swiftmodule/arm64-apple-ios-simulator.swiftdoc /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/Objects-normal/arm64/LiftLog.swiftdoc (in target 'LiftLog' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/Objects-normal/arm64/LiftLog.swiftdoc /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLog.swiftmodule/arm64-apple-ios-simulator.swiftdoc
+
+Copy /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLog.swiftmodule/arm64-apple-ios-simulator.abi.json /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/Objects-normal/arm64/LiftLog.abi.json (in target 'LiftLog' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/Objects-normal/arm64/LiftLog.abi.json /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLog.swiftmodule/arm64-apple-ios-simulator.abi.json
+
+Copy /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLog.swiftmodule/Project/arm64-apple-ios-simulator.swiftsourceinfo /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/Objects-normal/arm64/LiftLog.swiftsourceinfo (in target 'LiftLog' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/Objects-normal/arm64/LiftLog.swiftsourceinfo /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLog.swiftmodule/Project/arm64-apple-ios-simulator.swiftsourceinfo
+
+SwiftDriver\ Compilation LiftLog normal arm64 com.apple.xcode.tools.swift.compiler (in target 'LiftLog' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    builtin-Swift-Compilation -- /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name LiftLog -Onone @/Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/Objects-normal/arm64/LiftLog.SwiftFileList -DDEBUG -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk -target arm64-apple-ios16.0-simulator -g -module-cache-path /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex -Xfrontend -serialize-debugging-options -enable-testing -index-store-path /Users/runner/work/lift-log/lift-log/build/sim/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator -F /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator -c -j3 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /Users/runner/work/lift-log/lift-log/build/sim/SDKStatCaches.noindex/iphonesimulator26.5-23F81a-688ef53f1462e2c8f657fdc38a81448ff45c64a1807a658693f2a61704f17a36.sdkstatcache -output-file-map /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/Objects-normal/arm64/LiftLog-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex -sdk-module-cache-path /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/Objects-normal/arm64/LiftLog.swiftmodule -validate-clang-modules-once -clang-build-session-file /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex/Session.modulevalidation -Xcc -I/Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/Objects-normal/arm64/LiftLog_const_extract_protocols.json -Xcc -iquote -Xcc /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/LiftLog-generated-files.hmap -Xcc -I/Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/LiftLog-own-target-headers.hmap -Xcc -I/Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/LiftLog-all-target-headers.hmap -Xcc -iquote -Xcc /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/LiftLog-project-headers.hmap -Xcc -I/Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/include -Xcc -I/Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/DerivedSources-normal/arm64 -Xcc -I/Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/DerivedSources/arm64 -Xcc -I/Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/Objects-normal/arm64/LiftLog-Swift.h -working-directory /Users/runner/work/lift-log/lift-log -experimental-emit-module-separately -disable-cmo
+
+SwiftDriver LiftLogUITests normal arm64 com.apple.xcode.tools.swift.compiler (in target 'LiftLogUITests' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    builtin-SwiftDriver -- /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name LiftLogUITests -Onone @/Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/Objects-normal/arm64/LiftLogUITests.SwiftFileList -DDEBUG -module-alias Testing\=_Testing_Unavailable -plugin-path /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk -target arm64-apple-ios16.0-simulator -g -module-cache-path /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex -Xfrontend -serialize-debugging-options -enable-testing -index-store-path /Users/runner/work/lift-log/lift-log/build/sim/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator -Isystem /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib -F /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator -F /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/Frameworks -F /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk/Developer/Library/Frameworks -parse-as-library -c -j3 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /Users/runner/work/lift-log/lift-log/build/sim/SDKStatCaches.noindex/iphonesimulator26.5-23F81a-688ef53f1462e2c8f657fdc38a81448ff45c64a1807a658693f2a61704f17a36.sdkstatcache -output-file-map /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/Objects-normal/arm64/LiftLogUITests-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex -sdk-module-cache-path /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/Objects-normal/arm64/LiftLogUITests.swiftmodule -validate-clang-modules-once -clang-build-session-file /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex/Session.modulevalidation -Xcc -I/Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/Objects-normal/arm64/LiftLogUITests_const_extract_protocols.json -Xcc -iquote -Xcc /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/LiftLogUITests-generated-files.hmap -Xcc -I/Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/LiftLogUITests-own-target-headers.hmap -Xcc -I/Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/LiftLogUITests-all-target-headers.hmap -Xcc -iquote -Xcc /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/LiftLogUITests-project-headers.hmap -Xcc -I/Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/include -Xcc -I/Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/DerivedSources-normal/arm64 -Xcc -I/Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/DerivedSources/arm64 -Xcc -I/Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/Objects-normal/arm64/LiftLogUITests-Swift.h -working-directory /Users/runner/work/lift-log/lift-log -experimental-emit-module-separately -disable-cmo
+
+Ld /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLog.app/LiftLog.debug.dylib normal (in target 'LiftLog' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target arm64-apple-ios16.0-simulator -dynamiclib -isysroot /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk -O0 -L/Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphonesimulator -L/Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator -F/Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphonesimulator -F/Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator -filelist /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/Objects-normal/arm64/LiftLog.LinkFileList -install_name @rpath/LiftLog.debug.dylib -Xlinker -rpath -Xlinker /usr/lib/swift -Xlinker -rpath -Xlinker @executable_path/Frameworks -Xlinker -dead_strip -Xlinker -object_path_lto -Xlinker /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/Objects-normal/arm64/LiftLog_lto.o -rdynamic -Xlinker -no_deduplicate -Xlinker -objc_abi_version -Xlinker 2 -Xlinker -dependency_info -Xlinker /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/Objects-normal/arm64/LiftLog_dependency_info.dat -fobjc-link-runtime -L/Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphonesimulator -L/usr/lib/swift -Xlinker -add_ast_path -Xlinker /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/Objects-normal/arm64/LiftLog.swiftmodule @/Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/Objects-normal/arm64/LiftLog-linker-args.resp -Xlinker -alias -Xlinker _main -Xlinker ___debug_main_executable_dylib_entry_point -o /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLog.app/LiftLog.debug.dylib
+
+ConstructStubExecutorLinkFileList /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/LiftLog-ExecutorLinkFileList-normal-arm64.txt (in target 'LiftLog' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    construct-stub-executor-link-file-list /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLog.app/LiftLog.debug.dylib /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib/libPreviewsJITStubExecutor_no_swift_entry_point.a /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib/libPreviewsJITStubExecutor.a --output /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/LiftLog-ExecutorLinkFileList-normal-arm64.txt
+note: Using stub executor library with Swift entry point. (in target 'LiftLog' from project 'LiftLog')
+
+Ld /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLog.app/LiftLog normal (in target 'LiftLog' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target arm64-apple-ios16.0-simulator -isysroot /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk -O0 -L/Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator -F/Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator -Xlinker -rpath -Xlinker @executable_path -Xlinker -rpath -Xlinker @executable_path/Frameworks -rdynamic -Xlinker -no_deduplicate -Xlinker -objc_abi_version -Xlinker 2 -e ___debug_blank_executor_main -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __debug_dylib -Xlinker /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/LiftLog-DebugDylibPath-normal-arm64.txt -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __debug_instlnm -Xlinker /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/LiftLog-DebugDylibInstallName-normal-arm64.txt -Xlinker -filelist -Xlinker /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/LiftLog-ExecutorLinkFileList-normal-arm64.txt /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLog.app/LiftLog.debug.dylib -o /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLog.app/LiftLog
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules/XCUIAutomation-C80AC3PH9NSKCX3PC34VD5W6I.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules/XCTest-7EP3SITM3C3A6FCPL66CIZUG7.pcm
+
+SwiftExplicitDependencyCompileModuleFromInterface arm64 /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules/XCUIAutomation-19M9PCBA60OVA.swiftmodule
+
+SwiftExplicitDependencyCompileModuleFromInterface arm64 /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules/XCTest-37X2TY6F9TFFI.swiftmodule
+
+SwiftEmitModule normal arm64 Emitting\ module\ for\ LiftLogUITests (in target 'LiftLogUITests' from project 'LiftLog')
+
+SwiftCompile normal arm64 /Users/runner/work/lift-log/lift-log/LiftLogUITests/LiftLogUITests.swift (in target 'LiftLogUITests' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    
+
+SwiftCompile normal arm64 Compiling\ LiftLogUITests.swift /Users/runner/work/lift-log/lift-log/LiftLogUITests/LiftLogUITests.swift (in target 'LiftLogUITests' from project 'LiftLog')
+
+SwiftCompile normal arm64 /Users/runner/work/lift-log/lift-log/LiftLogUITests/LiftLogUITests.swift (in target 'LiftLogUITests' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    
+
+SwiftDriverJobDiscovery normal arm64 Emitting module for LiftLogUITests (in target 'LiftLogUITests' from project 'LiftLog')
+
+SwiftDriver\ Compilation\ Requirements LiftLogUITests normal arm64 com.apple.xcode.tools.swift.compiler (in target 'LiftLogUITests' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    builtin-Swift-Compilation-Requirements -- /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name LiftLogUITests -Onone @/Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/Objects-normal/arm64/LiftLogUITests.SwiftFileList -DDEBUG -module-alias Testing\=_Testing_Unavailable -plugin-path /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk -target arm64-apple-ios16.0-simulator -g -module-cache-path /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex -Xfrontend -serialize-debugging-options -enable-testing -index-store-path /Users/runner/work/lift-log/lift-log/build/sim/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator -Isystem /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib -F /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator -F /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/Frameworks -F /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk/Developer/Library/Frameworks -parse-as-library -c -j3 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /Users/runner/work/lift-log/lift-log/build/sim/SDKStatCaches.noindex/iphonesimulator26.5-23F81a-688ef53f1462e2c8f657fdc38a81448ff45c64a1807a658693f2a61704f17a36.sdkstatcache -output-file-map /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/Objects-normal/arm64/LiftLogUITests-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex -sdk-module-cache-path /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/Objects-normal/arm64/LiftLogUITests.swiftmodule -validate-clang-modules-once -clang-build-session-file /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex/Session.modulevalidation -Xcc -I/Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/Objects-normal/arm64/LiftLogUITests_const_extract_protocols.json -Xcc -iquote -Xcc /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/LiftLogUITests-generated-files.hmap -Xcc -I/Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/LiftLogUITests-own-target-headers.hmap -Xcc -I/Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/LiftLogUITests-all-target-headers.hmap -Xcc -iquote -Xcc /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/LiftLogUITests-project-headers.hmap -Xcc -I/Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/include -Xcc -I/Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/DerivedSources-normal/arm64 -Xcc -I/Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/DerivedSources/arm64 -Xcc -I/Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/Objects-normal/arm64/LiftLogUITests-Swift.h -working-directory /Users/runner/work/lift-log/lift-log -experimental-emit-module-separately -disable-cmo
+
+SwiftMergeGeneratedHeaders /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/DerivedSources/LiftLogUITests-Swift.h /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/Objects-normal/arm64/LiftLogUITests-Swift.h (in target 'LiftLogUITests' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    builtin-swiftHeaderTool -arch arm64 /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/Objects-normal/arm64/LiftLogUITests-Swift.h -o /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/DerivedSources/LiftLogUITests-Swift.h
+
+Copy /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLogUITests.swiftmodule/arm64-apple-ios-simulator.swiftmodule /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/Objects-normal/arm64/LiftLogUITests.swiftmodule (in target 'LiftLogUITests' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/Objects-normal/arm64/LiftLogUITests.swiftmodule /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLogUITests.swiftmodule/arm64-apple-ios-simulator.swiftmodule
+
+Copy /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLogUITests.swiftmodule/arm64-apple-ios-simulator.swiftdoc /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/Objects-normal/arm64/LiftLogUITests.swiftdoc (in target 'LiftLogUITests' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/Objects-normal/arm64/LiftLogUITests.swiftdoc /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLogUITests.swiftmodule/arm64-apple-ios-simulator.swiftdoc
+
+Copy /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLogUITests.swiftmodule/arm64-apple-ios-simulator.abi.json /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/Objects-normal/arm64/LiftLogUITests.abi.json (in target 'LiftLogUITests' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/Objects-normal/arm64/LiftLogUITests.abi.json /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLogUITests.swiftmodule/arm64-apple-ios-simulator.abi.json
+
+Copy /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLogUITests.swiftmodule/Project/arm64-apple-ios-simulator.swiftsourceinfo /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/Objects-normal/arm64/LiftLogUITests.swiftsourceinfo (in target 'LiftLogUITests' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/Objects-normal/arm64/LiftLogUITests.swiftsourceinfo /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLogUITests.swiftmodule/Project/arm64-apple-ios-simulator.swiftsourceinfo
+
+SwiftDriverJobDiscovery normal arm64 Compiling LiftLogUITests.swift (in target 'LiftLogUITests' from project 'LiftLog')
+
+SwiftDriver\ Compilation LiftLogUITests normal arm64 com.apple.xcode.tools.swift.compiler (in target 'LiftLogUITests' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    builtin-Swift-Compilation -- /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name LiftLogUITests -Onone @/Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/Objects-normal/arm64/LiftLogUITests.SwiftFileList -DDEBUG -module-alias Testing\=_Testing_Unavailable -plugin-path /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk -target arm64-apple-ios16.0-simulator -g -module-cache-path /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex -Xfrontend -serialize-debugging-options -enable-testing -index-store-path /Users/runner/work/lift-log/lift-log/build/sim/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator -Isystem /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib -F /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator -F /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/Frameworks -F /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk/Developer/Library/Frameworks -parse-as-library -c -j3 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /Users/runner/work/lift-log/lift-log/build/sim/SDKStatCaches.noindex/iphonesimulator26.5-23F81a-688ef53f1462e2c8f657fdc38a81448ff45c64a1807a658693f2a61704f17a36.sdkstatcache -output-file-map /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/Objects-normal/arm64/LiftLogUITests-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex -sdk-module-cache-path /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/Objects-normal/arm64/LiftLogUITests.swiftmodule -validate-clang-modules-once -clang-build-session-file /Users/runner/work/lift-log/lift-log/build/sim/ModuleCache.noindex/Session.modulevalidation -Xcc -I/Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/Objects-normal/arm64/LiftLogUITests_const_extract_protocols.json -Xcc -iquote -Xcc /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/LiftLogUITests-generated-files.hmap -Xcc -I/Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/LiftLogUITests-own-target-headers.hmap -Xcc -I/Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/LiftLogUITests-all-target-headers.hmap -Xcc -iquote -Xcc /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/LiftLogUITests-project-headers.hmap -Xcc -I/Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/include -Xcc -I/Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/DerivedSources-normal/arm64 -Xcc -I/Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/DerivedSources/arm64 -Xcc -I/Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/Objects-normal/arm64/LiftLogUITests-Swift.h -working-directory /Users/runner/work/lift-log/lift-log -experimental-emit-module-separately -disable-cmo
+
+LinkAssetCatalog /Users/runner/work/lift-log/lift-log/LiftLog/Assets.xcassets (in target 'LiftLog' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    builtin-linkAssetCatalog --thinned /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/assetcatalog_output/thinned --thinned-dependencies /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/assetcatalog_dependencies_thinned --thinned-info-plist-content /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/assetcatalog_generated_info.plist_thinned --unthinned /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/assetcatalog_output/unthinned --unthinned-dependencies /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/assetcatalog_dependencies_unthinned --unthinned-info-plist-content /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/assetcatalog_generated_info.plist_unthinned --output /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLog.app --plist-output /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/assetcatalog_generated_info.plist
+note: Emplaced /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLog.app/AppIcon60x60@2x.png (in target 'LiftLog' from project 'LiftLog')
+note: Emplaced /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLog.app/Assets.car (in target 'LiftLog' from project 'LiftLog')
+note: Emplaced /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLog.app/AppIcon76x76@2x~ipad.png (in target 'LiftLog' from project 'LiftLog')
+
+ProcessInfoPlistFile /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLog.app/Info.plist /Users/runner/work/lift-log/lift-log/LiftLog/Info.plist (in target 'LiftLog' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    builtin-infoPlistUtility /Users/runner/work/lift-log/lift-log/LiftLog/Info.plist -producttype com.apple.product-type.application -genpkginfo /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLog.app/PkgInfo -expandbuildsettings -format binary -platform iphonesimulator -additionalcontentfile /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/assetcatalog_generated_info.plist -o /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLog.app/Info.plist
+
+ExtractAppIntentsMetadata (in target 'LiftLog' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsmetadataprocessor --toolchain-dir /var/run/com.apple.security.cryptexd/mnt/com.apple.MobileAsset.MetalToolchain-v17.6.109.0.eoyCN0/Metal.xctoolchain --module-name LiftLog --sdk-root /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk --xcode-version 17F113 --platform-family iOS --deployment-target 16.0 --bundle-identifier com.lsims6.liftlog --output /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLog.app --target-triple arm64-apple-ios16.0-simulator --binary-file /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLog.app/LiftLog --dependency-file /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/Objects-normal/arm64/LiftLog_dependency_info.dat --stringsdata-file /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/Objects-normal/arm64/ExtractedAppShortcutsMetadata.stringsdata --source-file-list /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/Objects-normal/arm64/LiftLog.SwiftFileList --metadata-file-list /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/LiftLog.DependencyMetadataFileList --static-metadata-file-list /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/LiftLog.DependencyStaticMetadataFileList --swift-const-vals-list /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/Objects-normal/arm64/LiftLog.SwiftConstValuesFileList --compile-time-extraction --deployment-aware-processing --validate-assistant-intents --no-app-shortcuts-localization
+2026-10-21 19:14:25.805 appintentsmetadataprocessor[7855:28214] Starting appintentsmetadataprocessor export
+2026-10-21 19:14:25.831 appintentsmetadataprocessor[7855:28214] warning: Metadata extraction skipped. No AppIntents.framework dependency found.
+
+CopySwiftLibs /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLog.app (in target 'LiftLog' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    builtin-swiftStdLibTool --copy --verbose --scan-executable /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLog.app/LiftLog.debug.dylib --scan-folder /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLog.app/Frameworks --scan-folder /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLog.app/PlugIns --scan-folder /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLog.app/SystemExtensions --scan-folder /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLog.app/Extensions --platform iphonesimulator --toolchain /var/run/com.apple.security.cryptexd/mnt/com.apple.MobileAsset.MetalToolchain-v17.6.109.0.eoyCN0/Metal.xctoolchain --toolchain /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --destination /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLog.app/Frameworks --strip-bitcode --strip-bitcode-tool /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/bitcode_strip --emit-dependency-info /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/SwiftStdLibToolInputDependencies.dep --filter-for-swift-os
+Ignoring --strip-bitcode because --sign was not passed
+
+AppIntentsSSUTraining (in target 'LiftLog' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsnltrainingprocessor --infoplist-path /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLog.app/Info.plist --temp-dir-path /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/ssu --bundle-id com.lsims6.liftlog --product-path /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLog.app --extracted-metadata-path /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLog.app/Metadata.appintents --metadata-file-list /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLog.build/LiftLog.DependencyMetadataFileList --source-file /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLog.app/Info.plist --archive-ssu-assets
+2026-10-21 19:14:25.954 appintentsnltrainingprocessor[7866:28249] Parsing options for appintentsnltrainingprocessor
+2026-10-21 19:14:25.957 appintentsnltrainingprocessor[7866:28249] Starting AppIntents SSU YAML Generation
+2026-10-21 19:14:25.963 appintentsnltrainingprocessor[7866:28249] No AppShortcuts found - Skipping.
+
+RegisterExecutionPolicyException /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLog.app (in target 'LiftLog' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    builtin-RegisterExecutionPolicyException /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLog.app
+
+Validate /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLog.app (in target 'LiftLog' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    builtin-validationUtility /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLog.app -shallow-bundle -infoplist-subpath Info.plist
+
+Touch /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLog.app (in target 'LiftLog' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    /usr/bin/touch -c /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLog.app
+
+ProcessInfoPlistFile /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLogUITests-Runner.app/PlugIns/LiftLogUITests.xctest/Info.plist /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/empty-LiftLogUITests.plist (in target 'LiftLogUITests' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    builtin-infoPlistUtility /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/empty-LiftLogUITests.plist -producttype com.apple.product-type.bundle.ui-testing -expandbuildsettings -format binary -platform iphonesimulator -additionalcontentfile /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/ProductTypeInfoPlistAdditions.plist -o /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLogUITests-Runner.app/PlugIns/LiftLogUITests.xctest/Info.plist
+
+Ld /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLogUITests-Runner.app/PlugIns/LiftLogUITests.xctest/LiftLogUITests normal (in target 'LiftLogUITests' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target arm64-apple-ios16.0-simulator -bundle -isysroot /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk -O0 -L/Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphonesimulator -L/Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator -L/Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib -F/Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphonesimulator -F/Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator -iframework /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/Frameworks -iframework /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk/Developer/Library/Frameworks -filelist /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/Objects-normal/arm64/LiftLogUITests.LinkFileList -Xlinker -rpath -Xlinker /usr/lib/swift -Xlinker -rpath -Xlinker @loader_path/Frameworks -Xlinker -rpath -Xlinker @executable_path/Frameworks -Xlinker -dead_strip -Xlinker -object_path_lto -Xlinker /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/Objects-normal/arm64/LiftLogUITests_lto.o -rdynamic -Xlinker -no_deduplicate -Xlinker -objc_abi_version -Xlinker 2 -Xlinker -dependency_info -Xlinker /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/Objects-normal/arm64/LiftLogUITests_dependency_info.dat -fobjc-link-runtime -L/Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphonesimulator -L/usr/lib/swift -Xlinker -add_ast_path -Xlinker /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/Objects-normal/arm64/LiftLogUITests.swiftmodule @/Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/Objects-normal/arm64/LiftLogUITests-linker-args.resp -Xlinker -needed_framework -Xlinker XCTest -framework XCTest -Xlinker -needed-lXCTestSwiftSupport -lXCTestSwiftSupport -o /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLogUITests-Runner.app/PlugIns/LiftLogUITests.xctest/LiftLogUITests
+
+ExtractAppIntentsMetadata (in target 'LiftLogUITests' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsmetadataprocessor --toolchain-dir /var/run/com.apple.security.cryptexd/mnt/com.apple.MobileAsset.MetalToolchain-v17.6.109.0.eoyCN0/Metal.xctoolchain --module-name LiftLogUITests --sdk-root /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk --xcode-version 17F113 --platform-family iOS --deployment-target 16.0 --bundle-identifier com.lsims6.liftlog.uitests --output /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLogUITests-Runner.app/PlugIns/LiftLogUITests.xctest --target-triple arm64-apple-ios16.0-simulator --binary-file /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLogUITests-Runner.app/PlugIns/LiftLogUITests.xctest/LiftLogUITests --dependency-file /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/Objects-normal/arm64/LiftLogUITests_dependency_info.dat --stringsdata-file /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/Objects-normal/arm64/ExtractedAppShortcutsMetadata.stringsdata --source-file-list /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/Objects-normal/arm64/LiftLogUITests.SwiftFileList --metadata-file-list /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/LiftLogUITests.DependencyMetadataFileList --static-metadata-file-list /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/LiftLogUITests.DependencyStaticMetadataFileList --swift-const-vals-list /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/Objects-normal/arm64/LiftLogUITests.SwiftConstValuesFileList --compile-time-extraction --deployment-aware-processing --validate-assistant-intents --no-app-shortcuts-localization
+2026-10-21 19:14:28.226 appintentsmetadataprocessor[7874:28305] Starting appintentsmetadataprocessor export
+2026-10-21 19:14:28.307 appintentsmetadataprocessor[7874:28305] warning: Metadata extraction skipped. No AppIntents.framework dependency found.
+
+CopySwiftLibs /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLogUITests-Runner.app/PlugIns/LiftLogUITests.xctest (in target 'LiftLogUITests' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    builtin-swiftStdLibTool --copy --verbose --scan-executable /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLogUITests-Runner.app/PlugIns/LiftLogUITests.xctest/LiftLogUITests --scan-folder /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLogUITests-Runner.app/PlugIns/LiftLogUITests.xctest/Frameworks --scan-folder /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLogUITests-Runner.app/PlugIns/LiftLogUITests.xctest/PlugIns --scan-folder /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLogUITests-Runner.app/PlugIns/LiftLogUITests.xctest/SystemExtensions --scan-folder /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLogUITests-Runner.app/PlugIns/LiftLogUITests.xctest/Extensions --platform iphonesimulator --toolchain /var/run/com.apple.security.cryptexd/mnt/com.apple.MobileAsset.MetalToolchain-v17.6.109.0.eoyCN0/Metal.xctoolchain --toolchain /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --destination /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLogUITests-Runner.app/PlugIns/LiftLogUITests.xctest/Frameworks --strip-bitcode --scan-executable /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib/libXCTestSwiftSupport.dylib --strip-bitcode-tool /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/bitcode_strip --emit-dependency-info /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/SwiftStdLibToolInputDependencies.dep --filter-for-swift-os
+Ignoring --strip-bitcode because --sign was not passed
+
+AppIntentsSSUTraining (in target 'LiftLogUITests' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsnltrainingprocessor --infoplist-path /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLogUITests-Runner.app/PlugIns/LiftLogUITests.xctest/Info.plist --temp-dir-path /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/ssu --bundle-id com.lsims6.liftlog.uitests --product-path /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLogUITests-Runner.app/PlugIns/LiftLogUITests.xctest --extracted-metadata-path /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLogUITests-Runner.app/PlugIns/LiftLogUITests.xctest/Metadata.appintents --metadata-file-list /Users/runner/work/lift-log/lift-log/build/sim/Build/Intermediates.noindex/LiftLog.build/Debug-iphonesimulator/LiftLogUITests.build/LiftLogUITests.DependencyMetadataFileList --source-file /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLogUITests-Runner.app/PlugIns/LiftLogUITests.xctest/Info.plist --archive-ssu-assets
+2026-10-21 19:14:28.471 appintentsnltrainingprocessor[7875:28308] Parsing options for appintentsnltrainingprocessor
+2026-10-21 19:14:28.472 appintentsnltrainingprocessor[7875:28308] Starting AppIntents SSU YAML Generation
+2026-10-21 19:14:28.473 appintentsnltrainingprocessor[7875:28308] No AppShortcuts found - Skipping.
+
+MkDir /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLogUITests-Runner.app (in target 'LiftLogUITests' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    /bin/mkdir -p /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLogUITests-Runner.app
+
+CopyPlistFile /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLogUITests-Runner.app/Info.plist /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/Xcode/Agents/XCTRunner.app/Info.plist (in target 'LiftLogUITests' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    builtin-copyPlist --validate --convert xml1 --macro-expansion WRAPPEDPRODUCTNAME LiftLogUITests-Runner --macro-expansion WRAPPEDPRODUCTBUNDLEIDENTIFIER com.lsims6.liftlog.uitests.xctrunner --macro-expansion TESTPRODUCTNAME LiftLogUITests --macro-expansion TESTPRODUCTBUNDLEIDENTIFIER com.lsims6.liftlog.uitests --copy-value UIDeviceFamily /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLogUITests-Runner.app/PlugIns/LiftLogUITests.xctest/Info.plist --outdir /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLogUITests-Runner.app -- /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/Xcode/Agents/XCTRunner.app/Info.plist
+
+CopyAndPreserveArchs /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLogUITests-Runner.app/LiftLogUITests-Runner (in target 'LiftLogUITests' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/lipo /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/Xcode/Agents/XCTRunner.app/XCTRunner -output /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLogUITests-Runner.app/LiftLogUITests-Runner -extract arm64
+
+Copy /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLogUITests-Runner.app/PkgInfo /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/Xcode/Agents/XCTRunner.app/PkgInfo (in target 'LiftLogUITests' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/Xcode/Agents/XCTRunner.app/PkgInfo /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLogUITests-Runner.app
+
+Copy /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLogUITests-Runner.app/Frameworks/libXCTestSwiftSupport.dylib /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib/libXCTestSwiftSupport.dylib (in target 'LiftLogUITests' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -exclude Headers -exclude PrivateHeaders -exclude Modules -exclude \*.tbd -resolve-src-symlinks /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib/libXCTestSwiftSupport.dylib /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLogUITests-Runner.app/Frameworks
+
+Copy /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLogUITests-Runner.app/Frameworks/XCUnit.framework /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/PrivateFrameworks/XCUnit.framework (in target 'LiftLogUITests' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -exclude Headers -exclude PrivateHeaders -exclude Modules -exclude \*.tbd -resolve-src-symlinks /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/PrivateFrameworks/XCUnit.framework /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLogUITests-Runner.app/Frameworks
+
+Copy /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLogUITests-Runner.app/Frameworks/XCUIAutomation.framework /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/Frameworks/XCUIAutomation.framework (in target 'LiftLogUITests' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -exclude Headers -exclude PrivateHeaders -exclude Modules -exclude \*.tbd -resolve-src-symlinks /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/Frameworks/XCUIAutomation.framework /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLogUITests-Runner.app/Frameworks
+
+Copy /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLogUITests-Runner.app/Frameworks/XCTestSupport.framework /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/PrivateFrameworks/XCTestSupport.framework (in target 'LiftLogUITests' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -exclude Headers -exclude PrivateHeaders -exclude Modules -exclude \*.tbd -resolve-src-symlinks /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/PrivateFrameworks/XCTestSupport.framework /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLogUITests-Runner.app/Frameworks
+
+Copy /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLogUITests-Runner.app/Frameworks/XCTestCore.framework /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/PrivateFrameworks/XCTestCore.framework (in target 'LiftLogUITests' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -exclude Headers -exclude PrivateHeaders -exclude Modules -exclude \*.tbd -resolve-src-symlinks /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/PrivateFrameworks/XCTestCore.framework /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLogUITests-Runner.app/Frameworks
+
+Copy /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLogUITests-Runner.app/Frameworks/XCTest.framework /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/Frameworks/XCTest.framework (in target 'LiftLogUITests' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -exclude Headers -exclude PrivateHeaders -exclude Modules -exclude \*.tbd -resolve-src-symlinks /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/Frameworks/XCTest.framework /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLogUITests-Runner.app/Frameworks
+
+Copy /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLogUITests-Runner.app/Frameworks/XCTAutomationSupport.framework /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/PrivateFrameworks/XCTAutomationSupport.framework (in target 'LiftLogUITests' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -exclude Headers -exclude PrivateHeaders -exclude Modules -exclude \*.tbd -resolve-src-symlinks /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/PrivateFrameworks/XCTAutomationSupport.framework /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLogUITests-Runner.app/Frameworks
+
+Copy /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLogUITests-Runner.app/Frameworks/Testing.framework /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/Frameworks/Testing.framework (in target 'LiftLogUITests' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -exclude Headers -exclude PrivateHeaders -exclude Modules -exclude \*.tbd -resolve-src-symlinks /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/Frameworks/Testing.framework /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLogUITests-Runner.app/Frameworks
+
+RegisterExecutionPolicyException /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLogUITests-Runner.app/PlugIns/LiftLogUITests.xctest (in target 'LiftLogUITests' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    builtin-RegisterExecutionPolicyException /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLogUITests-Runner.app/PlugIns/LiftLogUITests.xctest
+
+Touch /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLogUITests-Runner.app/PlugIns/LiftLogUITests.xctest (in target 'LiftLogUITests' from project 'LiftLog')
+    cd /Users/runner/work/lift-log/lift-log
+    /usr/bin/touch -c /Users/runner/work/lift-log/lift-log/build/sim/Build/Products/Debug-iphonesimulator/LiftLogUITests-Runner.app/PlugIns/LiftLogUITests.xctest
+
+2026-10-21 19:15:15.357707+0000 LiftLogUITests-Runner[9024:31346] [Default] Running tests...
+objc[9024]: Class UIAccessibilityLoaderWebShared is implemented in both /Library/Developer/CoreSimulator/Volumes/iOS_23F77/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 26.5.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebCore.axbundle/WebCore (0x108670310) and /Library/Developer/CoreSimulator/Volumes/iOS_23F77/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 26.5.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebKit.axbundle/WebKit (0x108718398). This may cause spurious casting failures and mysterious crashes. One of the duplicates must be removed or renamed.
+    t =      nans Interface orientation changed to Portrait
+Test Suite 'All tests' started at 2026-10-21 19:15:27.159.
+Test Suite 'LiftLogUITests.xctest' started at 2026-10-21 19:15:27.167.
+Test Suite 'LiftLogUITests' started at 2026-10-21 19:15:27.167.
+Test Case '-[LiftLogUITests.LiftLogUITests testLoggedSetSurvivesRelaunch]' started.
+    t =     0.00s Start Test at 2026-10-21 19:15:27.172
+    t =     1.37s Set Up
+    t =     1.38s Open com.lsims6.liftlog
+    t =     1.38s     Launch com.lsims6.liftlog
+2026-10-21 19:15:30.687 xcodebuild[2971:14667] [MT] IDELaunchParametersSnapshot: The operation couldn’t be completed. (DebuggerLLDB.DebuggerVersionStore.StoreError error 0.)
+2026-10-21 19:15:30.687 xcodebuild[2971:14667] [MT] IDELaunchParametersSnapshot: no debugger version
+    t =    25.46s         Setting up automation session
+    t =    27.24s         Wait for com.lsims6.liftlog to idle
+    t =    29.30s Waiting 30.0s for WebView (First Match) to exist
+    t =    30.34s     Checking `Expect predicate `existsNoRetry == 1` for object WebView (First Match)`
+    t =    30.34s         Checking existence of `WebView (First Match)`
+    t =    31.94s Waiting 30.0s for Any (First Match) to exist
+    t =    32.97s     Checking `Expect predicate `existsNoRetry == 1` for object Any (First Match)`
+    t =    32.97s         Checking existence of `Any (First Match)`
+    t =    35.57s         Capturing element debug description
+    t =    35.95s     Checking `Expect predicate `existsNoRetry == 1` for object Any (First Match)`
+    t =    35.98s         Checking existence of `Any (First Match)`
+    t =    37.01s         Capturing element debug description
+    t =    37.97s     Checking `Expect predicate `existsNoRetry == 1` for object Any (First Match)`
+    t =    37.97s         Checking existence of `Any (First Match)`
+    t =    40.91s Find the Target Application 'com.lsims6.liftlog'
+    t =    41.31s Added attachment named '0-setup'
+    t =    41.32s Tap Any (First Match)
+    t =    41.32s     Wait for com.lsims6.liftlog to idle
+    t =    41.33s     Find the Any (First Match)
+    t =    41.75s     Check for interrupting elements affecting "Plan: 5-day split" Switch
+    t =    41.94s     Synthesize event
+    t =    42.43s     Wait for com.lsims6.liftlog to idle
+    t =    42.98s Waiting 5.0s for Any (First Match) to exist
+    t =    44.07s     Checking `Expect predicate `existsNoRetry == 1` for object Any (First Match)`
+    t =    44.07s         Checking existence of `Any (First Match)`
+    t =    47.49s Checking existence of `Any (First Match)`
+    t =    47.89s Checking existence of `Any (First Match)`
+    t =    48.18s Find the Any (First Match)
+    t =    48.47s Tap "Use 5-day split" Button
+    t =    48.47s     Wait for com.lsims6.liftlog to idle
+    t =    48.47s     Find the "Use 5-day split" Button
+    t =    48.58s     Check for interrupting elements affecting "Use 5-day split" Button
+    t =    48.71s     Synthesize event
+    t =    49.30s     Wait for com.lsims6.liftlog to idle
+    t =    49.59s Waiting 30.0s for Any (First Match) to exist
+    t =    50.64s     Checking `Expect predicate `existsNoRetry == 1` for object Any (First Match)`
+    t =    50.64s         Checking existence of `Any (First Match)`
+    t =    51.01s Tap Any (First Match)
+    t =    51.01s     Wait for com.lsims6.liftlog to idle
+    t =    51.01s     Find the Any (First Match)
+    t =    51.24s     Check for interrupting elements affecting "Monday, Oct 19" Switch
+    t =    51.38s     Synthesize event
+    t =    51.76s     Wait for com.lsims6.liftlog to idle
+    t =    51.79s Waiting 15.0s for Any (First Match) to exist
+    t =    52.81s     Checking `Expect predicate `existsNoRetry == 1` for object Any (First Match)`
+    t =    52.82s         Checking existence of `Any (First Match)`
+    t =    55.62s Checking existence of `Any (First Match)`
+    t =    56.01s Find the Target Application 'com.lsims6.liftlog'
+    t =    56.79s Added attachment named '1-monday'
+    t =    56.79s Checking existence of `Any (First Match)`
+    t =    57.05s Find the Any (First Match)
+    t =    57.33s Find the "Log cardio before workout" Switch
+    t =    57.64s Find the Target Application 'com.lsims6.liftlog'
+    t =    57.75s Swipe up Target Application 'com.lsims6.liftlog'
+    t =    57.75s     Wait for com.lsims6.liftlog to idle
+    t =    57.77s     Find the Target Application 'com.lsims6.liftlog'
+    t =    57.88s     Check for interrupting elements affecting "Lift Log" Application
+    t =    58.06s     Synthesize event
+    t =    58.53s     Wait for com.lsims6.liftlog to idle
+    t =    60.65s Checking existence of `"Log cardio before workout" Switch`
+    t =    60.87s Find the "Log cardio before workout" Switch
+    t =    61.07s Find the "Log cardio before workout" Switch
+    t =    61.28s Find the Target Application 'com.lsims6.liftlog'
+    t =    61.39s Tap "Log cardio before workout" Switch
+    t =    61.40s     Wait for com.lsims6.liftlog to idle
+    t =    61.40s     Find the "Log cardio before workout" Switch
+    t =    61.58s     Check for interrupting elements affecting "Log cardio before workout" Switch
+    t =    61.74s     Synthesize event
+    t =    62.07s     Wait for com.lsims6.liftlog to idle
+    t =    63.08s Waiting 15.0s for Any (First Match) to exist
+    t =    64.13s     Checking `Expect predicate `existsNoRetry == 1` for object Any (First Match)`
+    t =    64.14s         Checking existence of `Any (First Match)`
+    t =    64.28s Checking existence of `Any (First Match)`
+    t =    64.56s Find the Any (First Match)
+    t =    64.74s Find the "Set 1 done" Switch
+    t =    64.88s Find the Target Application 'com.lsims6.liftlog'
+    t =    64.98s Tap "Set 1 done" Switch
+    t =    64.98s     Wait for com.lsims6.liftlog to idle
+    t =    64.99s     Find the "Set 1 done" Switch
+    t =    65.14s     Check for interrupting elements affecting "Set 1 done" Switch
+    t =    65.24s     Synthesize event
+    t =    65.55s     Wait for com.lsims6.liftlog to idle
+    t =    66.58s Find the Target Application 'com.lsims6.liftlog'
+    t =    66.89s Added attachment named '2-set-logged'
+    t =    66.89s Tap Any (First Match)
+    t =    66.89s     Wait for com.lsims6.liftlog to idle
+    t =    66.90s     Find the Any (First Match)
+    t =    67.14s     Check for interrupting elements affecting "History" Switch
+    t =    67.27s     Synthesize event
+    t =    67.31s         Scroll element to visible
+    t =    68.36s         Find the "History" Switch
+    t =    68.80s         Computed hit point {196, 148} after scrolling to visible
+    t =    69.10s     Wait for com.lsims6.liftlog to idle
+    t =    69.11s Waiting 10.0s for "Hack squats" StaticText to exist
+    t =    70.14s     Checking `Expect predicate `existsNoRetry == 1` for object "Hack squats" StaticText`
+    t =    70.14s         Checking existence of `"Hack squats" StaticText`
+    t =    70.20s Find the Target Application 'com.lsims6.liftlog'
+    t =    70.41s Added attachment named '3-history'
+    t =    70.41s Terminate com.lsims6.liftlog:10448
+    t =    72.42s Open com.lsims6.liftlog
+    t =    72.42s     Launch com.lsims6.liftlog
+2026-10-21 19:16:39.648 xcodebuild[2971:14667] [MT] IDELaunchParametersSnapshot: The operation couldn’t be completed. (DebuggerLLDB.DebuggerVersionStore.StoreError error 0.)
+2026-10-21 19:16:39.650 xcodebuild[2971:14667] [MT] IDELaunchParametersSnapshot: no debugger version
+    t =    78.20s         Setting up automation session
+    t =    83.85s         Wait for com.lsims6.liftlog to idle
+    t =    86.10s Waiting 30.0s for WebView (First Match) to exist
+    t =    87.16s     Checking `Expect predicate `existsNoRetry == 1` for object WebView (First Match)`
+    t =    87.16s         Checking existence of `WebView (First Match)`
+    t =    87.45s Waiting 30.0s for Any (First Match) to exist
+    t =    88.51s     Checking `Expect predicate `existsNoRetry == 1` for object Any (First Match)`
+    t =    88.51s         Checking existence of `Any (First Match)`
+    t =    89.17s Tap Any (First Match)
+    t =    89.18s     Wait for com.lsims6.liftlog to idle
+    t =    89.18s     Find the Any (First Match)
+    t =    90.36s     Check for interrupting elements affecting "History" Switch
+    t =    90.55s     Synthesize event
+    t =    90.88s     Wait for com.lsims6.liftlog to idle
+    t =    91.24s Waiting 10.0s for "Hack squats" StaticText to exist
+    t =    92.27s     Checking `Expect predicate `existsNoRetry == 1` for object "Hack squats" StaticText`
+    t =    92.27s         Checking existence of `"Hack squats" StaticText`
+    t =    93.38s Waiting 10.0s for "Cardio before · Stair climber" StaticText to exist
+    t =    94.44s     Checking `Expect predicate `existsNoRetry == 1` for object "Cardio before · Stair climber" StaticText`
+    t =    94.44s         Checking existence of `"Cardio before · Stair climber" StaticText`
+    t =    94.67s Find the Target Application 'com.lsims6.liftlog'
+    t =    94.92s Added attachment named '4-history-after-reopen'
+    t =    94.92s Tap Any (First Match)
+    t =    94.92s     Wait for com.lsims6.liftlog to idle
+    t =    94.93s     Find the Any (First Match)
+    t =    95.11s     Check for interrupting elements affecting "Today" Switch
+    t =    95.36s     Synthesize event
+    t =    95.69s     Wait for com.lsims6.liftlog to idle
+    t =    95.70s Waiting 10.0s for Any (First Match) to exist
+    t =    96.75s     Checking `Expect predicate `existsNoRetry == 1` for object Any (First Match)`
+    t =    96.75s         Checking existence of `Any (First Match)`
+    t =    97.18s Tap Any (First Match)
+    t =    97.18s     Wait for com.lsims6.liftlog to idle
+    t =    97.18s     Find the Any (First Match)
+    t =    97.67s     Check for interrupting elements affecting "Monday, Oct 19" Switch
+    t =    97.88s     Synthesize event
+    t =    98.22s     Wait for com.lsims6.liftlog to idle
+    t =    98.23s Checking existence of `Any (First Match)`
+    t =    98.64s Find the Any (First Match)
+    t =    98.79s Swipe up Target Application 'com.lsims6.liftlog'
+    t =    98.79s     Wait for com.lsims6.liftlog to idle
+    t =    98.80s     Find the Target Application 'com.lsims6.liftlog'
+    t =    98.88s     Check for interrupting elements affecting "Lift Log" Application
+    t =    98.96s     Synthesize event
+    t =    99.41s     Wait for com.lsims6.liftlog to idle
+    t =   101.54s Checking existence of `"Finish workout & lock" Button`
+    t =   102.04s Find the "Finish workout & lock" Button
+    t =   102.34s Swipe up Target Application 'com.lsims6.liftlog'
+    t =   102.34s     Wait for com.lsims6.liftlog to idle
+    t =   102.34s     Find the Target Application 'com.lsims6.liftlog'
+    t =   102.46s     Check for interrupting elements affecting "Lift Log" Application
+    t =   102.57s     Synthesize event
+    t =   103.10s     Wait for com.lsims6.liftlog to idle
+    t =   105.19s Checking existence of `"Finish workout & lock" Button`
+    t =   105.41s Find the "Finish workout & lock" Button
+    t =   105.64s Swipe up Target Application 'com.lsims6.liftlog'
+    t =   105.64s     Wait for com.lsims6.liftlog to idle
+    t =   105.65s     Find the Target Application 'com.lsims6.liftlog'
+    t =   105.79s     Check for interrupting elements affecting "Lift Log" Application
+    t =   106.00s     Synthesize event
+    t =   106.54s     Wait for com.lsims6.liftlog to idle
+    t =   108.07s Checking existence of `"Finish workout & lock" Button`
+    t =   108.32s Find the "Finish workout & lock" Button
+    t =   108.64s Find the "Finish workout & lock" Button
+    t =   108.86s Find the Target Application 'com.lsims6.liftlog'
+    t =   108.96s Tap "Finish workout & lock" Button
+    t =   108.96s     Wait for com.lsims6.liftlog to idle
+    t =   108.96s     Find the "Finish workout & lock" Button
+    t =   109.18s     Check for interrupting elements affecting "Finish workout & lock" Button
+    t =   109.37s     Synthesize event
+    t =   109.69s     Wait for com.lsims6.liftlog to idle
+    t =   109.69s Waiting 10.0s for Any (First Match) to exist
+    t =   110.73s     Checking `Expect predicate `existsNoRetry == 1` for object Any (First Match)`
+    t =   110.73s         Checking existence of `Any (First Match)`
+    t =   111.88s Find the Target Application 'com.lsims6.liftlog'
+    t =   112.12s Added attachment named '5-finished'
+    t =   112.12s Tap Any (First Match)
+    t =   112.12s     Wait for com.lsims6.liftlog to idle
+    t =   112.13s     Find the Any (First Match)
+    t =   112.26s     Check for interrupting elements affecting "Progress" Switch
+    t =   112.35s     Synthesize event
+    t =   112.68s     Wait for com.lsims6.liftlog to idle
+    t =   113.69s Find the Target Application 'com.lsims6.liftlog'
+    t =   113.94s Added attachment named '6-progress'
+    t =   113.95s Tear Down
+Test Case '-[LiftLogUITests.LiftLogUITests testLoggedSetSurvivesRelaunch]' passed (114.329 seconds).
+Test Suite 'LiftLogUITests' passed at 2026-10-21 19:17:21.502.
+	 Executed 1 test, with 0 failures (0 unexpected) in 114.329 (114.335) seconds
+Test Suite 'LiftLogUITests.xctest' passed at 2026-10-21 19:17:21.503.
+	 Executed 1 test, with 0 failures (0 unexpected) in 114.329 (114.336) seconds
+Test Suite 'All tests' passed at 2026-10-21 19:17:21.503.
+	 Executed 1 test, with 0 failures (0 unexpected) in 114.329 (114.345) seconds
+2026-10-21 19:17:23.618 xcodebuild[2971:14667] [MT] IDETestOperationsObserverDebug: 174.325 elapsed -- Testing started completed.
+2026-10-21 19:17:23.618 xcodebuild[2971:14667] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-10-21 19:17:23.618 xcodebuild[2971:14667] [MT] IDETestOperationsObserverDebug: 174.325 sec, +174.325 sec -- end
+
+Test session results, code coverage, and logs:
+	/Users/runner/work/lift-log/lift-log/build/TestResults.xcresult
+
+** TEST SUCCEEDED **
+
+Testing started
