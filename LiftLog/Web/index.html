@@ -234,6 +234,11 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .fentry .acts{display:flex;gap:14px;margin-top:6px}
 .fentry .acts button{font:inherit;font-size:13px;border:0;background:none;color:var(--accent);cursor:pointer;padding:4px 0}
 .fentry .acts button.del{color:var(--warn)}
+.qadd{display:grid;grid-template-columns:84px minmax(0,1fr) auto;gap:8px}
+.qadd input{font:inherit;font-size:16px;height:44px;padding:0 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);min-width:0}
+.qadd input.fcal::placeholder{font-family:var(--body);font-size:15px;font-weight:400}
+.qadd input.fcal{text-align:right;font-family:var(--display);font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
+.qadd .btn{height:44px;padding:0 16px}
 .msearch{font:inherit;font-size:16px;width:100%;height:44px;padding:0 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
 .mlist{display:flex;flex-direction:column}
 .mlist .sec2{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;padding:10px 0 4px}
@@ -322,6 +327,12 @@ details.panel>summary{cursor:pointer;font-size:14px;font-weight:600;list-style-p
     <div class="panel" id="calSum"></div>
     <div class="panel">
       <h3>Add food</h3>
+      <div class="qadd" id="qAdd">
+        <input id="qCal" class="fcal" inputmode="numeric" enterkeyhint="done" placeholder="cal" aria-label="Quick add calories">
+        <input id="qName" enterkeyhint="done" autocomplete="off" placeholder="What was it?" aria-label="Quick add: what it was">
+        <button class="btn" id="qBtn">Add</button>
+      </div>
+      <div class="note" id="qNote">Quick add: just the calories, straight onto the day. Or find it below.</div>
       <div id="fDraft" class="wrap" style="gap:8px" hidden></div>
       <div id="fRecentWrap" hidden><div class="cat">Eat this a lot? Tap to log it again</div><div class="chips" id="fRecent" role="group" aria-label="Recent foods"></div></div>
       <input id="mSearch" class="msearch" type="search" enterkeyhint="search" autocomplete="off" autocorrect="off" placeholder="Search: biscuit, 3 finger, footlong…" aria-label="Search the menu">
@@ -1388,7 +1399,7 @@ function renderDraft(){
 }
 function recentFoods(){
   const from=shift(todayStr(),-60), seen={};
-  Object.keys(food).filter(d=>d>=from).sort().forEach(d=>dayFood(d).forEach(e=>{const k=e.text.trim().toLowerCase();if(!k)return;
+  Object.keys(food).filter(d=>d>=from).sort().forEach(d=>dayFood(d).forEach(e=>{const k=e.text.trim().toLowerCase();if(!k||k==="quick add")return;
     const r=seen[k]||(seen[k]={n:0,e});r.n++;r.e=e}));   // later entries win, so a fixed-up number sticks
   return Object.values(seen).sort((a,b)=>b.n-a.n||b.e.t-a.e.t).slice(0,8).map(r=>r.e);
 }
@@ -1479,6 +1490,20 @@ $("fEst").onclick=async()=>{
   catch(e){fMsg=e.message}
   fBusy=false;renderFood();
 };
+/* quick add: a calorie number (and optionally a name) goes straight onto the day as its own entry */
+function quickAdd(){
+  const v=$("qCal").value.trim(), n=Math.round(Number(v)), name=$("qName").value.trim();
+  if(v===""||!(n>0&&n<10000)){$("qNote").textContent="Type the calories first, like 350.";$("qNote").className="note down";$("qCal").focus();return}
+  const t=fDate===todayStr()?Date.now():parse(fDate).getTime()+12*36e5;
+  food[fDate]=[...dayFood(fDate),{id:newId(),t,text:name||"Quick add",items:[{name:name||"Quick add",cal:n,p:null}]}];
+  $("qCal").value="";$("qName").value="";$("qCal").blur();$("qName").blur();
+  persist();renderFood();
+  $("qNote").textContent=`Added ${n0(n)} cal${name?` for ${name}`:""}.`;$("qNote").className="note up";
+}
+$("qBtn").onclick=quickAdd;
+["qCal","qName"].forEach(id=>$(id).addEventListener("keydown",ev=>{if(ev.key==="Enter"){ev.preventDefault();
+  if(id==="qCal"&&!$("qName").value.trim()&&$("qCal").value.trim())$("qName").focus();else quickAdd()}}));
+$("qCal").addEventListener("input",()=>{$("qNote").textContent="Quick add: just the calories, straight onto the day. Or find it below.";$("qNote").className="note"});
 $("fManual").onclick=()=>{const q=$("mSearch").value.trim();   // starts the name from whatever you searched for
   const row={name:q,cal:null,p:null};
   if(fDraft){fDraft.text="";fDraft.items.push(row)}else fDraft={text:"",items:[row],note:""};
@@ -1525,7 +1550,8 @@ $("foodList").addEventListener("click",ev=>{const b=ev.target.closest("button[da
   if(fDelArmed!==id){fDelArmed=id;renderFoodList();setTimeout(()=>{if(fDelArmed===id){fDelArmed=null;if(view==="food")renderFoodList()}},4000);return}
   fDelArmed=null;food[fDate]=dayFood(fDate).filter(x=>x.id!==id);if(!food[fDate].length)delete food[fDate];
   if(fDraft&&fDraft.edit===id)fDraft=null;persist();renderFood();});
-function goFood(d){fDate=d;fDraft=null;fMsg="";fDelArmed=null;renderFood()}
+function goFood(d){fDate=d;fDraft=null;fMsg="";fDelArmed=null;
+  $("qNote").textContent="Quick add: just the calories, straight onto the day. Or find it below.";$("qNote").className="note";renderFood()}
 $("fPrev").onclick=()=>goFood(shift(fDate,-1));
 $("fNext").onclick=()=>goFood(shift(fDate,1));
 $("fDate").addEventListener("change",ev=>{if(ev.target.value)goFood(ev.target.value)});

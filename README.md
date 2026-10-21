@@ -36,6 +36,7 @@ The bar along the bottom switches between **Workout** and **Food**. The tabs up 
 
 The **Food** tab tracks calories against a daily target range. In **Settings → Calorie target**, enter sex, age, height, weight and activity: the app works out your BMR (Mifflin-St Jeor) and TDEE and sets the range from extreme loss (TDEE − 1,000, about 2 lb/week) to mild loss (TDEE − 250, about ½ lb/week), never below 1,500 (men) / 1,200 (women). Leave weight blank and it follows your latest weigh-in. You can still type your own range. It's free and works offline.
 
+- **Quick add:** type a calorie number (and, if you like, what it was) at the top of *Add food* and tap Add. It goes straight onto the day, no menu needed.
 - **Menu:** search ("biscuit", "3 finger", "footlong") or pick a restaurant, then tap foods to build the meal and **Add**. The menu lives in `LiftLog/Web/menu.js` (Chick-fil-A, Raising Cane's, McDonald's, Subway, Firehouse Subs, with sources noted at the top). Edit it and push to add or fix foods.
 - **My foods:** anything not on the menu, tap **Enter it myself**, type the calories, and **☆ Save to My foods** so it shows up in search next time.
 - **Recent** chips re-log a meal you've had before in one tap.
