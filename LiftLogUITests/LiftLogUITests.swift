@@ -51,10 +51,16 @@ final class LiftLogUITests: XCTestCase {
         // A fresh install opens the setup screen: pick the 5-day split.
         let template = control(web, "Plan: 5-day split")
         XCTAssertTrue(template.waitForExistence(timeout: 30), "The first-run setup screen didn't appear")
+        // The page can be in the accessibility tree a moment before it's drawn, and a tap then goes nowhere,
+        // so give it a second and retry the tap until the plan is selected.
+        sleep(2)
         shot(app, "0-setup")
-        template.tap()
         let start = control(web, "Use 5-day split")
-        XCTAssertTrue(start.waitForExistence(timeout: 10), "The setup screen's start button didn't appear")
+        for _ in 0..<4 {
+            template.tap()
+            if start.waitForExistence(timeout: 5) { break }
+        }
+        XCTAssertTrue(start.exists, "The setup screen's start button didn't appear")
         XCTAssertTrue(scrollTo(start, in: app, belowBar: false), "The setup screen's start button wasn't reachable")
         start.tap()
 
