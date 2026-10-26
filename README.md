@@ -1,6 +1,6 @@
 # Lift Log
 
-A workout and calorie tracker for iPhone. Everything is saved in a file on the phone. Nothing goes over the internet unless you add an optional API key for food estimates.
+A workout and calorie tracker for iPhone. Everything is saved in a file on the phone. Nothing goes over the internet; even food estimates run on the phone.
 
 ## What's here
 
@@ -28,7 +28,7 @@ Your workouts, their exercises and which day each one falls on are all editable:
 
 ## Layout
 
-The gear at the top right opens **Settings**: workout plan, calorie target (TDEE calculator), weight goal (shown on weigh-ins and the Progress chart, with a rough time to reach it), the optional Claude key, CSV export/import, privacy policy, erase all data, and the app version.
+The gear at the top right opens **Settings**: workout plan, calorie target (TDEE calculator), weight goal (shown on weigh-ins and the Progress chart, with a rough time to reach it), food estimate status, CSV export/import, privacy policy, erase all data, and the app version.
 
 The bar along the bottom switches between **Workout** and **Food**. The tabs up top switch views inside each one: Workout has Today, Progress and History; Food has Today and History (daily totals vs your target, a 14-day chart, and every day's meals). The app reopens in the section you used last.
 
@@ -40,7 +40,7 @@ The **Food** tab tracks calories against a daily target range. In **Settings →
 - **Menu:** search ("biscuit", "3 finger", "footlong") or pick a restaurant, then tap foods to build the meal and **Add**. The menu lives in `LiftLog/Web/menu.js` (Chick-fil-A, Raising Cane's, McDonald's, Subway, Firehouse Subs, with sources noted at the top). Edit it and push to add or fix foods.
 - **My foods:** anything not on the menu, tap **Enter it myself**, type the calories, and **☆ Save to My foods** so it shows up in search next time.
 - **Recent** chips re-log a meal you've had before in one tap.
-- **Optional:** with an Anthropic API key (platform.claude.com, billed per use, about $0.0003 an estimate) a box appears for describing food in your own words. The key is kept in the iPhone's Keychain.
+- **Estimates:** on an iPhone with Apple Intelligence (iPhone 15 Pro or newer, iOS 26+, turned on in Settings), a box appears for describing food in your own words. Apple's on-device model splits it into items with calories and protein, using matching menu lines as hints. Free, offline, and nothing leaves the phone. Without Apple Intelligence the box stays hidden.
 - Food shows on the History tab and goes into CSV exports (Set column "Food 1", "Food 2"…, with Calories, Protein and Meal columns). My foods are saved with the log.
 
 ## Moving data

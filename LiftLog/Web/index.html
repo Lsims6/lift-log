@@ -209,7 +209,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .card.skipped{opacity:.7;border-style:dashed;padding:10px 12px}
 .card.skipped .name{font-size:15px}
 .skipbtn{margin-left:auto;color:var(--muted)}
-/* food: a day total against the target range, an add box that asks Claude for calories, and the day's entries */
+/* food: a day total against the target range, an add box with on-device calorie estimates, and the day's entries */
 .calhead{display:flex;justify-content:space-between;align-items:flex-end;gap:10px}
 .calbig{font-family:var(--display);font-size:44px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
 .calbig small{font-family:var(--body);font-size:13px;font-weight:500;color:var(--muted);margin-left:4px}
@@ -340,7 +340,7 @@ details.panel>summary{cursor:pointer;font-size:14px;font-weight:600;list-style-p
       <div id="mResults" class="mlist"></div>
       <button class="btn ghost" id="fManual">Not on the list? Enter it myself</button>
       <div id="fAiWrap" class="wrap" style="gap:8px" hidden>
-        <div class="cat">Or describe it and let Claude estimate</div>
+        <div class="cat">Or describe it and get an estimate</div>
         <textarea id="fText" class="ftext" rows="2" enterkeyhint="done" placeholder="Cane's 3 finger combo, diet coke" aria-label="What you ate"></textarea>
         <button class="btn" id="fEst">Estimate calories</button>
       </div>
@@ -427,12 +427,9 @@ details.panel>summary{cursor:pointer;font-size:14px;font-weight:600;list-style-p
       </div>
     </div>
     <div class="panel" id="fSet">
-      <h3>Claude estimates <span class="note">(optional)</span></h3>
+      <h3>Food estimates</h3>
       <div class="fset">
-        <label for="fKey">Anthropic API key</label>
-        <div class="note" id="fKeyStatus"></div>
-        <input id="fKey" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="sk-ant-…">
-        <div class="fbtns"><button class="btn" id="fKeySave">Save key</button><button class="btn ghost" id="fKeyDel">Remove key</button></div>
+        <div class="note" id="fAiStatus"></div>
         <div class="note" id="fPrivacy"></div>
       </div>
         </div>
@@ -445,7 +442,7 @@ details.panel>summary{cursor:pointer;font-size:14px;font-weight:600;list-style-p
     </div>
     <div class="panel" id="xSet">
       <h3>Privacy</h3>
-      <div class="note">Lift Log has no account, no ads and no tracking. Your log stays on this phone. The only thing that ever leaves it is what you choose to send: a CSV you export, or, if you add a Claude key, the food you type for an estimate.</div>
+      <div class="note">Lift Log has no account, no ads and no tracking. Your log stays on this phone. The only thing that ever leaves it is a CSV you choose to export. Food estimates run on the iPhone itself and never go online.</div>
       <a class="btn ghost" id="privacyLink" href="https://lsims6.github.io/lift-log/privacy.html" target="_blank" rel="noopener" style="text-align:center;text-decoration:none">Read the privacy policy</a>
       <button class="btn ghost del" id="eraseBtn">Erase all data</button>
       <div class="note" id="eraseNote" hidden>This deletes every workout, weigh-in, food entry, your plan and settings from this phone. It can't be undone; export a CSV first if you want a copy.</div>
@@ -1069,7 +1066,6 @@ $("eraseBtn").onclick=()=>{
   sessions={};customNames={};bodyweight={};food={};myFoods=[];foodTarget={lo:2500,hi:3000};
   foodProfile={sex:null,age:null,ft:null,inch:null,wt:null,act:1.55,auto:false,goal:null};plan=null;
   try{["ll.data","ll.apikey","ll.section","ll.mChain","ll.bwRange","gl.statEx"].forEach(k=>localStorage.removeItem(k))}catch(e){}
-  if(NATIVE)window.webkit.messageHandlers.liftlog.postMessage({type:"setKey",key:""});else hasKey=false;
   rebuildPlan();persist();loadCur();$("eraseBtn").textContent="Erase all data";$("eraseNote").hidden=true;showView("setup");
 };
 function renderSettings(){
@@ -1330,30 +1326,14 @@ function importCSV(text){
 }
 
 /* ---- food & calories ----
-   Type what you ate; "Estimate calories" sends only that text to Claude (Haiku), which splits it into items
-   with calories and protein. You can fix any number before adding it. "Enter it myself" skips Claude entirely,
-   and the recent-foods chips re-log something you've eaten before without asking again.
-   In the iPhone app the request goes through the native side, which keeps the API key in the Keychain;
-   in a plain browser (the test site) the key stays in that browser's storage. */
-const AI_MODEL="claude-haiku-5-5";
-const FOOD_SYSTEM=`You estimate the calories and protein in food someone says they ate.
-Split the description into separate items: each sandwich, entree, side, sauce and drink gets its own item.
-For chain restaurant menu items, use that chain's published nutrition numbers for the standard size unless a size or count is given. A "meal" or "combo" includes its usual side and drink.
-For home-made or generic food, assume one typical portion unless amounts are given.
-Diet sodas, water, unsweetened tea and black coffee are 0 calories.
-Round calories to the nearest 10 and protein to the nearest gram.
-Give each item a short name that includes the restaurant (if any) and the portion.
-Always answer by calling log_food.`;
-const FOOD_TOOL={name:"log_food",description:"Record the estimated calories and protein for each food item eaten.",
-  input_schema:{type:"object",properties:{
-    items:{type:"array",items:{type:"object",properties:{
-      name:{type:"string",description:"Short name with portion, e.g. \"Chick-fil-A chicken biscuit\" or \"Medium fries\""},
-      calories:{type:"integer"},protein:{type:"integer",description:"grams of protein"}},required:["name","calories","protein"]}},
-    note:{type:"string",description:"One short sentence about any portion or size you had to assume, or an empty string."}},
-    required:["items","note"]}};
-
+   Type what you ate; "Estimate calories" asks Apple's on-device model (Apple Intelligence, iOS 26+) to split it
+   into items with calories and protein, with any matching lines from the built-in menu passed along as hints.
+   It runs on the iPhone: free, offline, nothing sent anywhere. You can fix any number before adding it.
+   "Enter it myself" skips the estimate, and the recent-foods chips re-log something you've eaten before.
+   The test site in a plain browser has no on-device model, so the estimate box stays hidden there. */
 let fDate=todayStr(), fDraft=null, fBusy=false, fMsg="", fDelArmed=null;
-let hasKey=NATIVE?!!window.__LIFTLOG_KEY__:!!ls.get("ll.apikey","");
+let aiStatus=NATIVE?String(window.__LIFTLOG_AI__||"unsupported"):"unsupported";
+try{localStorage.removeItem("ll.apikey")}catch(e){}   // left over from the old Claude key setting
 const esc=v=>String(v??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const n0=n=>Math.round(n||0).toLocaleString();
 const newId=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
@@ -1366,8 +1346,8 @@ function dayP(d){return dayFood(d).reduce((a,e)=>a+entryP(e),0)}
 function renderFood(){
   $("fDate").value=fDate;
   renderCalSum(); renderDraft(); renderRecent(); renderMenu(); renderFoodList();
-  $("fAiWrap").hidden=!hasKey;
-  const m=$("fMsg"); m.hidden=!fMsg; m.textContent=fMsg; m.className="note"+(/^(Couldn|That|The estimate|Add your|Type)/.test(fMsg)?" down":"");
+  $("fAiWrap").hidden=aiStatus!=="ready";
+  const m=$("fMsg"); m.hidden=!fMsg; m.textContent=fMsg; m.className="note"+(/^(Couldn|That|The estimate|Apple|Turn on|Estimates need|Type)/.test(fMsg)?" down":"");
   $("fEst").disabled=fBusy; $("fManual").disabled=fBusy; $("fEst").textContent=fBusy?"Estimating…":"Estimate calories";
 }
 $("calSum").addEventListener("click",ev=>{if(ev.target.closest("[data-go=settings]"))showView("settings")});
@@ -1452,39 +1432,50 @@ function renderFoodSettings(){
   if(document.activeElement!==$("fLo"))$("fLo").value=foodTarget.lo;
   if(document.activeElement!==$("fHi"))$("fHi").value=foodTarget.hi;
   renderCalc();
-  $("fKeyStatus").innerHTML=hasKey?`<span class="keyok">✓ Key saved ${NATIVE?"in this iPhone's Keychain":"in this browser"}</span>`:"No key yet. Create one at platform.claude.com → API keys, then paste it here.";
-  $("fKeyDel").hidden=!hasKey;
-  $("fPrivacy").textContent=`Optional: the menu, My foods and “Enter it myself” are free and never go online. A key adds a box on Food › Today for describing food in your own words. Estimates use Claude (${AI_MODEL}). Only what you type in the food box is sent, and only when you tap Estimate. The key never goes into your log or CSV exports. Each estimate costs a small fraction of a cent, billed to your API account.`;
+  const st={
+    ready:`<span class="keyok">✓ On</span> Describe what you ate on Food › Today and Apple Intelligence estimates it right on this iPhone.`,
+    notEnabled:"Turn on Apple Intelligence (iPhone Settings › Apple Intelligence & Siri) to get a box on Food › Today for describing food in your own words.",
+    notReady:"Apple Intelligence is still downloading on this iPhone. The estimate box shows up on Food › Today once it's ready.",
+    notEligible:"This iPhone can't run Apple Intelligence (it needs an iPhone 15 Pro or newer), so estimates are off.",
+    unsupported:NATIVE?"Estimates need iOS 26 with Apple Intelligence turned on.":"Estimates only work in the iPhone app, which uses Apple Intelligence on the phone."};
+  $("fAiStatus").innerHTML=st[aiStatus]||st.unsupported;
+  $("fPrivacy").textContent="Estimates run entirely on the iPhone: free, offline, and nothing is sent anywhere. They're rougher than the menu, so check the numbers before adding. The menu, My foods and “Enter it myself” always work.";
 }
 
-/* talking to Claude: native app → Swift does the request; browser → fetch directly */
+/* the estimate itself runs in Swift (Apple's on-device model); the page sends the text plus menu hints */
 const AI_WAIT={}; let aiSeq=0;
 window.__aiResult=r=>{const f=AI_WAIT[r.id];if(f){delete AI_WAIT[r.id];f(r)}};
-window.__keyStatus=v=>{hasKey=!!v;rerender()};
-function aiRequest(body){
-  if(NATIVE)return new Promise(res=>{const id=++aiSeq;AI_WAIT[id]=res;
-    window.webkit.messageHandlers.liftlog.postMessage({type:"ai",id,body})});
-  return fetch("https://api.anthropic.com/v1/messages",{method:"POST",body,headers:{"content-type":"application/json",
-      "x-api-key":ls.get("ll.apikey",""),"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"}})
-    .then(async r=>({status:r.status,body:await r.text()})).catch(()=>({status:0,body:""}));
+window.__aiStatus=v=>{const was=aiStatus;aiStatus=String(v||"unsupported");if(was!==aiStatus)rerender()};
+// Menu lines that look like what was typed, e.g. "Raising Cane's · 3 Finger Combo: 1,070 cal, 39 g protein".
+// Each comma/"and"/"+" piece is matched on its own; a food needs most of that piece's words to count.
+function menuHints(text){
+  const out=[], seen=new Set(), stop=new Set(["a","an","and","the","with","of","some","had","ate","i","my","plus"]);
+  text.split(/,|\+|\band\b|\bwith\b|\n/i).forEach(part=>{
+    const ws=fnorm(part).split(" ").filter(w=>w&&!stop.has(w)); if(!ws.length)return;
+    const need=Math.max(ws.length>1?2:1,Math.ceil(ws.length*0.6));
+    FOODS.filter(f=>f.chain!==MY).map(f=>({f,n:ws.filter(w=>f.hay.includes(w.length>=4?w:" "+w)).length}))
+      .filter(x=>x.n>=need).sort((a,b)=>b.n-a.n).slice(0,3)
+      .forEach(({f})=>{if(seen.has(f.key))return;seen.add(f.key);
+        out.push(`${f.chain.name} · ${f.n}: ${f.cal} cal${f.p!=null?`, ${f.p} g protein`:""}`)});
+  });
+  return out.slice(0,12).join("\n");
 }
-async function estimateFood(text){
-  const res=await aiRequest(JSON.stringify({model:AI_MODEL,max_tokens:1024,system:FOOD_SYSTEM,tools:[FOOD_TOOL],
-    tool_choice:{type:"tool",name:"log_food"},messages:[{role:"user",content:text}]}));
-  if(res.status===0)throw new Error(res.body||"Couldn't reach Claude. Check your connection, or tap Enter it myself.");
-  if(res.status===401||res.status===403)throw new Error("That API key was turned down. Check it in Settings (the gear, top right).");
-  if(res.status!==200){let m="";try{m=JSON.parse(res.body).error.message}catch(e){}
-    throw new Error(`The estimate failed (${res.status})${m?": "+m:""}. Try again, or tap Enter it myself.`)}
-  let tu=null;try{tu=JSON.parse(res.body).content.find(c=>c.type==="tool_use")}catch(e){}
-  const items=((tu&&tu.input&&tu.input.items)||[]).map(x=>({name:String(x.name||"").trim(),cal:Math.max(0,Math.round(+x.calories||0)),p:Math.max(0,Math.round(+x.protein||0))})).filter(x=>x.name);
-  if(!items.length)throw new Error("Couldn't find any food in that. Try naming each thing you ate.");
-  return {items,note:String(tu.input.note||"").trim()};
+function estimateFood(text){
+  if(!NATIVE)return Promise.reject(new Error("Estimates only work in the iPhone app. Tap Enter it myself instead."));
+  return new Promise(res=>{const id=++aiSeq;AI_WAIT[id]=res;
+    window.webkit.messageHandlers.liftlog.postMessage({type:"estimate",id,text,reference:menuHints(text)})})
+  .then(r=>{
+    if(r.error)throw new Error(r.error);
+    const items=(r.items||[]).map(x=>({name:String(x.name||"").trim(),cal:Math.max(0,Math.round((+x.calories||0)/10)*10),p:Math.max(0,Math.round(+x.protein||0))})).filter(x=>x.name);
+    if(!items.length)throw new Error("Couldn't find any food in that. Try naming each thing you ate.");
+    return {items,note:String(r.note||"").trim()};
+  });
 }
 
 $("fEst").onclick=async()=>{
   const text=$("fText").value.trim();
   if(!text){fMsg="Type what you ate first.";renderFood();$("fText").focus();return}
-  if(!hasKey){fMsg="Add your Anthropic API key in Settings (the gear, top right) first, or tap Enter it myself.";renderFood();return}
+  if(aiStatus!=="ready"){fMsg="Estimates need Apple Intelligence on this iPhone (see Settings). Tap Enter it myself instead.";renderFood();return}
   fBusy=true;fMsg="";renderFood();
   try{const r=await estimateFood(text);fDraft={text,items:r.items,note:r.note};fMsg=""}
   catch(e){fMsg=e.message}
@@ -1513,7 +1504,7 @@ $("fManual").onclick=()=>{const q=$("mSearch").value.trim();   // starts the nam
 $("fDraft").addEventListener("input",ev=>{const i=ev.target.closest("input[data-f]");if(!i||!fDraft)return;
   const x=fDraft.items[+i.closest(".frow").dataset.k];
   if(i.dataset.f==="name")x.name=i.value;
-  else{const n=Number(i.value.trim());x.cal=i.value.trim()===""||!isFinite(n)?null:Math.max(0,Math.round(n));x.p=null}  // a hand-edited number drops Claude's protein guess for that item
+  else{const n=Number(i.value.trim());x.cal=i.value.trim()===""||!isFinite(n)?null:Math.max(0,Math.round(n));x.p=null}  // a hand-edited number drops the estimate's protein guess for that item
   $("fDraftTot").textContent=n0(entryCal(fDraft))+" cal";});
 $("fDraft").addEventListener("change",ev=>{if(ev.target.matches("input[data-f=name]")&&fDraft){  // show "Save to My foods" once a typed name is in
   const has=!!$("fDraft").querySelector("[data-f=keep]"),want=fDraft.items.some(x=>x.name.trim()&&!MENU_NAMES.has(x.name.trim().toLowerCase()));
@@ -1632,15 +1623,6 @@ $("tSex").addEventListener("click",ev=>{const b=ev.target.closest("button[data-v
 $("tUse").addEventListener("click",()=>{calcInput();const r=calcTDEE();if(!r)return;
   foodTarget={lo:r.lo,hi:r.hi};foodProfile.auto=true;persist();rerender();});
 $("fLo").addEventListener("change",saveTarget);$("fHi").addEventListener("change",saveTarget);
-$("fKeySave").onclick=()=>{const k=$("fKey").value.trim();if(!k){$("fKey").focus();return}
-  $("fKey").value="";
-  if(NATIVE)window.webkit.messageHandlers.liftlog.postMessage({type:"setKey",key:k});
-  else{ls.set("ll.apikey",k);hasKey=true}
-  if(/^Add your/.test(fMsg))fMsg="";rerender();};
-$("fKeyDel").onclick=()=>{
-  if(NATIVE)window.webkit.messageHandlers.liftlog.postMessage({type:"setKey",key:""});
-  else{try{localStorage.removeItem("ll.apikey")}catch(e){}hasKey=false}
-  rerender();};
 // a new day rolls the Food tab forward when the app comes back from the background
 document.addEventListener("visibilitychange",()=>{if(!document.hidden&&view==="food"&&fDate!==todayStr()&&!fDraft&&fDate===shift(todayStr(),-1))goFood(todayStr())});
 

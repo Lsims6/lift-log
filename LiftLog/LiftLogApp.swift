@@ -2,12 +2,16 @@ import Security
 import SwiftUI
 import UIKit
 import WebKit
+#if canImport(FoundationModels)
+import FoundationModels
+#endif
 
 @main
 struct LiftLogApp: App {
     init() {
         // UI tests launch with -resetData to start from an empty log.
         if CommandLine.arguments.contains("-resetData") { Store.reset() }
+        FoodAI.removeOldKey()
     }
 
     var body: some Scene {
@@ -69,59 +73,118 @@ enum Store {
     }
 }
 
-/// The Anthropic API key for food estimates, kept in the iPhone's Keychain (never in the log file or exports).
-enum KeyStore {
-    private static let base: [String: Any] = [
-        kSecClass as String: kSecClassGenericPassword,
-        kSecAttrService as String: "com.lsims6.liftlog.anthropic",
-        kSecAttrAccount as String: "api-key",
-    ]
-
-    static func read() -> String? {
-        var query = base
-        query[kSecReturnData as String] = true
-        query[kSecMatchLimit as String] = kSecMatchLimitOne
-        var out: CFTypeRef?
-        guard SecItemCopyMatching(query as CFDictionary, &out) == errSecSuccess,
-              let data = out as? Data, let key = String(data: data, encoding: .utf8), !key.isEmpty else { return nil }
-        return key
+/// Food estimates from Apple's on-device model (Apple Intelligence, iOS 26 and later). Everything runs on the
+/// iPhone: no account, no key, no cost, and nothing is sent anywhere.
+enum FoodAI {
+    /// What the page needs to know: "ready", "notEnabled" (Apple Intelligence is off), "notReady" (still
+    /// downloading), "notEligible" (this iPhone can't run it) or "unsupported" (iOS older than 26).
+    static var status: String {
+        #if canImport(FoundationModels)
+        if #available(iOS 26.0, *) {
+            let availability = SystemLanguageModel.default.availability
+            if case .available = availability { return "ready" }
+            if case .unavailable(.appleIntelligenceNotEnabled) = availability { return "notEnabled" }
+            if case .unavailable(.modelNotReady) = availability { return "notReady" }
+            if case .unavailable(.deviceNotEligible) = availability { return "notEligible" }
+        }
+        #endif
+        return "unsupported"
     }
 
-    static func set(_ key: String) {
-        SecItemDelete(base as CFDictionary)
-        guard !key.isEmpty else { return }
-        var item = base
-        item[kSecValueData as String] = Data(key.utf8)
-        item[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
-        SecItemAdd(item as CFDictionary, nil)
+    static func message(for status: String) -> String {
+        switch status {
+        case "notEnabled": return "Turn on Apple Intelligence in the iPhone's Settings first, or tap Enter it myself."
+        case "notReady": return "Apple Intelligence is still getting ready on this iPhone. Try again in a bit, or tap Enter it myself."
+        default: return "Estimates need Apple Intelligence on this iPhone. Tap Enter it myself instead."
+        }
     }
 
-    static var hasKey: Bool { read() != nil }
-}
+    static let instructions = """
+        You estimate the calories and protein in food someone says they ate.
+        Split the description into separate items: each sandwich, entree, side, sauce and drink gets its own item.
+        For chain restaurant menu items, use that chain's published nutrition numbers for the standard size unless a size or count is given. A "meal" or "combo" includes its usual side and drink.
+        When menu numbers are listed with the request and one matches an item, use those numbers exactly.
+        For home-made or generic food, assume one typical portion unless amounts are given.
+        Diet sodas, water, unsweetened tea and black coffee are 0 calories.
+        Round calories to the nearest 10 and protein to the nearest gram.
+        Give each item a short name that includes the restaurant (if any) and the portion.
+        """
 
-/// Sends a food-estimate request to the Claude API. The page builds the request body; this side only adds the
-/// key and always posts to the same fixed address, so the page can't send the key anywhere else.
-enum ClaudeAPI {
-    static let url = URL(string: "https://api.anthropic.com/v1/messages")!
-
-    static func send(body: String, done: @escaping (_ status: Int, _ body: String) -> Void) {
-        guard let key = KeyStore.read() else {
-            done(0, "Add your Anthropic API key in the settings below first, or tap Enter it myself.")
+    /// Answers with ["items": [[name, calories, protein]], "note": String] or ["error": String], on the main thread.
+    static func estimate(text: String, reference: String, done: @escaping ([String: Any]) -> Void) {
+        #if canImport(FoundationModels)
+        if #available(iOS 26.0, *) {
+            Task { @MainActor in done(await run(text: text, reference: reference)) }
             return
         }
-        var req = URLRequest(url: url, timeoutInterval: 45)
-        req.httpMethod = "POST"
-        req.setValue("application/json", forHTTPHeaderField: "content-type")
-        req.setValue(key, forHTTPHeaderField: "x-api-key")
-        req.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
-        req.httpBody = Data(body.utf8)
-        URLSession.shared.dataTask(with: req) { data, response, _ in
-            let status = (response as? HTTPURLResponse)?.statusCode ?? 0
-            let text = data.flatMap { String(data: $0, encoding: .utf8) } ?? ""
-            DispatchQueue.main.async { done(status, text) }
-        }.resume()
+        #endif
+        done(["error": message(for: "unsupported")])
+    }
+
+    #if canImport(FoundationModels)
+    @available(iOS 26.0, *)
+    private static func run(text: String, reference: String) async -> [String: Any] {
+        let now = status
+        guard now == "ready" else { return ["error": message(for: now)] }
+        var prompt = "What I ate: \(text)"
+        if !reference.isEmpty {
+            prompt += "\n\nMenu numbers from the app that may match:\n\(reference)"
+        }
+        do {
+            let session = LanguageModelSession(instructions: instructions)
+            let response = try await session.respond(to: prompt, generating: FoodEstimate.self)
+            let items: [[String: Any]] = response.content.items.map {
+                ["name": $0.name, "calories": $0.calories, "protein": $0.protein]
+            }
+            return ["items": items, "note": response.content.note]
+        } catch let error as LanguageModelSession.GenerationError {
+            if case .guardrailViolation = error {
+                return ["error": "Apple's model wouldn't estimate that. Try wording it differently, or tap Enter it myself."]
+            }
+            if case .exceededContextWindowSize = error {
+                return ["error": "That's too long to estimate in one go. Try a shorter description."]
+            }
+            if case .unsupportedLanguageOrLocale = error {
+                return ["error": "Apple's model doesn't support this iPhone's language yet. Tap Enter it myself instead."]
+            }
+            return ["error": "The estimate failed. Try again, or tap Enter it myself."]
+        } catch {
+            return ["error": "The estimate failed. Try again, or tap Enter it myself."]
+        }
+    }
+    #endif
+
+    /// Earlier versions kept an Anthropic API key in the Keychain; clear it out so nothing is left behind.
+    static func removeOldKey() {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: "com.lsims6.liftlog.anthropic",
+        ]
+        SecItemDelete(query as CFDictionary)
     }
 }
+
+#if canImport(FoundationModels)
+@available(iOS 26.0, *)
+@Generable
+struct FoodEstimate {
+    @Guide(description: "Each separate food or drink that was eaten, one entry per item")
+    var items: [FoodEstimateItem]
+    @Guide(description: "One short sentence about any portion or size you had to assume, or an empty string")
+    var note: String
+}
+
+@available(iOS 26.0, *)
+@Generable
+struct FoodEstimateItem {
+    @Guide(description: "Short name with the restaurant (if any) and portion, e.g. Chick-fil-A chicken biscuit")
+    var name: String
+    @Guide(description: "Estimated calories, rounded to the nearest 10")
+    var calories: Int
+    @Guide(description: "Estimated grams of protein")
+    var protein: Int
+}
+#endif
 
 struct LiftLogWebView: UIViewControllerRepresentable {
     func makeUIViewController(context: Context) -> WebViewController { WebViewController() }
@@ -156,7 +219,7 @@ final class WebViewController: UIViewController, WKScriptMessageHandler, WKNavig
         content.removeAllUserScripts()
         let info = Bundle.main.infoDictionary ?? [:]
         let version = "\(info["CFBundleShortVersionString"] as? String ?? "?") (build \(info["CFBundleVersion"] as? String ?? "?"))"
-        let boot = "window.__LIFTLOG__ = \(Store.load()); window.__LIFTLOG_KEY__ = \(KeyStore.hasKey); window.__LIFTLOG_VERSION__ = \"\(version)\";"
+        let boot = "window.__LIFTLOG__ = \(Store.load()); window.__LIFTLOG_AI__ = \"\(FoodAI.status)\"; window.__LIFTLOG_VERSION__ = \"\(version)\";"
         content.addUserScript(WKUserScript(source: boot, injectionTime: .atDocumentStart, forMainFrameOnly: true))
     }
 
@@ -167,10 +230,17 @@ final class WebViewController: UIViewController, WKScriptMessageHandler, WKNavig
             return
         }
         webView.loadFileURL(index, allowingReadAccessTo: index.deletingLastPathComponent())
+        // Apple Intelligence can be turned on or finish downloading while the app is in the background.
+        NotificationCenter.default.addObserver(self, selector: #selector(appBecameActive),
+                                               name: UIApplication.didBecomeActiveNotification, object: nil)
+    }
+
+    @objc private func appBecameActive() {
+        callPage("__aiStatus", FoodAI.status)
     }
 
     // Messages from the page: {type: "save", json}, {type: "export", filename, csv},
-    // {type: "setKey", key} (empty removes it) and {type: "ai", id, body} for a food estimate.
+    // and {type: "estimate", id, text, reference} for a food estimate from the on-device model.
     func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage) {
         guard let body = message.body as? [String: Any], let type = body["type"] as? String else { return }
         switch type {
@@ -180,14 +250,11 @@ final class WebViewController: UIViewController, WKScriptMessageHandler, WKNavig
             guard let csv = body["csv"] as? String else { return }
             let name = (body["filename"] as? String).flatMap { $0.isEmpty ? nil : $0 } ?? "lift-log.csv"
             share(csv: csv, filename: name)
-        case "setKey":
-            KeyStore.set(((body["key"] as? String) ?? "").trimmingCharacters(in: .whitespacesAndNewlines))
-            callPage("__keyStatus", KeyStore.hasKey)
-        case "ai":
-            guard let request = body["body"] as? String else { return }
+        case "estimate":
+            guard let text = body["text"] as? String else { return }
             let id = body["id"] ?? 0
-            ClaudeAPI.send(body: request) { [weak self] status, text in
-                self?.callPage("__aiResult", ["id": id, "status": status, "body": text])
+            FoodAI.estimate(text: text, reference: body["reference"] as? String ?? "") { [weak self] result in
+                self?.callPage("__aiResult", result.merging(["id": id]) { _, new in new })
             }
         default:
             break
