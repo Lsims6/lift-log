@@ -148,6 +148,7 @@ jobs:
       - name: Build the iPhone app (unsigned; AltStore signs it)
         if: always()
         run: |
+          mkdir -p build   # the test step usually makes it; not when the test is skipped
           set +e
           xcodebuild build \
             -project LiftLog.xcodeproj -scheme LiftLog \
