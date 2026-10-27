@@ -34,6 +34,7 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
   padding-top:calc(env(safe-area-inset-top,0px) + 12px);padding-bottom:calc(env(safe-area-inset-bottom,0px) + 104px)}
 .wrap{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+.wrap .wrap{width:100%;min-width:0}   /* a nested column fills its parent; otherwise a long chip row (Progress › By exercise) widens it past the screen */
 section.wrap{width:100%}
 header{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .gear{width:44px;height:44px;display:grid;place-items:center;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);cursor:pointer;padding:0;align-self:center}
