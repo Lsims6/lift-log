@@ -42,6 +42,11 @@ header{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;
 .gear[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .tabs button.back{border:0;background:none;color:var(--accent);padding-left:0}
 .tlist{display:flex;flex-direction:column;gap:10px}
+.sprow{display:flex;align-items:center;gap:8px;padding:10px 0;border-top:1px solid var(--line)}
+.sprow:first-child{border-top:0}
+.sprow .nm{flex:1;min-width:0;font-weight:600}
+.sprow .nm small{display:block;font-weight:400;font-size:12px;color:var(--muted);margin-top:2px}
+.sprow .btn{padding:8px 12px;font-size:14px}
 .tcard{font:inherit;text-align:left;background:var(--surface);border:1.5px solid var(--line);border-radius:10px;padding:12px;color:var(--ink);cursor:pointer;display:flex;flex-direction:column;gap:4px}
 .tcard b{font-family:var(--display);font-size:20px;text-transform:uppercase;letter-spacing:.02em}
 .tcard span{font-size:13px;color:var(--muted)}
@@ -379,6 +384,7 @@ details.panel>summary{cursor:pointer;font-size:14px;font-weight:600;list-style-p
 
   <section id="planView" class="wrap" style="gap:12px" hidden>
     <h2 class="sec" style="margin:0">Workout plan</h2>
+    <input class="wkname" id="pName" aria-label="Plan name" enterkeyhint="done" placeholder="Plan name">
     <div class="panel">
       <h3>Your week</h3>
       <div class="note">Pick a workout for each day, or leave it as a rest day. The same workout can go on more than one day.</div>
@@ -386,7 +392,12 @@ details.panel>summary{cursor:pointer;font-size:14px;font-weight:600;list-style-p
     </div>
     <div class="wrap" style="gap:12px" id="pWorkouts"></div>
     <button class="btn ghost" id="pNew">+ New workout</button>
-    <button class="btn ghost" id="pTemplate">Start over from a template…</button>
+    <div class="panel" id="pSaved">
+      <h3>Saved plans</h3>
+      <div class="note" id="pSavedNote"></div>
+      <div id="pSavedList"></div>
+    </div>
+    <button class="btn ghost" id="pTemplate">Switch to a template…</button>
     <p class="note">Changes save as you go. Your logged workouts are never touched: removing an exercise or workout only changes what shows up from now on.</p>
   </section>
 
@@ -638,6 +649,7 @@ plan=BOOT.plan||null;
 if(!plan&&(Object.keys(sessions).length||Object.keys(bodyweight).length||Object.keys(food).length)){
   plan={workouts:split5(true),order:["mon","tue","wed","thu","fri"],schedule:{mon:"mon",tue:"tue",wed:"wed",thu:"thu",fri:"fri",sat:null,sun:null}};
 }
+let savedPlans=Array.isArray(BOOT.savedPlans)?BOOT.savedPlans:[];   // other plans you can switch back to: [{id,name,savedAt,workouts,order,schedule}]
 if(plan){plan.custom=plan.custom||[];plan.schedule=Object.assign({mon:null,tue:null,wed:null,thu:null,fri:null,sat:null,sun:null},plan.schedule)}
 rebuildPlan();
 Object.entries(customNames).forEach(([k,v])=>{if(!NAMES[k])NAMES[k]=v});   // exercises brought in by CSV import
@@ -1000,7 +1012,7 @@ $("bwRange").addEventListener("click",ev=>{const b=ev.target.closest("button[dat
 /* ---- saving ---- */
 const SAVED_LABEL=NATIVE?"Saved on this iPhone":"Saved in this browser";
 function persist(){
-  const payload={version:1,savedAt:Date.now(),names:customNames,sessions,bodyweight,food,foodTarget,myFoods,foodProfile,plan};
+  const payload={version:1,savedAt:Date.now(),names:customNames,sessions,bodyweight,food,foodTarget,myFoods,foodProfile,plan,savedPlans};
   try{
     if(NATIVE)window.webkit.messageHandlers.liftlog.postMessage({type:"save",json:JSON.stringify(payload)});
     else ls.set("ll.data",payload);
@@ -1081,7 +1093,7 @@ $("eraseBtn").onclick=()=>{
     setTimeout(()=>{if(eraseArmed){eraseArmed=false;$("eraseBtn").textContent="Erase all data";$("eraseNote").hidden=true}},5000);return}
   eraseArmed=false;
   sessions={};customNames={};bodyweight={};food={};myFoods=[];foodTarget={lo:2500,hi:3000};
-  foodProfile={sex:null,age:null,ft:null,inch:null,wt:null,act:1.55,auto:false,goal:null};plan=null;
+  foodProfile={sex:null,age:null,ft:null,inch:null,wt:null,act:1.55,auto:false,goal:null};plan=null;savedPlans=[];
   try{["ll.data","ll.apikey","ll.section","ll.mChain","ll.bwRange","gl.statEx"].forEach(k=>localStorage.removeItem(k))}catch(e){}
   rebuildPlan();persist();loadCur();$("eraseBtn").textContent="Erase all data";$("eraseNote").hidden=true;showView("setup");
 };
@@ -1715,7 +1727,7 @@ function renderSetup(){
   const again=!!plan;
   $("setupTitle").textContent=again?"Start from a template":"Welcome";
   $("setupLead").textContent=again
-    ?"This replaces your workouts and schedule with the template. Your logged workouts, weigh-ins and food stay exactly as they are."
+    ?`Your current plan, “${planName(plan)}”, goes into Saved plans so you can switch back to it exactly as it is. Your logged workouts, weigh-ins and food stay as they are.`
     :"Lift Log tracks your lifts with progressive overload, your cardio, body weight and food. Everything stays on your phone. Pick a plan to start with; you can change every workout, exercise and day later in Settings.";
   $("tList").innerHTML=Object.entries(TEMPLATES).map(([k,T])=>{const P=T.make();
     return `<button class="tcard" data-t="${k}" aria-pressed="${k===tPick}" aria-label="Plan: ${T.name}"><b>${T.name}</b><span>${T.about}</span>${P.order.length?`<span>${planDaysText(P)}</span>`:""}</button>`}).join("");
@@ -1727,7 +1739,8 @@ $("tList").addEventListener("click",ev=>{const b=ev.target.closest("button[data-
 $("tCancel").onclick=()=>{tPick=null;showView("plan")};
 $("tStart").onclick=()=>{if(!tPick)return;
   const keep=plan&&plan.custom||[], first=!plan;
-  plan={...TEMPLATES[tPick].make(),custom:keep};
+  stashPlan();
+  plan={...TEMPLATES[tPick].make(),pid:newPid(),name:tPick==="blank"?"My plan":TEMPLATES[tPick].name,custom:keep};
   const blank=tPick==="blank"; tPick=null;
   rebuildPlan(); persist(); loadCur();
   showView(blank?"plan":first?"log":"plan");
@@ -1737,13 +1750,55 @@ $("tStart").onclick=()=>{if(!tPick)return;
 let pPicker=null, pQ="", pDelArmed=null, pMake=false;
 const newPid=()=>"w"+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
 function savePlan(){rebuildPlan();persist();if(cur&&!cur.locked&&!PLAN[cur.day]&&cur.day&&!sessions[date])cur.day=defaultDay(date);}
+/* saved plans: switching never loses a plan. The current one is copied into savedPlans first,
+   and the one you pick comes out of the list. Your own exercises (plan.custom) stay with you either way. */
+function planName(P){return (P&&P.name)||"My plan"}
+const copyOf=v=>JSON.parse(JSON.stringify(v));
+function stashPlan(){
+  if(!plan)return;
+  if(!plan.pid)plan.pid=newPid();
+  const entry={id:plan.pid,name:planName(plan),savedAt:Date.now(),workouts:copyOf(plan.workouts),order:copyOf(plan.order),schedule:copyOf(plan.schedule)};
+  savedPlans=savedPlans.filter(x=>x.id!==entry.id).concat(entry);
+}
+function switchPlan(id){
+  const P=savedPlans.find(x=>x.id===id);if(!P)return;
+  const keep=plan&&plan.custom||[];
+  stashPlan();
+  savedPlans=savedPlans.filter(x=>x.id!==id);
+  plan={pid:P.id,name:P.name,workouts:P.workouts,order:P.order,custom:keep,
+    schedule:Object.assign({mon:null,tue:null,wed:null,thu:null,fri:null,sat:null,sun:null},P.schedule)};
+  pPicker=null;pDelArmed=null;spDelArmed=null;
+  rebuildPlan();persist();
+  if(cur&&!cur.locked&&!sessions[date])cur.day=defaultDay(date);
+  loadCur();
+}
+let spDelArmed=null;
+function planBrief(P){const days=WD.filter(d=>P.schedule&&P.schedule[d]&&P.workouts[P.schedule[d]]).length;
+  return `${P.order.length} workout${P.order.length===1?"":"s"} · ${days} day${days===1?"":"s"} a week`}
+function renderSavedPlans(){
+  const list=savedPlans.slice().sort((a,b)=>b.savedAt-a.savedAt);
+  $("pSavedNote").textContent=list.length
+    ?"Switching saves the plan you're on now here too, so you can always come back to it."
+    :"Plans you switch away from are kept here, so you can come back to them exactly as they were.";
+  $("pSavedList").innerHTML=list.map(P=>`<div class="sprow" data-sp="${esc(P.id)}"><div class="nm">${esc(P.name)}<small>${planBrief(P)} · saved ${new Date(P.savedAt).toLocaleDateString([],{month:"short",day:"numeric"})}</small></div>
+    <button class="btn" data-spa="use">Switch</button><button class="btn ghost del" data-spa="del">${spDelArmed===P.id?"Tap again":"Delete"}</button></div>`).join("");
+}
+$("pSavedList").addEventListener("click",ev=>{const b=ev.target.closest("button[data-spa]");if(!b)return;
+  const id=b.closest("[data-sp]").dataset.sp;
+  if(b.dataset.spa==="use"){switchPlan(id);renderPlanEditor();window.scrollTo(0,0);return}
+  if(spDelArmed!==id){spDelArmed=id;renderSavedPlans();setTimeout(()=>{if(spDelArmed===id){spDelArmed=null;if(view==="plan")renderSavedPlans()}},4000);return}
+  spDelArmed=null;savedPlans=savedPlans.filter(x=>x.id!==id);persist();renderSavedPlans();});
+$("pName").addEventListener("change",()=>{plan.name=$("pName").value.trim()||"My plan";savePlan();renderPlanEditor()});
+$("pName").addEventListener("keydown",ev=>{if(ev.key==="Enter"){ev.preventDefault();$("pName").blur()}});
 function renderPlanSum(){
   if(!plan){$("pSum").innerHTML="";return}
-  $("pSum").innerHTML=`<ul class="psum">${WD.map(d=>{const id=plan.schedule[d];
+  $("pSum").innerHTML=`<div class="cat" style="margin-bottom:4px">${esc(planName(plan))}${savedPlans.length?` · ${savedPlans.length} saved`:""}</div><ul class="psum">${WD.map(d=>{const id=plan.schedule[d];
     return `<li><span>${WDLONG[d]}</span>${id&&PLAN[id]?`<span>${esc(PLAN[id].label)} <em>· ${PLAN[id].items.length} exercises</em></span>`:`<em>Rest</em>`}</li>`}).join("")}</ul>`;
 }
 function exMeta(x){return `${GLABEL[x.g]||""}${x.cardio?"":x.c?" · 8–12 reps":" · 6–15 reps"}${x.mine?" · yours":""}`}
 function renderPlanEditor(){
+  if(document.activeElement!==$("pName"))$("pName").value=planName(plan);
+  renderSavedPlans();
   const opt=(sel)=>`<option value="">Rest day</option>`+DAYS.map(id=>`<option value="${id}"${id===sel?" selected":""}>${esc(PLAN[id].label)}</option>`).join("");
   $("pWeek").innerHTML=WD.map(d=>`<span>${WDNAME[d]}</span><select class="tsel" data-wd="${d}" aria-label="${WDLONG[d]} workout">${opt(plan.schedule[d])}</select>`).join("");
   $("pWorkouts").innerHTML=plan.order.map((id,wi)=>{const W=plan.workouts[id], days=wdsFor(id).map(d=>WDLONG[d]);
