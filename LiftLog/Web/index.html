@@ -245,6 +245,15 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .mlist .sec2{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;padding:10px 0 4px}
 .mrow{display:flex;align-items:center;gap:8px;border-top:1px solid var(--line)}
 .mrow:first-child,.mlist .sec2+.mrow{border-top:0}
+/* a restaurant's categories are dropdowns: tap a heading to open it, tap again to close */
+.mgrp{border-top:1px solid var(--line)}
+.mgrp:first-child{border-top:0}
+.mgrp>button.mhead{width:100%;display:flex;align-items:center;gap:8px;font:inherit;font-weight:600;font-size:15px;text-align:left;background:none;border:0;color:var(--ink);padding:12px 2px;min-height:46px;cursor:pointer}
+.mgrp>button.mhead .ct{margin-left:auto;font-size:12px;font-weight:500;color:var(--muted)}
+.mgrp>button.mhead .ct b{color:var(--done);font-weight:700}
+.mgrp>button.mhead .chev{width:10px;height:10px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg) translate(-2px,-2px);transition:transform .15s;flex:none;margin-left:6px}
+.mgrp>button.mhead[aria-expanded="true"] .chev{transform:rotate(-135deg) translate(-2px,-2px)}
+.mgrp .mbody{padding:0 0 6px 10px;border-left:2px solid var(--line);margin:0 0 8px 2px}
 .mrow>button.add{flex:1;min-width:0;display:flex;justify-content:space-between;align-items:center;gap:10px;font:inherit;text-align:left;background:none;border:0;color:var(--ink);padding:11px 2px;cursor:pointer;min-height:44px}
 .mrow>button.add:active{background:var(--bg)}
 .mrow .nm{min-width:0}
@@ -1633,7 +1642,7 @@ document.addEventListener("visibilitychange",()=>{if(!document.hidden&&view==="f
 const MENU=window.LIFTLOG_MENU||{chains:[]};
 const MY={id:"my",name:"My foods",short:"Mine"};
 const MENU_NAMES=new Set();
-let FOODS=[], mChain=ls.get("ll.mChain",null), mDelArmed=null;
+let FOODS=[], mChain=ls.get("ll.mChain",null), mDelArmed=null, mOpen=new Set();   // mOpen: which category dropdowns are open
 const fnorm=t=>String(t).toLowerCase().replace(/"/g," inch ").replace(/['’.®™]/g,"").replace(/&/g," and ").replace(/[^a-z0-9]+/g," ").trim();
 function buildFoodIndex(){
   FOODS=[];MENU_NAMES.clear();
@@ -1665,14 +1674,19 @@ function renderMenuResults(){
   if(!mChain){el.innerHTML=`<div class="mhint">Pick a restaurant or search. Tap foods to build your meal.</div>`;return}
   const list=FOODS.filter(f=>f.chain.id===mChain);
   if(!list.length){el.innerHTML=`<div class="mhint">No saved foods yet. Enter one yourself, then tap ☆ Save to My foods.</div>`;return}
-  let sec="",html="";list.forEach(f=>{if(f.sec!==sec&&f.chain!==MY){sec=f.sec;html+=`<div class="sec2">${esc(sec)}</div>`}html+=mRow(f,false)});
-  el.innerHTML=html;
+  if(mChain==="my"){el.innerHTML=list.map(f=>mRow(f,false)).join("");return}   // My foods is short: no dropdowns
+  const groups=[];list.forEach(f=>{let g=groups[groups.length-1];if(!g||g.sec!==f.sec)groups.push(g={sec:f.sec,items:[]});g.items.push(f)});
+  el.innerHTML=groups.map(g=>{const k=mChain+"|"+g.sec, open=mOpen.has(k);
+    const inMeal=fDraft?g.items.filter(f=>fDraft.items.some(x=>x.name===f.full)).length:0;
+    return `<div class="mgrp"><button class="mhead" data-msec="${esc(k)}" aria-expanded="${open}"><span>${esc(g.sec)}</span><span class="ct">${inMeal?`<b>✓ ${inMeal}</b> · `:""}${g.items.length}</span><span class="chev" aria-hidden="true"></span></button>${open?`<div class="mbody">${g.items.map(f=>mRow(f,false)).join("")}</div>`:""}</div>`}).join("");
 }
 $("mSearch").addEventListener("input",renderMenuResults);
 $("mSearch").addEventListener("keydown",ev=>{if(ev.key==="Enter"){ev.preventDefault();$("mSearch").blur()}});
 $("mChains").addEventListener("click",ev=>{const b=ev.target.closest("button[data-chain]");if(!b)return;
   mChain=mChain===b.dataset.chain?null:b.dataset.chain;ls.set("ll.mChain",mChain);mDelArmed=null;renderMenu();});
 $("mResults").addEventListener("click",ev=>{
+  const h=ev.target.closest("button[data-msec]");
+  if(h){const k=h.dataset.msec;mOpen.has(k)?mOpen.delete(k):mOpen.add(k);renderMenuResults();return}
   const d=ev.target.closest("button[data-mdel]");
   if(d){const id=d.dataset.mdel;
     if(mDelArmed!==id){mDelArmed=id;renderMenuResults();setTimeout(()=>{if(mDelArmed===id){mDelArmed=null;renderMenuResults()}},4000);return}
