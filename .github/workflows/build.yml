@@ -173,10 +173,8 @@ jobs:
           ls -la LiftLog.ipa
 
       # ---- TestFlight ----
-      # One signing identity for the project: the archive is built unsigned and Xcode signs it at export
-      # time with the team's cloud-managed Apple Distribution certificate (through the App Store Connect
-      # API key). Nothing is created on the runner, so builds no longer pile up Apple Development
-      # certificates. If cloud signing is ever refused, it falls back to the old signed archive.
+      # Signs the app with the Apple Developer account through the App Store Connect API key
+      # (Xcode creates and renews the certificates itself) and uploads it to TestFlight.
       # Runs only after the simulator test passed, and only when the four secrets are set.
       - name: Check Apple secrets
         id: asc
@@ -193,7 +191,7 @@ jobs:
             echo "ready=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Archive app (unsigned)
+      - name: Archive signed app
         if: success() && steps.asc.outputs.ready == 'true'
         run: |
           mkdir -p ~/private_keys
@@ -210,8 +208,11 @@ jobs:
             -configuration Release -destination "generic/platform=iOS" \
             -archivePath build/LiftLog.xcarchive \
             -derivedDataPath build/archive \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$KEY" \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
             DEVELOPMENT_TEAM="$APPLE_TEAM_ID" CODE_SIGN_STYLE=Automatic \
-            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
             CURRENT_PROJECT_VERSION="$BUILD_NO" > build/archive.log 2>&1
           status=$?
           set -e
@@ -221,7 +222,7 @@ jobs:
           fi
           exit $status
 
-      - name: Sign and upload to TestFlight
+      - name: Upload to TestFlight
         if: success() && steps.asc.outputs.ready == 'true'
         run: |
           cat > build/ExportOptions.plist <<EOF
@@ -236,42 +237,20 @@ jobs:
             <key>manageAppVersionAndBuildNumber</key><false/>
           </dict></plist>
           EOF
-          export_archive() {  # $1 = archive, $2 = log
-            xcodebuild -exportArchive \
-              -archivePath "$1" \
-              -exportOptionsPlist build/ExportOptions.plist \
-              -exportPath build/export \
-              -allowProvisioningUpdates \
-              -authenticationKeyPath "$KEY_PATH" \
-              -authenticationKeyID "$ASC_KEY_ID" \
-              -authenticationKeyIssuerID "$ASC_ISSUER_ID" > "$2" 2>&1
-          }
           set +e
-          export_archive build/LiftLog.xcarchive build/upload.log
+          xcodebuild -exportArchive \
+            -archivePath build/LiftLog.xcarchive \
+            -exportOptionsPlist build/ExportOptions.plist \
+            -exportPath build/export \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$KEY_PATH" \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID" > build/upload.log 2>&1
           status=$?
-          if [ $status -ne 0 ]; then
-            echo "::warning::Cloud signing of the unsigned archive didn't work; falling back to a signed archive (this can create a new Apple Development certificate)."
-            grep -iE "error" build/upload.log | head -n 10
-            cp build/upload.log build/upload-cloud.log
-            xcodebuild archive \
-              -project LiftLog.xcodeproj -scheme LiftLog \
-              -configuration Release -destination "generic/platform=iOS" \
-              -archivePath build/LiftLog-signed.xcarchive \
-              -derivedDataPath build/archive \
-              -allowProvisioningUpdates \
-              -authenticationKeyPath "$KEY_PATH" \
-              -authenticationKeyID "$ASC_KEY_ID" \
-              -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
-              DEVELOPMENT_TEAM="$APPLE_TEAM_ID" CODE_SIGN_STYLE=Automatic \
-              CURRENT_PROJECT_VERSION="$BUILD_NO" > build/archive-signed.log 2>&1 \
-              && export_archive build/LiftLog-signed.xcarchive build/upload.log
-            status=$?
-            grep -E "error:|\*\* ARCHIVE" build/archive-signed.log | tail -n 15 || true
-          fi
           set -e
           grep -E "error|Upload succeeded|EXPORT SUCCEEDED|EXPORT FAILED|Progress" build/upload.log | tail -n 30 || true
           if [ $status -ne 0 ]; then
-            grep -ihE "error" build/upload.log build/archive-signed.log 2>/dev/null | head -n 10 | while IFS= read -r line; do echo "::error::${line}"; done
+            grep -iE "error" build/upload.log | head -n 10 | while IFS= read -r line; do echo "::error::${line}"; done
             exit $status
           fi
           echo "Build $BUILD_NO uploaded to TestFlight. Apple takes about 5–15 minutes to process it." | tee -a "$GITHUB_STEP_SUMMARY"
