@@ -4,6 +4,11 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      skip_test:
+        description: "Skip the simulator test (faster; the build still goes to TestFlight)"
+        type: boolean
+        default: false
 
 permissions:
   contents: write   # lets the last step save logs and screenshots to the ci-results branch
@@ -17,6 +22,9 @@ jobs:
     runs-on: macos-26   # Xcode 26: Apple requires the iOS 26 SDK for TestFlight uploads
     timeout-minutes: 45
     env:
+      # Skip the simulator test for small changes: put [skip test] in the commit message,
+      # or tick "Skip the simulator test" when running the workflow by hand.
+      SKIP_TEST: ${{ contains(github.event.head_commit.message, '[skip test]') || inputs.skip_test == true }}
       # Set these as repository secrets to send each passing build to Appetize (see README).
       APPETIZE_TOKEN: ${{ secrets.APPETIZE_API_TOKEN }}
       APPETIZE_KEY: ${{ secrets.APPETIZE_PUBLIC_KEY }}
@@ -39,6 +47,7 @@ jobs:
 
       - name: Pick an iPhone simulator
         id: sim
+        if: env.SKIP_TEST != 'true'
         run: |
           UDID=$(xcrun simctl list devices available -j | python3 -c '
           import json, re, sys
@@ -64,11 +73,13 @@ jobs:
       # Start the virtual iPhone and wait until it's fully up, so the test doesn't time out
       # waiting for a cold simulator on a busy runner.
       - name: Start the simulator
+        if: env.SKIP_TEST != 'true'
         run: |
           xcrun simctl boot "${{ steps.sim.outputs.udid }}" || true
           xcrun simctl bootstatus "${{ steps.sim.outputs.udid }}" -b
 
       - name: Run the app test on the simulator
+        if: env.SKIP_TEST != 'true'
         run: |
           mkdir -p build
           run_test() {
@@ -98,7 +109,7 @@ jobs:
           exit $status
 
       - name: Collect screenshots
-        if: always()
+        if: always() && env.SKIP_TEST != 'true'
         run: |
           mkdir -p screenshots
           if [ -d build/TestResults.xcresult ]; then
