@@ -563,6 +563,13 @@ const TEMPLATES={
       pull:{label:"Pull",items:[it("rows"),it("pulldown"),it("facepull"),it("ezbar"),it("hammercurl")]},
       legs:{label:"Legs",items:[it("legpress"),it("rdl"),it("legext"),it("hamcurl"),it("calf")]}},
       order:["push","pull","legs"],schedule:{mon:"push",tue:null,wed:"pull",thu:null,fri:"legs",sat:null,sun:null}})},
+  pplu:{name:"Push / Pull / Legs / Upper",about:"4 days: Mon push, Tue pull, Wed legs & abs, Fri upper (Thu free for cardio)",
+    make:()=>({workouts:{
+      push:{label:"Push",items:[it("bench"),it("inclinedb"),it("shoulder"),it("latraise"),it("pushdown"),it("ohtri")]},
+      pull:{label:"Pull",items:[it("rows"),it("pulldown"),it("chestrow"),it("straightpd"),it("ezbar"),it("hammercurl")]},
+      legsabs:{label:"Legs + Abs",items:[it("hack"),it("legext"),it("hamcurl"),it("rdl"),it("hipthrust"),it("calf"),it("hangcrunch",2,{w:0})]},
+      upper:{label:"Upper Body",items:[it("inclinebench"),it("chestpress"),it("cablerow"),it("closepd"),it("dbshoulder"),it("cablelat"),it("dbcurl"),it("ropepush")]}},
+      order:["push","pull","legsabs","upper"],schedule:{mon:"push",tue:"pull",wed:"legsabs",thu:null,fri:"upper",sat:null,sun:null}})},
   ul:{name:"Upper / Lower",about:"4 days: Mon & Thu upper, Tue & Fri lower",
     make:()=>({workouts:{
       upper:{label:"Upper",items:[it("bench"),it("rows"),it("shoulder"),it("pulldown"),it("ezbar"),it("pushdown")]},
