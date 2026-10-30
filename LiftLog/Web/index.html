@@ -293,6 +293,14 @@ details.panel>summary{cursor:pointer;font-size:14px;font-weight:600;list-style-p
 .seg button{font:inherit;font-weight:600;border:0;background:var(--bg);color:var(--ink);height:40px;cursor:pointer}
 .seg button+button{border-left:1px solid var(--line)}
 .seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.seg.three{grid-template-columns:repeat(3,1fr)}
+.gearlink{font:inherit;font-size:12.5px;font-weight:600;border:0;background:none;color:var(--accent);cursor:pointer;padding:4px 0 0;text-align:left}
+.gearbox{display:grid;gap:10px;padding:10px;border:1px solid var(--line);border-radius:8px}
+.gearbox .glbl{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;margin-bottom:-4px}
+.gearbox .chips{flex-wrap:wrap}
+.gearbox .chips small{font-weight:500;opacity:.75;margin-left:3px}
+.gearbox .gother{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
+.gearbox .gother input{width:72px;height:36px;border:1px solid var(--line);border-radius:8px;text-align:center;font:inherit;font-size:15px;font-weight:600;background:transparent;color:var(--ink)}
 .grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:10px}
 .grid2>div{display:flex;flex-direction:column;gap:8px}
 .grid2 .two{grid-template-columns:1fr auto 1fr}
@@ -649,6 +657,9 @@ plan=BOOT.plan||null;
 if(!plan&&(Object.keys(sessions).length||Object.keys(bodyweight).length||Object.keys(food).length)){
   plan={workouts:split5(true),order:["mon","tue","wed","thu","fri"],schedule:{mon:"mon",tue:"tue",wed:"wed",thu:"thu",fri:"fri",sat:null,sun:null}};
 }
+// how each exercise is loaded and how far its weight jumps: gear[exercise id] = {t:"plates"|"machine"|"db", step:lb}.
+// Kept apart from the plan, so it follows the exercise into every plan and every day it shows up.
+let gear=Object.assign({},BOOT.gear||{});
 let savedPlans=Array.isArray(BOOT.savedPlans)?BOOT.savedPlans:[];   // other plans you can switch back to: [{id,name,savedAt,workouts,order,schedule}]
 if(plan){plan.custom=plan.custom||[];plan.schedule=Object.assign({mon:null,tue:null,wed:null,thu:null,fri:null,sat:null,sun:null},plan.schedule)}
 rebuildPlan();
@@ -720,8 +731,32 @@ function commitC(slot,c){delete c._draft;cur.cardio=Object.assign({},cur.cardio,
    Each session aims for one more rep than last time; once every working set reaches the top of the
    range, the next session adds weight and drops back to the bottom of the range. Warm-up sets stay as they were. */
 function repRange(item){return item.c?[8,12]:[6,15]}
+/* ---- equipment ----
+   Plates: the jump is the total added to the bar or sled, split across two sides (+5 lb = a 2.5 on each side).
+   Machine: the jump is the pin stack's step. Dumbbells: the jump is per dumbbell.
+   Nothing set yet: the exercise's built-in jump (5 lb unless the library says otherwise). */
+const GEAR={plates:{name:"Plates",steps:[5,10,20,50,90]},machine:{name:"Machine",steps:[2.5,5,10,15,20]},db:{name:"Dumbbells",steps:[2.5,5,10]}};
+function gearOf(item){return gear[item.id]||{}}
+function stepOf(item){const g=gearOf(item);return g.step>0?g.step:(item.step||5)}
+function sideTxt(item,n){return gearOf(item).t==="plates"?` (${n/2} a side)`:""}
+function gearLabel(item){const g=gearOf(item),st=stepOf(item);
+  return `${g.t?GEAR[g.t].name:"Equipment"} · +${st} lb${sideTxt(item,st)}`}
+let gearOpen=null;   // exercise id whose equipment box is open
+function gearHTML(item){
+  if(gearOpen!==item.id)return `<button class="gearlink" data-act="gear" aria-expanded="false">${gearLabel(item)} ▾</button>`;
+  const g=gearOf(item),st=stepOf(item),steps=(GEAR[g.t]||GEAR.machine).steps;
+  const custom=!steps.includes(st);
+  return `<div class="gearbox">
+    <div class="glbl">Loaded with</div>
+    <div class="seg three" role="group" aria-label="Equipment for ${item.name}">${Object.entries(GEAR).map(([k,v])=>`<button data-act="gt" data-v="${k}" aria-pressed="${g.t===k}">${v.name}</button>`).join("")}</div>
+    <div class="glbl">Go up by</div>
+    <div class="chips">${steps.map(n=>`<button data-act="gs" data-v="${n}" aria-pressed="${n===st}">+${n}${g.t==="plates"?`<small>${n/2}/side</small>`:""}</button>`).join("")}</div>
+    <label class="gother">Other <input data-act="gstep" inputmode="decimal" aria-label="Custom weight jump for ${item.name}" placeholder="lb" value="${custom?st:""}"> lb${g.t==="plates"?" total":g.t==="db"?" per dumbbell":""}</label>
+    <button class="set addset" data-act="gear" aria-expanded="true">Done</button>
+  </div>`;
+}
 function advice(item,last){
-  const [lo,hi]=repRange(item), step=item.step||5;
+  const [lo,hi]=repRange(item), step=stepOf(item);
   const sd=last?setsDone(last.e):[];
   if(!sd.length)return {first:true,w:item.w,reps:lo,lo,hi,step};
   const top=Math.max(...sd.map(x=>+x.w||0)), work=sd.filter(x=>(+x.w||0)===top);
@@ -745,10 +780,10 @@ function goalHTML(item,e,adv){
   if(!e._draft){ // already logging today: say so as soon as every working set reaches the top
     const top=Math.max(...e.sets.map(x=>+x.w||0)), work=e.sets.filter(x=>(+x.w||0)===top);
     if(work.length&&work.every(x=>x.done&&(x.reps||0)>=hi))
-      return `<div class="goal up">✓ Top of the range. Next time go up to ${top+step} lb and start back at ${lo} reps.</div>`;
+      return `<div class="goal up">✓ Top of the range. Next time go up to ${top+step} lb${sideTxt(item,step)} and start back at ${lo} reps.</div>`;
   }
   if(adv.first)return `<div class="goal">Start at ${lo} reps. Add a rep each time until you hit ${hi}, then add weight.</div>`;
-  if(adv.up)return `<div class="goal up">⬆ Go up to ${adv.w} lb and start back at ${lo} reps. You hit ${hi} on every working set last time.</div>`;
+  if(adv.up)return `<div class="goal up">⬆ Go up to ${adv.w} lb${sideTxt(item,step)} and start back at ${lo} reps. You hit ${hi} on every working set last time.</div>`;
   return `<div class="goal">Goal: <b>${fmtW(adv.w)}${adv.w?" lb":""} × ${adv.reps}</b> on your working sets. Go up in weight at ${hi}.</div>`;
 }
 function commit(item,e){delete e._draft;cur.entries[item.id]=e;markDirty()}
@@ -854,7 +889,8 @@ function cardHTML(item,taken=new Set()){
       <button class="chk" data-act="set" aria-pressed="${on}" aria-label="Set ${k+1} done"></button>
     </div>`}).join("");
   return `<div class="card ${comp?"complete":""}" data-id="${item.id}" data-slot="${item.slot}">
-    <div class="top"><div>${exPick(item,taken)}<div class="last">${lastTxt}${hint}</div></div><div class="target">${adv.lo}–${adv.hi}<small> reps</small></div></div>
+    <div class="top"><div>${exPick(item,taken)}<div class="last">${lastTxt}${hint}</div>${gearOpen===item.id?"":gearHTML(item)}</div><div class="target">${adv.lo}–${adv.hi}<small> reps</small></div></div>
+    ${gearOpen===item.id?gearHTML(item):""}
     ${goalHTML(item,e,adv)}
     <div class="shead"><span>Set</span><span>Weight (lb)</span><span>Reps</span><span>Done</span></div>
     <div class="srows">${rows}</div>
@@ -878,8 +914,13 @@ $("list").addEventListener("click",ev=>{
     const sk=Object.assign({},cur.skips);
     if(act==="skip"){sk[item.slot]=true;delete cur.entries[item.id]}else delete sk[item.slot];
     cur.skips=sk;markDirty();render();return}
+  if(act==="gear"){gearOpen=gearOpen===item.id?null:item.id;render();return}
+  if(act==="gt"||act==="gs"){const g=Object.assign({},gearOf(item));
+    if(act==="gt"){g.t=b.dataset.v;if(!(g.step>0)||!GEAR[g.t].steps.includes(g.step))g.step=GEAR[g.t].steps.includes(stepOf(item))?stepOf(item):5}
+    else g.step=+b.dataset.v;
+    gear[item.id]=g;persist();render();return}
   const e=entryFor(item);
-  const step=item.step||5, row=b.closest(".srow"), k=row?+row.dataset.k:-1, s=k>=0?e.sets[k]:null;
+  const step=stepOf(item), row=b.closest(".srow"), k=row?+row.dataset.k:-1, s=k>=0?e.sets[k]:null;
   if(act==="w-")setW(e,k,Math.max(0,(+s.w||0)-step));
   else if(act==="w+")setW(e,k,(+s.w||0)+step);
   else if(act==="set")s.done=!s.done;
@@ -898,6 +939,9 @@ $("list").addEventListener("change",ev=>{
     const oe=cur.entries[old]; if(oe&&!(oe.min>0)&&!setsDone(oe).length)delete cur.entries[old]; // drop untouched sets of the old pick
     markDirty();render();return}
   const inp=ev.target.closest("input[data-act]"); if(!inp)return;
+  if(inp.dataset.act==="gstep"){const it2=itemById(inp.closest(".card").dataset.id),n=Number(inp.value.trim());
+    if(inp.value.trim()&&isFinite(n)&&n>0&&n<=200){const g=Object.assign({},gearOf(it2));g.step=Math.round(n*4)/4;gear[it2.id]=g;persist()}
+    render();return}
   const item=itemById(inp.closest(".card").dataset.id), e=entryFor(item), v=inp.value.trim();
   const n=v===""?null:Number(v); if(v!==""&&!isFinite(n))return render();
   const row=inp.closest(".srow"), k=row?+row.dataset.k:-1;
@@ -1012,7 +1056,7 @@ $("bwRange").addEventListener("click",ev=>{const b=ev.target.closest("button[dat
 /* ---- saving ---- */
 const SAVED_LABEL=NATIVE?"Saved on this iPhone":"Saved in this browser";
 function persist(){
-  const payload={version:1,savedAt:Date.now(),names:customNames,sessions,bodyweight,food,foodTarget,myFoods,foodProfile,plan,savedPlans};
+  const payload={version:1,savedAt:Date.now(),names:customNames,sessions,bodyweight,food,foodTarget,myFoods,foodProfile,plan,savedPlans,gear};
   try{
     if(NATIVE)window.webkit.messageHandlers.liftlog.postMessage({type:"save",json:JSON.stringify(payload)});
     else ls.set("ll.data",payload);
@@ -1093,7 +1137,7 @@ $("eraseBtn").onclick=()=>{
     setTimeout(()=>{if(eraseArmed){eraseArmed=false;$("eraseBtn").textContent="Erase all data";$("eraseNote").hidden=true}},5000);return}
   eraseArmed=false;
   sessions={};customNames={};bodyweight={};food={};myFoods=[];foodTarget={lo:2500,hi:3000};
-  foodProfile={sex:null,age:null,ft:null,inch:null,wt:null,act:1.55,auto:false,goal:null};plan=null;savedPlans=[];
+  foodProfile={sex:null,age:null,ft:null,inch:null,wt:null,act:1.55,auto:false,goal:null};plan=null;savedPlans=[];gear={};
   try{["ll.data","ll.apikey","ll.section","ll.mChain","ll.bwRange","gl.statEx"].forEach(k=>localStorage.removeItem(k))}catch(e){}
   rebuildPlan();persist();loadCur();$("eraseBtn").textContent="Erase all data";$("eraseNote").hidden=true;showView("setup");
 };
@@ -1795,7 +1839,7 @@ function renderPlanSum(){
   $("pSum").innerHTML=`<div class="cat" style="margin-bottom:4px">${esc(planName(plan))}${savedPlans.length?` · ${savedPlans.length} saved`:""}</div><ul class="psum">${WD.map(d=>{const id=plan.schedule[d];
     return `<li><span>${WDLONG[d]}</span>${id&&PLAN[id]?`<span>${esc(PLAN[id].label)} <em>· ${PLAN[id].items.length} exercises</em></span>`:`<em>Rest</em>`}</li>`}).join("")}</ul>`;
 }
-function exMeta(x){return `${GLABEL[x.g]||""}${x.cardio?"":x.c?" · 8–12 reps":" · 6–15 reps"}${x.mine?" · yours":""}`}
+function exMeta(x){const g=gear[x.id];return `${GLABEL[x.g]||""}${x.cardio?"":x.c?" · 8–12 reps":" · 6–15 reps"}${g&&g.t?` · ${GEAR[g.t].name} +${stepOf(x)}`:""}${x.mine?" · yours":""}`}
 function renderPlanEditor(){
   if(document.activeElement!==$("pName"))$("pName").value=planName(plan);
   renderSavedPlans();
