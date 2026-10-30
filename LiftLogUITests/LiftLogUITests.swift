@@ -30,12 +30,22 @@ final class LiftLogUITests: XCTestCase {
     /// Scrolls down until the element is on screen and (unless `belowBar` is false, for screens without it)
     /// clear of the Workout | Food bar at the bottom; returns whether it was found.
     private func scrollTo(_ element: XCUIElement, in app: XCUIApplication, maxSwipes: Int = 10, belowBar: Bool = true) -> Bool {
+        // Also keep it below the status bar: a swipe can overshoot and park the element under it,
+        // where it still counts as hittable but a tap lands on the status bar instead.
+        let top = app.frame.minY + 120
         func clear() -> Bool {
-            element.exists && element.isHittable && (!belowBar || element.frame.maxY < app.frame.maxY - 140)
+            element.exists && element.isHittable && element.frame.minY > top
+                && (!belowBar || element.frame.maxY < app.frame.maxY - 140)
         }
         for _ in 0..<maxSwipes {
             if clear() { return true }
-            app.swipeUp()
+            if element.exists && element.frame.minY <= top {
+                // overshot: drag the page back down a little
+                let from = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.4))
+                from.press(forDuration: 0.05, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.6)))
+            } else {
+                app.swipeUp()
+            }
         }
         return clear()
     }
