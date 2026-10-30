@@ -142,7 +142,12 @@ h1{font-family:var(--display);font-weight:700;font-size:30px;letter-spacing:.01e
 .plansel select{font:inherit;font-size:14px;text-transform:none;letter-spacing:0;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:7px 8px;flex:1;min-width:0}
 .plansel select:disabled{opacity:.6}
 .wnote textarea{width:100%;box-sizing:border-box;min-height:64px;resize:vertical;border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:inherit;font-size:16px;line-height:1.4;background:transparent;color:var(--ink)}
+.hcard tr.xn td{border-top:0;padding-top:0}
 .hcard td.hnote{text-align:left;color:var(--ink);white-space:pre-wrap;font-style:italic}
+.xnote{width:100%;box-sizing:border-box;min-height:52px;resize:vertical;border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:inherit;font-size:16px;line-height:1.4;background:transparent;color:var(--ink)}
+.xprev{font-size:12.5px;color:var(--muted);line-height:1.4;white-space:pre-wrap;border-left:2px solid var(--line);padding-left:8px}
+.xprev span{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;font-weight:600}
+.lnote{font-size:12.5px;color:var(--muted);font-style:italic;white-space:pre-wrap;padding:0 0 4px}
 .lockpill{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:2px 7px;border-radius:999px;border:1px solid var(--done);color:var(--done);font-family:var(--body);vertical-align:2px;margin-left:6px}
 .addset{border-style:solid;font-size:13px;font-family:var(--body)}
 button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
@@ -339,7 +344,6 @@ details.panel>summary{cursor:pointer;font-size:14px;font-weight:600;list-style-p
     <label class="plansel"><span>Workout</span><select id="planSel" aria-label="Workout for this day"></select></label>
     <div id="lockBanner" class="banner" hidden></div>
     <div class="list" id="list"></div>
-    <div id="wNote" class="card wnote" hidden></div>
     <div id="finishBar" class="finish"></div>
     <p class="note" id="logNote">Each set has its own weight and reps, so log a lighter warm-up and your top sets separately. Sets start at what you did last time. Tap ✓ when a set is done. Log your warm-up and cool-down cardio in the cards above and below the lifts. Everything saves on your phone as you go.</p>
   </section>
@@ -809,7 +813,6 @@ function render(){
   const doneN=act.filter(i=>isComplete(i,cur.entries[i.id])).length, skipN=items.length-act.length;
   $("dayCount").textContent=`${nice(date)} · ${doneN}/${act.length} done${skipN?` · ${skipN} skipped`:""}`;
   $("logNote").hidden=!!cur.locked;
-  renderNote(W);
   if(cur.locked){renderLocked(items);return}
   $("lockBanner").hidden=true;
   if(!W){   // rest day (or a workout you've since removed from your plan)
@@ -823,29 +826,30 @@ function render(){
     :"";
 }
 
-/* ---- workout notes ----
-   One free-text note per day, saved on the session as note. It sits under the exercises, stays editable after the
-   workout is locked (so you can jot something down after you finish), and shows in History and the CSV. */
-function renderNote(W){
-  const box=$("wNote"), show=!!W||!!cur.note;
-  box.hidden=!show; if(!show||document.activeElement===$("wNoteText"))return;
-  box.innerHTML=`<div class="cat">Notes</div><textarea id="wNoteText" rows="2" placeholder="How it went, seat settings, what to change next time…" aria-label="Workout notes">${esc(cur.note||"")}</textarea>`;
+/* ---- exercise notes ----
+   Each exercise card has its own note for that day, saved on the session as notes:{exercise id: text}.
+   It's kept apart from the sets, so writing a note never counts as logging the exercise. The card also shows the
+   last note you wrote for that exercise, so seat settings and cues from last time are right there.
+   (1.10 had one note per workout, saved as session.note; those still show in History and the CSV.) */
+let noteOpen=null;
+function lastNote(id,before){
+  const ds=Object.keys(sessions).filter(d=>d<before&&sessions[d].notes&&sessions[d].notes[id]).sort();
+  return ds.length?{date:ds[ds.length-1],t:sessions[ds[ds.length-1]].notes[id]}:null}
+function noteHTML(item){
+  const t=cur.notes&&cur.notes[item.id], L=lastNote(item.id,date);
+  const prev=L?`<div class="xprev"><span>Last note · ${nice(L.date,{month:"short",day:"numeric"})}</span>${esc(L.t)}</div>`:"";
+  if(!t&&noteOpen!==item.id)return `${prev}<button class="gearlink" data-act="noteopen">+ Note</button>`;
+  return `${prev}<textarea class="xnote" data-act="note" rows="2" placeholder="Seat settings, how it felt, what to change…" aria-label="Note for ${item.name}">${esc(t||"")}</textarea>`;
 }
-$("wNote").addEventListener("change",ev=>{if(ev.target.id!=="wNoteText")return;
-  const v=ev.target.value.trim(); if(v===(cur.note||""))return;
-  if(v)cur.note=v;else delete cur.note;
-  if(cur.locked){const s=sessions[cur.date]||{date:cur.date,entries:{}};if(v)s.note=v;else delete s.note;s.updatedAt=Date.now();sessions[cur.date]=s;persist()}
-  else markDirty();
-  if(view==="hist")renderHist();});
 /* ---- finish & lock ---- */
 let unlockArmed=false;
 function renderLocked(items){
   const done=[],skipped=[];let sets=0,vol=0,min=0;
   items.forEach(i=>{const e=cur.entries[i.id];
     if(isSkipped(i)){skipped.push(i.name);return}
-    if(i.cardio){if(e&&e.min>0){done.push([i.name,e.min+" min"]);min+=e.min}else skipped.push(i.name);return}
+    if(i.cardio){if(e&&e.min>0){done.push([i.name,e.min+" min",i.id]);min+=e.min}else skipped.push(i.name);return}
     const sd=setsDone(e);if(!sd.length){skipped.push(i.name);return}
-    sets+=sd.length;sd.forEach(x=>vol+=(+x.w||0)*(x.reps||0));done.push([i.name,fmtSets(sd)]);});
+    sets+=sd.length;sd.forEach(x=>vol+=(+x.w||0)*(x.reps||0));done.push([i.name,fmtSets(sd),i.id]);});
   // also show anything logged that isn't on this day's plan
   Object.entries(cur.entries).forEach(([id,e])=>{if(items.some(i=>i.id===id))return;
     if(e.min>0)done.push([NAMES[id]||id,e.min+" min"]);else{const sd=setsDone(e);if(sd.length)done.push([NAMES[id]||id,fmtSets(sd)])}});
@@ -858,7 +862,7 @@ function renderLocked(items){
   const facts=[[sets,"sets"],[kfmt(vol),"lb moved"]];if(min)facts.push([min,"cardio min"]);
   $("list").innerHTML=`<div class="card complete">
       <div class="facts">${facts.map(([v,l])=>fact(v,l)).join("")}</div>
-      ${done.map(([n,v])=>`<div class="sumrow"><span class="name">${n}</span><span class="v">${v}</span></div>`).join("")||`<div class="note">Nothing was logged for this day.</div>`}
+      ${done.map(([n,v,id])=>`<div class="sumrow"><span class="name">${n}</span><span class="v">${v}</span></div>${id&&cur.notes&&cur.notes[id]?`<div class="lnote">${esc(cur.notes[id])}</div>`:""}`).join("")||`<div class="note">Nothing was logged for this day.</div>`}
       ${skipped.length?`<div class="note">Skipped: ${skipped.join(", ")}</div>`:""}
     </div>`;
   $("finishBar").innerHTML="";
@@ -896,6 +900,7 @@ function cardHTML(item,taken=new Set()){
       <div class="row"><div class="stepper"><button data-act="min-" aria-label="Less time">−</button><input data-act="min" inputmode="numeric" aria-label="${item.name} minutes" value="${e.min??""}"><button data-act="min+" aria-label="More time">+</button></div>
       <span class="unit">minutes</span>
       <button class="set ${comp?"on":""}" data-act="cardiodone" style="margin-left:auto">${comp?"Done ✓":"Log it"}</button></div>
+      ${noteHTML(item)}
       <div class="row">${skipBtn(item,e)}</div></div>`;
   }
   const adv=advice(item,last);
@@ -912,6 +917,7 @@ function cardHTML(item,taken=new Set()){
     ${goalHTML(item,e,adv)}
     <div class="shead"><span>Set</span><span>Weight (lb)</span><span>Reps</span><span>Done</span></div>
     <div class="srows">${rows}</div>
+    ${noteHTML(item)}
     <div class="row"><button class="set addset" data-act="addset">+ Add set</button>${e.sets.length>1?`<button class="set addset" data-act="rmset">− Remove last</button>`:""}${skipBtn(item,e)}</div>
   </div>`;
 }
@@ -932,6 +938,7 @@ $("list").addEventListener("click",ev=>{
     const sk=Object.assign({},cur.skips);
     if(act==="skip"){sk[item.slot]=true;delete cur.entries[item.id]}else delete sk[item.slot];
     cur.skips=sk;markDirty();render();return}
+  if(act==="noteopen"){noteOpen=item.id;render();const t=$("list").querySelector(`.card[data-slot="${item.slot}"] textarea.xnote`);if(t)t.focus();return}
   if(act==="gear"){gearOpen=gearOpen===item.id?null:item.id;render();return}
   if(act==="gt"||act==="gs"){const g=Object.assign({},gearOf(item));
     if(act==="gt"){g.t=b.dataset.v;if(!(g.step>0)||!GEAR[g.t].steps.includes(g.step))g.step=GEAR[g.t].steps.includes(stepOf(item))?stepOf(item):5}
@@ -951,6 +958,12 @@ $("list").addEventListener("click",ev=>{
 });
 $("list").addEventListener("change",ev=>{
   if(cur.locked||ev.target.closest("[data-cslot]"))return;
+  const nt=ev.target.closest("textarea.xnote");
+  if(nt){const id=nt.closest(".card").dataset.id, v=nt.value.trim(), n=Object.assign({},cur.notes);
+    if(v)n[id]=v;else delete n[id];
+    if(v!==((cur.notes&&cur.notes[id])||"")){cur.notes=n;markDirty()}
+    if(noteOpen===id&&!v)noteOpen=null;   // no re-render here: it would swallow the tap that blurred the box
+    return}
   const sel=ev.target.closest("select.exsel");
   if(sel){const card=sel.closest(".card"),old=card.dataset.id;
     cur.swaps=Object.assign({},cur.swaps,{[card.dataset.slot]:sel.value});
@@ -1093,17 +1106,19 @@ function renderHist(){
   // every day with logged sets, cardio or a weigh-in; rest days with only a weigh-in get their own card
   const days=[...new Set([...Object.keys(sessions),...Object.keys(bodyweight)])].sort().reverse();
   const html=days.map(d=>{const s=sessions[d]||{entries:{}};
+    const xn=Object.assign({},s.notes), nrow=id=>{const t=xn[id];delete xn[id];return t?`<tr class="xn"><td class="hnote" colspan="2">${esc(t)}</td></tr>`:""};
     let rows=Object.entries(s.entries||{}).map(([id,e])=>{
-      if(e.min!=null)return e.min>0?`<tr><td>${NAMES[id]||id}</td><td>${e.min} min</td></tr>`:"";
+      if(e.min!=null)return e.min>0?`<tr><td>${NAMES[id]||id}</td><td>${e.min} min</td></tr>${nrow(id)}`:"";
       const sd=setsDone(e); if(!sd.length)return "";
-      return `<tr><td>${NAMES[id]||id}</td><td>${fmtSets(sd)}</td></tr>`}).join("");
+      return `<tr><td>${NAMES[id]||id}</td><td>${fmtSets(sd)}</td></tr>${nrow(id)}`}).join("");
+    rows+=Object.keys(xn).map(id=>`<tr><td>${NAMES[id]||id}</td><td>note</td></tr>${nrow(id)}`).join("");
     const crow=k=>{const c=s.cardio&&s.cardio[k];return cDone(c)?`<tr><td>Cardio ${CSLOT[k]} · ${NAMES[c.ex]||c.ex}</td><td>${fmtCardio(c,false)}</td></tr>`:""};
     rows=crow("lunch")+crow("pre")+rows+crow("post");
     const w=bodyweight[d], noteRow=s.note?`<tr><td class="hnote" colspan="2">${esc(s.note)}</td></tr>`:"";
     if(!rows&&w==null&&!noteRow)return "";
     const bwRow=w!=null?`<tr class="bwh"><td>${BW_NAME}</td><td>${w} lb</td></tr>`:"";
     const gym=Object.values(s.entries||{}).some(e=>e.min>0||setsDone(e).length)||gymCardio(s).length>0;
-    const label=rows?(gym?workoutName(s.day,s):"Lunch cardio"):w!=null?"Weigh-in":(workoutName(s.day,s)||"Notes");
+    const label=rows?(gym?workoutName(s.day,s):cDone(s.cardio&&s.cardio.lunch)?"Lunch cardio":(workoutName(s.day,s)||"Notes")):w!=null?"Weigh-in":(workoutName(s.day,s)||"Notes");
     const btn=rows?(s.locked?"Open":"Edit"):"Edit";
     return `<div class="hcard"><h3><span>${nice(d)} · ${label}${rows&&s.locked?'<span class="lockpill">Done</span>':""}</span><button data-open="${d}">${btn}</button></h3><table>${bwRow}${rows}${noteRow}</table></div>`}).join("");
   $("hist").innerHTML=html||`<div class="empty">Nothing logged yet. Log sets or your body weight on the Today tab and they'll show up here.</div>`;
@@ -1328,6 +1343,7 @@ function csv(){
       if(e.min!=null){if(e.min>0)out.push([d,workoutName(s.day,s),NAMES[id]||id,"","","",e.min]);return}
       setsDone(e).forEach((x,i)=>out.push([d,workoutName(s.day,s),NAMES[id]||id,i+1,x.w,x.reps,""]));});
     crow("post");
+    Object.entries(s.notes||{}).forEach(([id,t])=>out.push([d,workoutName(s.day,s),NAMES[id]||id,"Note","","","","","","","",t]));
     if(s.note)out.push([d,workoutName(s.day,s),NOTE_NAME,"Notes","","","","","","","",s.note]);
     // food: one row per item; Set says "Food 1", "Food 2"… per entry and Meal holds what was typed, so entries regroup on import
     dayFood(d).forEach((e,k)=>e.items.forEach(x=>out.push([d,workoutName(s.day,s),x.name,"Food "+(k+1),"","","","","",x.cal,x.p??"",e.text])));});
@@ -1372,7 +1388,7 @@ function importCSV(text){
   const iD=col("date"),iDay=col("day"),iEx=col("exercise"),iW=col("weight"),iR=col("reps"),iM=col("min"),iSet=col("set"),iL=col("level"),iF=col("floor"),iC=col("cal"),iP=col("protein"),iMeal=col("meal");
   if(iD<0||iEx<0)throw new Error("header");
   const byName={};Object.entries(NAMES).forEach(([id,n])=>byName[n.toLowerCase()]=id);
-  const got={};let bwN=0;const gotFood={},gotNote={};
+  const got={};let bwN=0;const gotFood={},gotNote={},gotX={};
   rows.forEach(r=>{
     const d=(r[iD]||"").trim(), name=(r[iEx]||"").trim();
     if(!/^\d{4}-\d{2}-\d{2}$/.test(d)||!name)return;
@@ -1381,6 +1397,7 @@ function importCSV(text){
     if(name.toLowerCase()===NOTE_NAME.toLowerCase()){const t=iMeal>=0?(r[iMeal]||"").trim():"";
       if(t)(gotNote[d]=t);return}
     const ftag=iSet>=0?(r[iSet]||"").trim().toLowerCase():"";
+    if(ftag==="note"){const t=iMeal>=0?(r[iMeal]||"").trim():"";if(t)(gotX[d]=gotX[d]||[]).push([name,t]);return}
     if(/^food\b/.test(ftag)){
       const cal=Number((r[iC]||"").trim()),p=Number((r[iP]||"").trim()),meal=iMeal>=0?(r[iMeal]||"").trim():"";
       if(!(cal>=0))return;
@@ -1411,6 +1428,12 @@ function importCSV(text){
   Object.entries(gotNote).forEach(([d,t])=>{if(got[d])got[d].note=got[d].note||t;
     else if(sessions[d]){if(!sessions[d].note)sessions[d].note=t}
     else got[d]={date:d,day:defaultDay(d),entries:{},note:t}});
+  // exercise notes: same rule, never overwrite a note already on that day
+  Object.entries(gotX).forEach(([d,list])=>list.forEach(([name,t])=>{
+    let id=byName[name.toLowerCase()];
+    if(!id){id="x-"+name.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");customNames[id]=name;NAMES[id]=name;byName[name.toLowerCase()]=id}
+    const tgt=got[d]||sessions[d]||(got[d]={date:d,day:defaultDay(d),entries:{}});
+    tgt.notes=tgt.notes||{}; if(!tgt.notes[id])tgt.notes[id]=t}));
   const ds=Object.keys(got), bwMsg=(bwN?` and ${bwN} weigh-in${bwN>1?"s":""}`:"")+(fN?` and ${fN} food entr${fN>1?"ies":"y"}`:"");
   if(!ds.length){if(bwN||fN){persist();rerender();return `Imported${bwMsg.replace(/^ and/,"")}.`}
     return Object.keys(gotFood).length?"Everything in that file is already logged.":"No workouts found in that file."}
@@ -1418,7 +1441,8 @@ function importCSV(text){
   ds.forEach(d=>{
     if(sessions[d]){merged++;Object.assign(sessions[d].entries,got[d].entries);
       if(got[d].cardio)sessions[d].cardio=Object.assign({},sessions[d].cardio,got[d].cardio);
-      if(got[d].note&&!sessions[d].note)sessions[d].note=got[d].note;return}
+      if(got[d].note&&!sessions[d].note)sessions[d].note=got[d].note;
+      if(got[d].notes)sessions[d].notes=Object.assign({},got[d].notes,sessions[d].notes);return}
     sessions[d]={...got[d],locked:d<today};   // past days come in finished, so they can't be changed by accident
   });
   persist(); loadCur(); rerender();
