@@ -252,6 +252,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .qadd input.fcal::placeholder{font-family:var(--body);font-size:15px;font-weight:400}
 .qadd input.fcal{text-align:right;font-family:var(--display);font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
 .qadd .btn{height:44px;padding:0 16px}
+.pbox{display:flex;flex-direction:column;gap:8px;padding:10px;border:1px dashed var(--line);border-radius:8px}
 .msearch{font:inherit;font-size:16px;width:100%;height:44px;padding:0 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
 .mlist{display:flex;flex-direction:column}
 .mlist .sec2{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;padding:10px 0 4px}
@@ -363,6 +364,13 @@ details.panel>summary{cursor:pointer;font-size:14px;font-weight:600;list-style-p
         <button class="btn" id="qBtn">Add</button>
       </div>
       <div class="note" id="qNote">Quick add: just the calories, straight onto the day. Or find it below.</div>
+      <button class="btn ghost" id="pOpen">Paste from Claude</button>
+      <div class="pbox" id="pBox" hidden>
+        <div class="cat">Paste from Claude</div>
+        <textarea id="pText" class="ftext" rows="3" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="Cane's 3 Finger Combo - 1250 cal, 47g protein&#10;Diet Coke - 0 cal" aria-label="Pasted food list"></textarea>
+        <div class="fbtns"><button class="btn ghost" id="pPaste">Paste</button><button class="btn" id="pRead">Read it</button></div>
+        <div class="note" id="pNote">One food per line with its calories. The items land in the meal below so you can check them before adding.</div>
+      </div>
       <div id="fDraft" class="wrap" style="gap:8px" hidden></div>
       <div id="fRecentWrap" hidden><div class="cat">Eat this a lot? Tap to log it again</div><div class="chips" id="fRecent" role="group" aria-label="Recent foods"></div></div>
       <input id="mSearch" class="msearch" type="search" enterkeyhint="search" autocomplete="off" autocorrect="off" placeholder="Search: biscuit, 3 finger, footlong…" aria-label="Search the menu">
@@ -1619,6 +1627,40 @@ $("qBtn").onclick=quickAdd;
 ["qCal","qName"].forEach(id=>$(id).addEventListener("keydown",ev=>{if(ev.key==="Enter"){ev.preventDefault();
   if(id==="qCal"&&!$("qName").value.trim()&&$("qCal").value.trim())$("qName").focus();else quickAdd()}}));
 $("qCal").addEventListener("input",()=>{$("qNote").textContent="Quick add: just the calories, straight onto the day. Or find it below.";$("qNote").className="note"});
+/* paste from Claude: one food per line ("Name - 520 cal, 30g protein"), read into the editable meal draft */
+function parsePasted(txt){
+  const items=[];
+  txt.split(/\r?\n/).forEach(raw=>{
+    let l=raw.replace(/[*_`]/g,"").replace(/^\s*(?:[-•–—>]|\d+[.)])\s+/,"").trim();
+    if(!l||/^total\b/i.test(l))return;
+    const c=l.match(/(\d[\d,]*)(?:\s*[-–]\s*(\d[\d,]*))?\s*(?:k?cals?|calories)\b/i);
+    if(!c&&!/\d/.test(l)&&/:$/.test(l))return;   // a heading like "Lunch:" or "Here's the list:"
+    const num=v=>Number(String(v).replace(/,/g,""));
+    let cal=null,name=l;
+    if(c){cal=Math.round(c[2]?(num(c[1])+num(c[2]))/2:num(c[1]));name=l.slice(0,c.index)}
+    const pm=l.match(/(\d+(?:\.\d+)?)\s*g\b(?:\s*(?:of\s*)?protein)?/i)||l.match(/protein\D{0,3}(\d+(?:\.\d+)?)/i);
+    name=name.replace(/[\s\-–—:|,(~=]+$/,"").replace(/\b(?:about|approx\.?|around)$/i,"").replace(/[\s\-–—:|,(~=]+$/,"").trim();
+    if(!name&&cal==null)return;
+    items.push({name:name||"Food",cal:cal>=0&&cal<10000?cal:null,p:pm&&c?Math.round(Number(pm[1])):null});
+  });
+  return items;
+}
+function pNote(t,cls){$("pNote").textContent=t;$("pNote").className="note"+(cls?" "+cls:"")}
+function readPasted(){
+  const items=parsePasted($("pText").value);
+  if(!items.length){pNote("Nothing to read yet. Paste the list from Claude first.","down");$("pText").focus();return}
+  if(fDraft&&!fDraft.edit){fDraft.text="";fDraft.items=fDraft.items.filter(x=>x.name.trim()||x.cal!=null).concat(items)}
+  else fDraft={text:"",items,note:""};
+  const miss=items.filter(x=>x.cal==null).length;
+  fDraft.note=`Read ${items.length} item${items.length>1?"s":""} from your paste. `+(miss?`${miss} had no calories, so fill ${miss>1?"those":"it"} in, then tap Add.`:"Check the numbers, then tap Add.");
+  $("pText").value="";$("pBox").hidden=true;$("pOpen").hidden=false;fMsg="";renderFood();
+  $("fDraft").scrollIntoView({behavior:"smooth",block:"nearest"});
+}
+$("pOpen").onclick=()=>{$("pBox").hidden=false;$("pOpen").hidden=true;pNote("One food per line with its calories. The items land in the meal below so you can check them before adding.");$("pText").focus()};
+$("pPaste").onclick=async()=>{
+  try{const t=await navigator.clipboard.readText();if(!t||!t.trim())throw 0;$("pText").value=t;readPasted()}
+  catch(e){pNote("Couldn't read the clipboard. Press and hold in the box and tap Paste, then Read it.","down");$("pText").focus()}};
+$("pRead").onclick=readPasted;
 $("fManual").onclick=()=>{const q=$("mSearch").value.trim();   // starts the name from whatever you searched for
   const row={name:q,cal:null,p:null};
   if(fDraft){fDraft.text="";fDraft.items.push(row)}else fDraft={text:"",items:[row],note:""};
