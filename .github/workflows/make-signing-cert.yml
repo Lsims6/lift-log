@@ -1,0 +1,77 @@
+# One-time job on the signing-setup branch: turns on HealthKit for com.lsims6.liftlog and remakes the
+# "Lift Log App Store CI" profile with the stored certificate so the profile includes HealthKit.
+name: Remake signing profile
+
+on:
+  push:
+    branches: [signing-setup]
+
+permissions:
+  contents: write
+
+jobs:
+  make:
+    runs-on: ubuntu-latest
+    env:
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+    steps:
+      - name: Turn on HealthKit and remake the profile
+        run: |
+          python3 -m venv /tmp/v && /tmp/v/bin/pip -q install pyjwt cryptography
+          mkdir -p out
+          /tmp/v/bin/python - <<'PY'
+          import json, os, time, urllib.request, urllib.error, urllib.parse, jwt
+          key = os.environ["ASC_KEY_P8"].replace("\r", "").strip()
+          CERT = "MD866P5CND"; NAME = "Lift Log App Store CI"; log = []
+          def tok():
+              return jwt.encode({"iss": os.environ["ASC_ISSUER_ID"].strip(), "iat": int(time.time()),
+                                 "exp": int(time.time()) + 900, "aud": "appstoreconnect-v1"},
+                                key, algorithm="ES256", headers={"kid": os.environ["ASC_KEY_ID"].strip(), "typ": "JWT"})
+          def api(path, body=None, method=None):
+              req = urllib.request.Request("https://api.appstoreconnect.apple.com" + path,
+                  data=json.dumps(body).encode() if body else None, method=method,
+                  headers={"Authorization": "Bearer " + tok(), "Content-Type": "application/json"})
+              r = urllib.request.urlopen(req).read()
+              return json.loads(r) if r else {}
+          try:
+              b = api("/v1/bundleIds?" + urllib.parse.urlencode({"filter[identifier]": "com.lsims6.liftlog"}))
+              bid = [x for x in b["data"] if x["attributes"]["identifier"] == "com.lsims6.liftlog"][0]["id"]
+              try:
+                  api("/v1/bundleIdCapabilities", {"data": {"type": "bundleIdCapabilities",
+                      "attributes": {"capabilityType": "HEALTHKIT"},
+                      "relationships": {"bundleId": {"data": {"type": "bundleIds", "id": bid}}}}})
+                  log.append("HealthKit turned on")
+              except urllib.error.HTTPError as e:
+                  msg = e.read().decode()
+                  if e.code == 409: log.append("HealthKit already on")
+                  else: raise urllib.error.HTTPError(e.url, e.code, msg, e.hdrs, None)
+              old = api("/v1/profiles?" + urllib.parse.urlencode({"filter[name]": NAME}))
+              for p in old["data"]:
+                  api("/v1/profiles/" + p["id"], method="DELETE"); log.append("removed old profile " + p["id"])
+              p = api("/v1/profiles", {"data": {"type": "profiles",
+                  "attributes": {"name": NAME, "profileType": "IOS_APP_STORE"},
+                  "relationships": {"bundleId": {"data": {"type": "bundleIds", "id": bid}},
+                                    "certificates": {"data": [{"type": "certificates", "id": CERT}]}}}})
+              pa = p["data"]["attributes"]
+              open("out/profile.mobileprovision.b64", "w").write(pa["profileContent"])
+              log.append(f"profile: {pa.get('name')} uuid {pa.get('uuid')} expires {pa.get('expirationDate')}")
+              open("out/RESULT.txt", "w").write("ok\n" + "\n".join(log) + "\n"); print("\n".join(log))
+          except urllib.error.HTTPError as e:
+              msg = e.msg if isinstance(e.msg, str) and e.msg.startswith("{") else e.read().decode()
+              open("out/RESULT.txt", "w").write(f"error {e.code}\n" + "\n".join(log) + "\n" + msg + "\n")
+              print("::error::Apple said", e.code, msg[:800])
+          PY
+      - name: Save the results to the signing-cert branch
+        if: always()
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd out
+          git init -q -b signing-cert
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A && git commit -qm "Profile result"
+          git push -qf "https://x-access-token:${TOKEN}@github.com/${{ github.repository }}.git" signing-cert
+          grep -q '^ok' RESULT.txt
