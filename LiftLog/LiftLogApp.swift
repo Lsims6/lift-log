@@ -225,7 +225,7 @@ final class WebViewController: UIViewController, WKScriptMessageHandler, WKNavig
         let info = Bundle.main.infoDictionary ?? [:]
         let version = "\(info["CFBundleShortVersionString"] as? String ?? "?") (build \(info["CFBundleVersion"] as? String ?? "?"))"
         let page = shown.map { c in "\(c.info?.short ?? "built-in")\(c.live ? " (live update)" : "")" } ?? ""
-        let boot = "window.__LIFTLOG__ = \(Store.load()); window.__LIFTLOG_AI__ = \"\(FoodAI.status)\"; window.__LIFTLOG_VERSION__ = \"\(version)\"; window.__LIFTLOG_PAGE__ = \"\(page)\"; window.__LIFTLOG_TABBAR__ = \(shell != nil);"
+        let boot = "window.__LIFTLOG__ = \(Store.load()); window.__LIFTLOG_AI__ = \"\(FoodAI.status)\"; window.__LIFTLOG_VERSION__ = \"\(version)\"; window.__LIFTLOG_PAGE__ = \"\(page)\"; window.__LIFTLOG_TABBAR__ = \(shell != nil); window.__LIFTLOG_HEALTH__ = \(HealthSync.available);"
         content.addUserScript(WKUserScript(source: boot, injectionTime: .atDocumentStart, forMainFrameOnly: true))
     }
 
@@ -287,6 +287,7 @@ final class WebViewController: UIViewController, WKScriptMessageHandler, WKNavig
 
     @objc private func appBecameActive() {
         callPage("__aiStatus", FoodAI.status)
+        callPage("__healthWake", true)   // pick up weigh-ins other apps saved to Apple Health meanwhile
     }
 
     // Messages from the page: {type: "save", json}, {type: "export", filename, csv},
@@ -314,6 +315,22 @@ final class WebViewController: UIViewController, WKScriptMessageHandler, WKNavig
             let id = body["id"] ?? 0
             FoodAI.estimate(text: text, reference: body["reference"] as? String ?? "") { [weak self] result in
                 self?.callPage("__aiResult", result.merging(["id": id]) { _, new in new })
+            }
+        case "health":
+            // {type: "health", id, op: "connect" | "sync" (put, remove) | "weights" (since)}; answered on window.__healthResult
+            let id = body["id"] ?? 0
+            let reply: ([String: Any]) -> Void = { [weak self] r in
+                self?.callPage("__healthResult", r.merging(["id": id]) { _, new in new })
+            }
+            switch body["op"] as? String {
+            case "connect":
+                HealthSync.connect(reply)
+            case "sync":
+                HealthSync.sync(put: body["put"] as? [[String: Any]] ?? [], remove: body["remove"] as? [String] ?? [], done: reply)
+            case "weights":
+                HealthSync.readWeights(since: Date(timeIntervalSince1970: (body["since"] as? Double ?? 0) / 1000), reply)
+            default:
+                reply(["ok": false, "error": "unknown"])
             }
         default:
             break

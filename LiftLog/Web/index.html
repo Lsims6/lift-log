@@ -532,6 +532,11 @@ header{position:sticky;top:0;z-index:20;
         <div class="note" id="fPrivacy"></div>
       </div>
         </div>
+    <div class="panel" id="hSet" hidden>
+      <h3>Apple Health</h3>
+      <div class="note" id="hNote"></div>
+      <div class="fbtns" id="hBtns"></div>
+    </div>
     <div class="panel" id="dSet">
       <h3>Your data</h3>
       <div class="note">One CSV file holds everything: workouts, cardio, weigh-ins and food. Export one now and then as a backup; deleting the app deletes the log. Settings and My foods aren't in the file.</div>
@@ -541,7 +546,7 @@ header{position:sticky;top:0;z-index:20;
     </div>
     <div class="panel" id="xSet">
       <h3>Privacy</h3>
-      <div class="note">Lift Log has no account, no ads and no tracking. Your log stays on this phone. The only thing that ever leaves it is a CSV you choose to export. Food estimates run on the iPhone itself and never go online.</div>
+      <div class="note">Lift Log has no account, no ads and no tracking. Your log stays on this phone. The only things that ever leave it are a CSV you choose to export and, if you connect it, what you share with Apple Health on this phone. Food estimates run on the iPhone itself and never go online.</div>
       <a class="btn ghost" id="privacyLink" href="https://lsims6.github.io/lift-log/privacy.html" target="_blank" rel="noopener" style="text-align:center;text-decoration:none">Read the privacy policy</a>
       <button class="btn ghost del" id="eraseBtn">Erase all data</button>
       <div class="note" id="eraseNote" hidden>This deletes every workout, weigh-in, food entry, your plan and settings from this phone. It can't be undone; export a CSV first if you want a copy.</div>
@@ -736,6 +741,72 @@ if(plan){plan.custom=plan.custom||[];plan.schedule=Object.assign({mon:null,tue:n
 rebuildPlan();
 Object.entries(customNames).forEach(([k,v])=>{if(!NAMES[k])NAMES[k]=v});   // exercises brought in by CSV import
 let date=todayStr(), cur=null, dirty=false;
+let health=Object.assign({on:false,synced:{},imported:{},lastRead:0},BOOT.health||{});
+
+/* ---- Apple Health (iPhone app only). Workouts, cardio, body weight and calories eaten go to Health; weigh-ins
+   other apps saved there (a smart scale, the Health app) come into the log. Every item has a stable key, and
+   health.synced remembers what was last sent for each key, so only changes go over and deletions follow. ---- */
+const HEALTH_OK=NATIVE&&window.__LIFTLOG_HEALTH__===true;
+let hSeq=0,hWait={},hBusy=false,hAgain=false,hTimer=null,hMsg="";
+function hCall(op,extra){return new Promise(res=>{const id=++hSeq;hWait[id]=res;
+  try{window.webkit.messageHandlers.liftlog.postMessage(Object.assign({type:"health",op,id},extra||{}))}catch(e){delete hWait[id];res({ok:false,error:String(e)})}})}
+window.__healthResult=r=>{const f=hWait[r.id];delete hWait[r.id];if(f)f(r)};
+window.__healthWake=()=>{if(health.on)healthPull().then(healthSoon)};
+function hAt(d,h,m){const x=parse(d);x.setHours(h,m||0,0,0);return x.getTime()}   // clock time that day, right across daylight-saving changes
+function hCardio(ex,start,min,name){return {kind:"workout",activity:ex,start,end:start+min*6e4,name}}
+function healthWanted(){
+  const out={},today=todayStr();
+  Object.keys(bodyweight).forEach(d=>{if(!health.imported[d])out["w:"+d]={kind:"weight",lb:bodyweight[d],start:hAt(d,7)}});
+  // calories as one total per meal, at a typical time for that meal
+  const MH={b:[8],l:[12],d:[18,30],s:[15],u:[12,30]};
+  Object.keys(food).forEach(d=>{const by={};dayFood(d).forEach(e=>{const m=MEAL_NAME[e.meal]?e.meal:"u";(by[m]=by[m]||[]).push(e)});
+    Object.entries(by).forEach(([m,es])=>{const cal=Math.round(es.reduce((a,e)=>a+entryCal(e),0));if(cal<=0)return;
+      out[`f:${d}:${m}`]={kind:"food",cal,start:hAt(d,...MH[m]),meal:MEAL_NAME[m]||"Food"}})});
+  Object.keys(sessions).forEach(d=>{const s=sessions[d], c=s.cardio||{};
+    if(cDone(c.lunch))out[`c:${d}:lunch`]=hCardio(c.lunch.ex,hAt(d,12),c.lunch.min,"Lunch break "+(NAMES[c.lunch.ex]||c.lunch.ex).toLowerCase());
+    // a gym day goes over once you tap Finish, or the next day if you never do
+    if(!(s.locked||d<today)||!gymDay(s))return;
+    // laid out backwards from when you tapped Finish: warm-up, lifts, the plan's cardio, cool-down
+    let end=s.lockedAt&&todayStr(new Date(s.lockedAt))===d?s.lockedAt:hAt(d,18);
+    if(cDone(c.post)){out[`c:${d}:post`]=hCardio(c.post.ex,end-c.post.min*6e4,c.post.min,"Cool-down");end-=c.post.min*6e4}
+    Object.entries(s.entries||{}).forEach(([id,e])=>{if(e.min>0){out[`c:${d}:${id}`]=hCardio(id,end-e.min*6e4,e.min,NAMES[id]||id);end-=e.min*6e4}});
+    const sets=Object.values(s.entries||{}).reduce((a,e)=>a+(e.min!=null?0:setsDone(e).length),0);
+    if(sets){const len=Math.max(10,Math.round(sets*2.5))*6e4;   // about 2½ minutes a set, rest included
+      out["wk:"+d]={kind:"workout",activity:"strength",start:end-len,end,name:workoutName(s.day,s)};end-=len}
+    if(cDone(c.pre))out[`c:${d}:pre`]=hCardio(c.pre.ex,end-c.pre.min*6e4,c.pre.min,"Warm-up");
+  });
+  return out;
+}
+function healthSoon(){if(!HEALTH_OK||!health.on)return;clearTimeout(hTimer);hTimer=setTimeout(healthPush,1500)}
+async function healthPush(){
+  if(!HEALTH_OK||!health.on)return; if(hBusy){hAgain=true;return} hBusy=true;renderHealth();
+  try{
+    const want=healthWanted(),put=[],remove=Object.keys(health.synced).filter(k=>!want[k]);
+    Object.entries(want).forEach(([k,v])=>{if(health.synced[k]!==JSON.stringify(v))put.push(Object.assign({key:k},v))});
+    const chunks=[];for(let i=0;i<put.length;i+=40)chunks.push(put.slice(i,i+40));if(!chunks.length&&remove.length)chunks.push([]);
+    hMsg="";
+    for(let i=0;i<chunks.length;i++){const r=await hCall("sync",{put:chunks[i],remove:i?[]:remove});
+      (r.done||[]).forEach(k=>{if(want[k])health.synced[k]=JSON.stringify(want[k]);else delete health.synced[k]});
+      if(!r.ok){hMsg="Couldn't save everything to Apple Health"+(r.error?" ("+r.error+")":"")+". It'll try again next time.";break}}
+    if(chunks.length)persist(true);
+  }finally{hBusy=false;renderHealth();if(hAgain){hAgain=false;healthSoon()}}
+}
+async function healthPull(){
+  if(!HEALTH_OK||!health.on)return;
+  const since=health.lastRead?health.lastRead-3*864e5:Date.now()-365*864e5;   // a few days' overlap for late-syncing scales
+  const r=await hCall("weights",{since});if(!r.ok)return;
+  let n=0;(r.weights||[]).forEach(x=>{const d=todayStr(new Date(x.t));
+    if(bodyweight[d]==null||health.imported[d]){bodyweight[d]=r1(x.lb);health.imported[d]=1;n++}});
+  health.lastRead=Date.now(); if(n){applyAuto();renderBW()} persist(true);
+}
+function renderHealth(){const el=$("hSet");if(!el)return;el.hidden=!HEALTH_OK;if(!HEALTH_OK)return;
+  const n=Object.keys(health.synced).length;
+  $("hNote").innerHTML=health.on
+    ?`On. Workouts, cardio, body weight and calories eaten go to Apple Health, and weigh-ins from other apps (like a smart scale) come in here. ${hBusy?"Syncing…":n?n+" item"+(n===1?"":"s")+" in Health.":""}${hMsg?`<br><b>${esc(hMsg)}</b>`:""}<br>To change what Lift Log can read or save: Health app › your picture › Apps › Lift Log.`
+    :`Send workouts, cardio, body weight and calories eaten to Apple Health and the Fitness app, and bring in weigh-ins from a smart scale.${n?" What Lift Log already saved stays in Health while this is off.":""}${hMsg?`<br><b>${esc(hMsg)}</b>`:""}`;
+  $("hBtns").innerHTML=health.on?`<button class="btn ghost" data-h="sync">Sync now</button><button class="btn ghost" data-h="off">Turn off</button>`
+    :`<button class="btn" data-h="on">Connect Apple Health</button>`;
+}
 
 function todayStr(d=new Date()){const z=n=>String(n).padStart(2,"0");return d.getFullYear()+"-"+z(d.getMonth()+1)+"-"+z(d.getDate())}
 function parse(s){const [y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d)}
@@ -1114,14 +1185,14 @@ function bwInput(){return $("bwRow").querySelector("input[data-bw]")}
 function bwSave(){
   const v=bwInput().value.trim(), n=Number(v);
   if(v===""||!(n>0&&n<1000)){bwErr="Enter a weight in lb, like 182.4";renderBW();bwInput().focus();return}
-  bodyweight[date]=r1(n);bwOpen=false;bwErr="";applyAuto();persist();renderBW();
+  bodyweight[date]=r1(n);delete health.imported[date];bwOpen=false;bwErr="";applyAuto();persist();renderBW();
 }
 $("bwRow").addEventListener("click",ev=>{const b=ev.target.closest("button[data-bw]");if(!b)return;
   const a=b.dataset.bw;
   if(a==="open"){bwOpen=true;bwErr="";renderBW();const i=bwInput();if(!i.value)i.focus();return}
   if(a==="cancel"){bwOpen=false;bwErr="";renderBW();return}
   if(a==="save")return bwSave();
-  if(a==="x"){delete bodyweight[date];bwOpen=false;applyAuto();persist();renderBW();return}
+  if(a==="x"){delete bodyweight[date];delete health.imported[date];bwOpen=false;applyAuto();persist();renderBW();return}
   const i=bwInput(), cur=Number(i.value);   // −/+ only change the box; nothing saves until Save
   if(!(cur>0)){i.focus();return}
   i.value=r1(cur+(a==="+"?BW_STEP:-BW_STEP));
@@ -1149,8 +1220,9 @@ $("bwRange").addEventListener("click",ev=>{const b=ev.target.closest("button[dat
 
 /* ---- saving ---- */
 const SAVED_LABEL=NATIVE?"Saved on this iPhone":"Saved in this browser";
-function persist(){
-  const payload={version:1,savedAt:Date.now(),names:customNames,sessions,bodyweight,food,foodTarget,myFoods,foodProfile,plan,savedPlans,gear};
+function persist(fromHealth){
+  const payload={version:1,savedAt:Date.now(),names:customNames,sessions,bodyweight,food,foodTarget,myFoods,foodProfile,plan,savedPlans,gear,health};
+  if(!fromHealth)healthSoon();
   try{
     if(NATIVE)window.webkit.messageHandlers.liftlog.postMessage({type:"save",json:JSON.stringify(payload)});
     else ls.set("ll.data",payload);
@@ -1245,7 +1317,7 @@ $("eraseBtn").onclick=()=>{
   rebuildPlan();persist();loadCur();$("eraseBtn").textContent="Erase all data";$("eraseNote").hidden=true;showView("setup");
 };
 function renderSettings(){
-  renderFoodSettings(); renderGoal(); renderPlanSum();
+  renderFoodSettings(); renderGoal(); renderPlanSum(); renderHealth();
   const v=window.__LIFTLOG_VERSION__;
   const pg=window.__LIFTLOG_PAGE__;
   $("aboutLine").textContent=v?`Lift Log ${v}${pg?` · page ${pg}`:""}`:"Lift Log · test site (saves in this browser)";
@@ -2102,6 +2174,12 @@ $("pWorkouts").addEventListener("click",ev=>{const b=ev.target.closest("button[d
 /* ---- boot ---- */
 if(plan&&!BOOT.plan)persist();   // an older log just got its plan: write it into the file now
 loadCur(); showView(view); status(SAVED_LABEL,"ok");
+$("hBtns").addEventListener("click",async ev=>{const b=ev.target.closest("button[data-h]");if(!b||hBusy)return;const a=b.dataset.h;
+  if(a==="on"){const r=await hCall("connect");if(!r.ok){hMsg=r.error||"Couldn't connect to Apple Health.";renderHealth();return}
+    health.on=true;hMsg="";persist(true);renderHealth();await healthPull();healthPush()}
+  else if(a==="sync"){await healthPull();healthPush()}
+  else if(a==="off"){health.on=false;clearTimeout(hTimer);persist(true);renderHealth()}});
+if(health.on)healthPull().then(healthSoon);
 if(NATIVE)try{window.webkit.messageHandlers.liftlog.postMessage({type:"booted"})}catch(e){}   // a live-updated page that never gets here is rolled back
 </script>
 </body>

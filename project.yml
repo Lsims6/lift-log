@@ -8,7 +8,7 @@ options:
   createIntermediateGroups: true
 settings:
   base:
-    MARKETING_VERSION: "2.02"
+    MARKETING_VERSION: "2.03"
     CURRENT_PROJECT_VERSION: "1"
     SWIFT_VERSION: "5.0"
 targets:
@@ -34,6 +34,13 @@ targets:
         UIRequiresFullScreen: true
         ITSAppUsesNonExemptEncryption: false
         LSSupportsOpeningDocumentsInPlace: false
+        NSHealthShareUsageDescription: Lift Log reads your body weight from Apple Health so weigh-ins from a smart scale or other apps show up in your log.
+        NSHealthUpdateUsageDescription: Lift Log saves your workouts, cardio, body weight and calories eaten to Apple Health.
+    entitlements:
+      path: LiftLog/LiftLog.entitlements
+      properties:
+        com.apple.developer.healthkit: true
+        com.apple.developer.healthkit.access: []
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.lsims6.liftlog
