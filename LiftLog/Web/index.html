@@ -86,7 +86,9 @@ h1{font-family:var(--display);font-weight:700;font-size:30px;letter-spacing:.01e
 .tabs button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .datebar{display:flex;align-items:center;gap:8px}
 .datebar input{font:inherit;font-weight:600;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);flex:1;min-width:0}
-.daybar{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.daybar{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.daybar i{font-style:normal;font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;line-height:1}
+.daybar button[aria-pressed="true"] i{color:var(--accent-ink);opacity:.8}
 .daybar button{padding:8px 2px 7px;display:flex;flex-direction:column;align-items:center;gap:1px}
 .daybar b{font-family:var(--display);font-size:20px;font-weight:700;letter-spacing:.03em}
 .daybar span{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
@@ -813,13 +815,12 @@ function commit(item,e){delete e._draft;cur.entries[item.id]=e;markDirty()}
 
 function render(){
   $("dateInput").value=date;
-  // one button per training day in your schedule, showing this week's dates; each date has its own log and lock
-  const mon=weekStart(date), tdays=WD.map((d,i)=>[d,i]).filter(([d])=>plan.schedule[d]&&PLAN[plan.schedule[d]]);
-  $("daybar").style.gridTemplateColumns=`repeat(${Math.max(tdays.length,1)},1fr)`;
-  $("daybar").hidden=!tdays.length;
+  // all seven days of this week, Mon–Sun; days with nothing scheduled say "Rest" but can still be opened and logged
+  const mon=weekStart(date), tdays=WD.map((d,i)=>[d,i]);
   $("daybar").innerHTML=tdays.map(([d,i])=>{const ds=shift(mon,i),s=sessions[ds];
     const mark=s&&s.locked?" ✓":(s&&gymDay(s)?" •":"");
-    return `<button data-date="${ds}" aria-pressed="${ds===date}" aria-label="${nice(ds,{weekday:"long",month:"short",day:"numeric"})}${s&&s.locked?", finished":""}"><b>${WDNAME[d]}</b><span>${parse(ds).getDate()}${mark}</span></button>`}).join("");
+    const wk=s&&s.day?s.day:(ds===date&&cur.day?cur.day:plan.schedule[d]), rest=!(wk&&PLAN[wk]);
+    return `<button data-date="${ds}" aria-pressed="${ds===date}" aria-label="${nice(ds,{weekday:"long",month:"short",day:"numeric"})}${rest?", rest day":""}${s&&s.locked?", finished":""}"><b>${WDNAME[d]}</b><span>${parse(ds).getDate()}${mark}</span>${rest?"<i>Rest</i>":""}</button>`}).join("");
   renderBW();
   $("lunchRow").innerHTML=cardioHTML("lunch");
   renderPlanSel();
