@@ -25,9 +25,6 @@ jobs:
       # Skip the simulator test for small changes: put [skip test] in the commit message,
       # or tick "Skip the simulator test" when running the workflow by hand.
       SKIP_TEST: ${{ contains(github.event.head_commit.message, '[skip test]') || inputs.skip_test == true }}
-      # Set these as repository secrets to send each passing build to Appetize (see README).
-      APPETIZE_TOKEN: ${{ secrets.APPETIZE_API_TOKEN }}
-      APPETIZE_KEY: ${{ secrets.APPETIZE_PUBLIC_KEY }}
       # Apple Developer account (see README). With these set, every passing build goes to TestFlight.
       ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
       ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
@@ -41,6 +38,10 @@ jobs:
 
       - name: Generate Xcode project
         run: xcodegen generate
+
+      # Tells the app how new the page inside it is, so a live update never swaps it for an older one.
+      - name: Stamp the page version
+        run: python3 scripts/web-version.py LiftLog/Web
 
       - name: Show Xcode version
         run: xcodebuild -version
@@ -70,115 +71,19 @@ jobs:
           ')
           echo "udid=$UDID" >> "$GITHUB_OUTPUT"
 
-      # Start the virtual iPhone and wait until it's fully up, so the test doesn't time out
-      # waiting for a cold simulator on a busy runner.
-      - name: Start the simulator
+      # Start booting the virtual iPhone now; it warms up while the app is built and uploaded.
+      - name: Start booting the simulator
         if: env.SKIP_TEST != 'true'
-        run: |
-          xcrun simctl boot "${{ steps.sim.outputs.udid }}" || true
-          xcrun simctl bootstatus "${{ steps.sim.outputs.udid }}" -b
+        run: xcrun simctl boot "${{ steps.sim.outputs.udid }}" || true
 
-      - name: Run the app test on the simulator
-        if: env.SKIP_TEST != 'true'
-        run: |
-          mkdir -p build
-          run_test() {
-            rm -rf build/TestResults.xcresult
-            xcodebuild test \
-              -project LiftLog.xcodeproj -scheme LiftLog \
-              -destination "id=${{ steps.sim.outputs.udid }}" \
-              -derivedDataPath build/sim \
-              -resultBundlePath build/TestResults.xcresult \
-              CODE_SIGNING_ALLOWED=NO > build/test.log 2>&1
-          }
-          set +e
-          run_test
-          status=$?
-          # A launch timeout is the runner being slow, not the app failing: try once more.
-          if [ $status -ne 0 ] && grep -qE "Failed to launch|Timed out while launching" build/test.log; then
-            echo "Simulator was slow to launch the app; retrying the test once."
-            cp build/test.log build/test-attempt1.log
-            run_test
-            status=$?
-          fi
-          set -e
-          grep -E "error:|warning: .*LiftLog|Test Case|\*\* TEST|XCTAssert" build/test.log | tail -n 80 || true
-          if [ $status -ne 0 ]; then
-            grep -E "error:|failed|XCTAssert" build/test.log | head -n 15 | while IFS= read -r line; do echo "::error::${line}"; done
-          fi
-          exit $status
-
-      - name: Collect screenshots
-        if: always() && env.SKIP_TEST != 'true'
-        run: |
-          mkdir -p screenshots
-          if [ -d build/TestResults.xcresult ]; then
-            xcrun xcresulttool export attachments --path build/TestResults.xcresult --output-path screenshots || true
-            # Keep only the named PNG screenshots, renamed to their step names (1-monday.png, ...).
-            python3 - <<'PY' || true
-          import json, os
-          d = "screenshots"
-          man = os.path.join(d, "manifest.json")
-          if os.path.exists(man):
-              for test in json.load(open(man)):
-                  for a in test.get("attachments", []):
-                      src = os.path.join(d, a.get("exportedFileName", ""))
-                      name = a.get("suggestedHumanReadableName", "")
-                      if not os.path.isfile(src):
-                          continue
-                      if name[:1].isdigit():
-                          os.replace(src, os.path.join(d, name.split("_")[0] + ".png"))
-                      else:
-                          os.remove(src)
-          PY
-          fi
-          # One more look in dark mode, with the data the test left behind.
-          APP=build/sim/Build/Products/Debug-iphonesimulator/LiftLog.app
-          UDID=${{ steps.sim.outputs.udid }}
-          if [ -d "$APP" ]; then
-            xcrun simctl boot "$UDID" 2>/dev/null || true
-            xcrun simctl ui "$UDID" appearance dark || true
-            xcrun simctl install "$UDID" "$APP" || true
-            xcrun simctl launch "$UDID" com.lsims6.liftlog || true
-            sleep 8
-            xcrun simctl io "$UDID" screenshot screenshots/7-dark-mode.png || true
-          fi
-          ls -la screenshots
-
-      - name: Build the iPhone app (unsigned; AltStore signs it)
-        if: always()
-        run: |
-          mkdir -p build   # the test step usually makes it; not when the test is skipped
-          set +e
-          xcodebuild build \
-            -project LiftLog.xcodeproj -scheme LiftLog \
-            -configuration Release -sdk iphoneos \
-            -destination "generic/platform=iOS" \
-            -derivedDataPath build/device \
-            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" > build/device.log 2>&1
-          status=$?
-          set -e
-          grep -E "error:|\*\* BUILD" build/device.log | tail -n 40 || true
-          if [ $status -ne 0 ]; then
-            grep -E "error:" build/device.log | head -n 15 | while IFS= read -r line; do echo "::error::${line}"; done
-          fi
-          exit $status
-
-      - name: Package LiftLog.ipa
-        if: always()
-        run: |
-          rm -rf Payload && mkdir Payload
-          cp -R build/device/Build/Products/Release-iphoneos/LiftLog.app Payload/
-          zip -qry LiftLog.ipa Payload
-          ls -la LiftLog.ipa
-
-      # ---- TestFlight ----
+      # ---- TestFlight first ----
+      # The build goes to TestFlight before the simulator test, so it's there about 4 minutes in. The test
+      # still runs right after and the run shows as failed if it doesn't pass. Every change is also
+      # tried in a browser before it's pushed.
       # Signs the app with the Apple Developer account through the App Store Connect API key
-      # (Xcode creates and renews the certificates itself) and uploads it to TestFlight.
-      # Runs only after the simulator test passed, and only when the four secrets are set.
+      # (Xcode creates and renews the certificates itself). Runs only when the four secrets are set.
       - name: Check Apple secrets
         id: asc
-        if: success()
         run: |
           missing=""
           for v in ASC_KEY_ID ASC_ISSUER_ID ASC_KEY_P8 APPLE_TEAM_ID; do
@@ -194,7 +99,7 @@ jobs:
       - name: Archive signed app
         if: success() && steps.asc.outputs.ready == 'true'
         run: |
-          mkdir -p ~/private_keys
+          mkdir -p build ~/private_keys
           KEY=~/private_keys/AuthKey_${ASC_KEY_ID}.p8
           # tolerate a key pasted with Windows line endings or stray spaces
           printf '%s\n' "$ASC_KEY_P8" | tr -d '\r' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' > "$KEY"
@@ -255,63 +160,77 @@ jobs:
           fi
           echo "Build $BUILD_NO uploaded to TestFlight. Apple takes about 5–15 minutes to process it." | tee -a "$GITHUB_STEP_SUMMARY"
 
-      # A simulator copy of the app for Appetize.io, which runs it on a virtual iPhone in the browser.
-      # Built fresh (not reused from the test) so it starts with an empty log.
-      - name: Build simulator copy for Appetize
-        if: always()
+      # ---- Simulator test (after the upload) ----
+      - name: Wait for the simulator
+        if: "!cancelled() && env.SKIP_TEST != 'true'"
+        run: xcrun simctl bootstatus "${{ steps.sim.outputs.udid }}" -b
+
+      - name: Run the app test on the simulator
+        if: "!cancelled() && env.SKIP_TEST != 'true'"
         run: |
+          mkdir -p build
+          run_test() {
+            rm -rf build/TestResults.xcresult
+            xcodebuild test \
+              -project LiftLog.xcodeproj -scheme LiftLog \
+              -destination "id=${{ steps.sim.outputs.udid }}" \
+              -derivedDataPath build/sim \
+              -resultBundlePath build/TestResults.xcresult \
+              CODE_SIGNING_ALLOWED=NO > build/test.log 2>&1
+          }
           set +e
-          xcodebuild build \
-            -project LiftLog.xcodeproj -scheme LiftLog \
-            -configuration Debug -sdk iphonesimulator \
-            -destination "generic/platform=iOS Simulator" \
-            -derivedDataPath build/appetize \
-            ARCHS=arm64 ONLY_ACTIVE_ARCH=NO CODE_SIGNING_ALLOWED=NO > build/appetize.log 2>&1
+          run_test
           status=$?
+          # A launch timeout is the runner being slow, not the app failing: try once more.
+          if [ $status -ne 0 ] && grep -qE "Failed to launch|Timed out while launching" build/test.log; then
+            echo "Simulator was slow to launch the app; retrying the test once."
+            cp build/test.log build/test-attempt1.log
+            run_test
+            status=$?
+          fi
           set -e
-          grep -E "error:|\*\* BUILD" build/appetize.log | tail -n 20 || true
-          if [ $status -ne 0 ]; then exit $status; fi
-          cd build/appetize/Build/Products/Debug-iphonesimulator
-          zip -qry "$GITHUB_WORKSPACE/LiftLog-simulator.zip" LiftLog.app
-          ls -la "$GITHUB_WORKSPACE/LiftLog-simulator.zip"
+          grep -E "error:|warning: .*LiftLog|Test Case|\*\* TEST|XCTAssert" build/test.log | tail -n 80 || true
+          if [ $status -ne 0 ]; then
+            grep -E "error:|failed|XCTAssert" build/test.log | head -n 15 | while IFS= read -r line; do echo "::error::${line}"; done
+          fi
+          exit $status
 
-      - name: Upload simulator copy (for Appetize)
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: LiftLog-simulator-for-Appetize
-          path: LiftLog-simulator.zip
-          if-no-files-found: ignore
-          retention-days: 30
-
-      # Only builds that passed the test go to Appetize. With APPETIZE_PUBLIC_KEY set, it replaces
-      # the same Appetize app, so the link never changes; without it, Appetize makes a new app.
-      - name: Send to Appetize
-        id: appetize
-        if: success() && env.APPETIZE_TOKEN != ''
-        uses: appetizeio/github-action-appetize@v1.1.0
-        with:
-          apiToken: ${{ env.APPETIZE_TOKEN }}
-          publicKey: ${{ env.APPETIZE_KEY }}
-          appFile: LiftLog-simulator.zip
-          platform: ios
-          note: "Lift Log build ${{ github.run_number }} (${{ github.sha }})"
-          timeout: 300
-
-      - name: Appetize link
-        if: steps.appetize.outcome == 'success'
+      - name: Collect screenshots
+        if: "!cancelled() && env.SKIP_TEST != 'true'"
         run: |
-          echo "Try it: https://appetize.io/app/${{ steps.appetize.outputs.publicKey }}" | tee -a "$GITHUB_STEP_SUMMARY"
-          echo "appetize: https://appetize.io/app/${{ steps.appetize.outputs.publicKey }}" > appetize-link.txt
-
-      - name: Upload LiftLog.ipa
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: LiftLog-ipa
-          path: LiftLog.ipa
-          if-no-files-found: ignore
-          retention-days: 30
+          mkdir -p screenshots
+          if [ -d build/TestResults.xcresult ]; then
+            xcrun xcresulttool export attachments --path build/TestResults.xcresult --output-path screenshots || true
+            # Keep only the named PNG screenshots, renamed to their step names (1-monday.png, ...).
+            python3 - <<'PY' || true
+          import json, os
+          d = "screenshots"
+          man = os.path.join(d, "manifest.json")
+          if os.path.exists(man):
+              for test in json.load(open(man)):
+                  for a in test.get("attachments", []):
+                      src = os.path.join(d, a.get("exportedFileName", ""))
+                      name = a.get("suggestedHumanReadableName", "")
+                      if not os.path.isfile(src):
+                          continue
+                      if name[:1].isdigit():
+                          os.replace(src, os.path.join(d, name.split("_")[0] + ".png"))
+                      else:
+                          os.remove(src)
+          PY
+          fi
+          # One more look in dark mode, with the data the test left behind.
+          APP=build/sim/Build/Products/Debug-iphonesimulator/LiftLog.app
+          UDID=${{ steps.sim.outputs.udid }}
+          if [ -d "$APP" ]; then
+            xcrun simctl boot "$UDID" 2>/dev/null || true
+            xcrun simctl ui "$UDID" appearance dark || true
+            xcrun simctl install "$UDID" "$APP" || true
+            xcrun simctl launch "$UDID" com.lsims6.liftlog || true
+            sleep 8
+            xcrun simctl io "$UDID" screenshot screenshots/7-dark-mode.png || true
+          fi
+          ls -la screenshots
 
       - name: Upload screenshots
         if: always()
@@ -329,7 +248,7 @@ jobs:
           path: build/*.log
           retention-days: 7
 
-      # Also keep the latest results (logs, screenshots, and the .ipa when it built) on a
+      # Also keep the latest results (logs and screenshots) on a
       # separate ci-results branch, so they can be read with plain git. main is never touched.
       - name: Save results to the ci-results branch
         if: always()
@@ -340,9 +259,6 @@ jobs:
           OUT=$(mktemp -d)
           cp -R screenshots "$OUT/" 2>/dev/null
           for f in build/*.log; do [ -f "$f" ] && tail -n 4000 "$f" > "$OUT/$(basename "$f")"; done
-          [ -f LiftLog.ipa ] && cp LiftLog.ipa "$OUT/"
-          [ -f LiftLog-simulator.zip ] && cp LiftLog-simulator.zip "$OUT/"
-          [ -f appetize-link.txt ] && cp appetize-link.txt "$OUT/"
           printf 'run: %s\ncommit: %s\nresult: %s\n' "${{ github.run_id }}" "${{ github.sha }}" "${{ job.status }}" > "$OUT/RESULT.txt"
           cd "$OUT"
           git init -q -b ci-results

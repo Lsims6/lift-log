@@ -7,6 +7,7 @@ on:
     branches: [main]
     paths:
       - "LiftLog/Web/**"
+      - "scripts/web-version.py"
       - ".github/workflows/pages.yml"
   workflow_dispatch:
 
@@ -27,6 +28,9 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+      # version.json tells the iPhone app a newer page is up (live updates), with a checksum for each file
+      - name: Stamp the page version
+        run: python3 scripts/web-version.py LiftLog/Web
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

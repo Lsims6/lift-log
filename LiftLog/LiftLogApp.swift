@@ -187,12 +187,17 @@ struct FoodEstimateItem {
 #endif
 
 struct LiftLogWebView: UIViewControllerRepresentable {
-    func makeUIViewController(context: Context) -> WebViewController { WebViewController() }
-    func updateUIViewController(_ controller: WebViewController, context: Context) {}
+    func makeUIViewController(context: Context) -> AppShell { AppShell() }
+    func updateUIViewController(_ controller: AppShell, context: Context) {}
 }
 
 final class WebViewController: UIViewController, WKScriptMessageHandler, WKNavigationDelegate {
     private var webView: WKWebView!
+    weak var shell: AppShell?
+    var scrollView: UIScrollView { webView.scrollView }
+    /// The page being shown (nil sha for a built-in page without a version.json), and whether it's a live download.
+    private var shown: LiveWeb.Choice?
+    private var bootCheck: DispatchWorkItem?
 
     override func loadView() {
         let config = WKWebViewConfiguration()
@@ -219,20 +224,65 @@ final class WebViewController: UIViewController, WKScriptMessageHandler, WKNavig
         content.removeAllUserScripts()
         let info = Bundle.main.infoDictionary ?? [:]
         let version = "\(info["CFBundleShortVersionString"] as? String ?? "?") (build \(info["CFBundleVersion"] as? String ?? "?"))"
-        let boot = "window.__LIFTLOG__ = \(Store.load()); window.__LIFTLOG_AI__ = \"\(FoodAI.status)\"; window.__LIFTLOG_VERSION__ = \"\(version)\";"
+        let page = shown.map { c in "\(c.info?.short ?? "built-in")\(c.live ? " (live update)" : "")" } ?? ""
+        let boot = "window.__LIFTLOG__ = \(Store.load()); window.__LIFTLOG_AI__ = \"\(FoodAI.status)\"; window.__LIFTLOG_VERSION__ = \"\(version)\"; window.__LIFTLOG_PAGE__ = \"\(page)\"; window.__LIFTLOG_TABBAR__ = \(shell != nil);"
         content.addUserScript(WKUserScript(source: boot, injectionTime: .atDocumentStart, forMainFrameOnly: true))
     }
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        guard let index = Bundle.main.url(forResource: "index", withExtension: "html", subdirectory: "Web") else {
-            assertionFailure("Web/index.html is missing from the app bundle")
-            return
-        }
-        webView.loadFileURL(index, allowingReadAccessTo: index.deletingLastPathComponent())
+        loadPage()
         // Apple Intelligence can be turned on or finish downloading while the app is in the background.
         NotificationCenter.default.addObserver(self, selector: #selector(appBecameActive),
                                                name: UIApplication.didBecomeActiveNotification, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(appWillEnterForeground),
+                                               name: UIApplication.willEnterForegroundNotification, object: nil)
+        checkForUpdate()
+    }
+
+    /// Shows the newest usable page: a live download, or the copy built into the app.
+    private func loadPage() {
+        guard let choice = LiveWeb.pick() else {
+            assertionFailure("Web/index.html is missing from the app bundle")
+            return
+        }
+        shown = choice
+        installBootScript(on: webView.configuration.userContentController)
+        webView.loadFileURL(choice.index, allowingReadAccessTo: choice.dir)
+        bootCheck?.cancel()
+        bootCheck = nil
+        if choice.live, let sha = choice.info?.sha {
+            // A downloaded page has a few seconds to say it started; otherwise go back to the built-in one for good.
+            let item = DispatchWorkItem { [weak self] in
+                LiveWeb.badSha = sha
+                self?.loadPage()
+            }
+            bootCheck = item
+            DispatchQueue.main.asyncAfter(deadline: .now() + 12, execute: item)
+        }
+    }
+
+    /// Whether a newer page than the one on screen is downloaded and waiting.
+    private var updateWaiting: Bool {
+        guard let next = LiveWeb.pick() else { return false }
+        return next.info?.sha != shown?.info?.sha
+    }
+
+    private func checkForUpdate() {
+        LiveWeb.check { [weak self] ready in
+            guard let self, ready, self.updateWaiting else { return }
+            self.callPage("__updateReady", true)   // the page offers a Reload button
+        }
+    }
+
+    /// Coming back to the app: put a waiting update on screen right away, then look for a newer one.
+    @objc private func appWillEnterForeground() {
+        if updateWaiting { loadPage() }
+        checkForUpdate()
+    }
+
+    func showSection(_ section: String, again: Bool) {
+        callPage("__nativeSection", ["section": section, "again": again])
     }
 
     @objc private func appBecameActive() {
@@ -240,7 +290,9 @@ final class WebViewController: UIViewController, WKScriptMessageHandler, WKNavig
     }
 
     // Messages from the page: {type: "save", json}, {type: "export", filename, csv},
-    // and {type: "estimate", id, text, reference} for a food estimate from the on-device model.
+    // {type: "estimate", id, text, reference} for a food estimate from the on-device model,
+    // {type: "booted"} once the page has started, {type: "reload"} to show a downloaded update,
+    // and {type: "chrome", section, tabs} so the tab bar follows the page.
     func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage) {
         guard let body = message.body as? [String: Any], let type = body["type"] as? String else { return }
         switch type {
@@ -250,6 +302,13 @@ final class WebViewController: UIViewController, WKScriptMessageHandler, WKNavig
             guard let csv = body["csv"] as? String else { return }
             let name = (body["filename"] as? String).flatMap { $0.isEmpty ? nil : $0 } ?? "lift-log.csv"
             share(csv: csv, filename: name)
+        case "booted":
+            bootCheck?.cancel()
+            bootCheck = nil
+        case "reload":
+            loadPage()
+        case "chrome":
+            shell?.pageChanged(section: body["section"] as? String ?? "workout", showTabs: body["tabs"] as? Bool ?? true)
         case "estimate":
             guard let text = body["text"] as? String else { return }
             let id = body["id"] ?? 0
@@ -295,8 +354,7 @@ final class WebViewController: UIViewController, WKScriptMessageHandler, WKNavig
 
     // If iOS ever reclaims the web content process, reload so the app isn't left blank.
     func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
-        installBootScript(on: webView.configuration.userContentController)
-        webView.reload()
+        loadPage()
     }
 }
 

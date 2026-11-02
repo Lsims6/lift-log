@@ -7,3 +7,4 @@ Payload/
 *.ipa
 .DS_Store
 xcuserdata/
+LiftLog/Web/version.json

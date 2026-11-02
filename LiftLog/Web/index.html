@@ -4,7 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
+<meta name="liftlog-min-native" content="2">
 <title>Lift Log</title>
+<script>if(window.__LIFTLOG_TABBAR__)document.documentElement.classList.add("native-tabs")   // the app shows Apple's tab bar instead of the page's</script>
 <style>
 @font-face{font-family:"Archivo";src:url(fonts/archivo-latin-400-normal.woff2) format("woff2");font-weight:400}
 @font-face{font-family:"Archivo";src:url(fonts/archivo-latin-500-normal.woff2) format("woff2");font-weight:500}
@@ -328,6 +330,35 @@ details.panel>summary{cursor:pointer;font-size:14px;font-weight:600;list-style-p
 .ttab tr.pick td{color:var(--done)}
 .ttab small{color:var(--muted);font-weight:400}
 @media (prefers-reduced-motion:no-preference){.set,.card{transition:background .12s,border-color .12s}}
+/* ---- Liquid Glass look, to match the iOS 26 tab bar: see-through, blurred, with a bright edge ---- */
+:root{--glass:rgba(255,255,255,.58);--glass-edge:rgba(255,255,255,.9);--glass-hi:rgba(255,255,255,.95);--glass-shade:rgba(22,34,58,.10)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--glass:rgba(44,50,60,.52);--glass-edge:rgba(255,255,255,.14);--glass-hi:rgba(255,255,255,.2);--glass-shade:rgba(0,0,0,.4)}}
+:root[data-theme="dark"]{--glass:rgba(44,50,60,.52);--glass-edge:rgba(255,255,255,.14);--glass-hi:rgba(255,255,255,.2);--glass-shade:rgba(0,0,0,.4)}
+.tabs button:not(.back),.gear,.daybar button,.mpick button,.navbar,.updbar{
+  background:var(--glass);-webkit-backdrop-filter:blur(18px) saturate(1.8);backdrop-filter:blur(18px) saturate(1.8);
+  border:1px solid var(--glass-edge);
+  box-shadow:inset 0 1px 0 var(--glass-hi),0 1px 2px var(--glass-shade),0 6px 16px var(--glass-shade)}
+.tabs button:not(.back),.gear,.daybar button,.mpick button{transition:transform .18s cubic-bezier(.3,1.6,.5,1),background-color .15s}
+.tabs button:not(.back):active,.gear:active,.daybar button:active,.mpick button:active{transform:scale(.94)}
+.tabs button:not(.back){border-radius:999px;padding:7px 14px}
+.gear{border-radius:999px}
+.daybar button{border-radius:14px}
+.mpick button{border-radius:999px}
+.tabs button[aria-pressed="true"],.gear[aria-pressed="true"],.daybar button[aria-pressed="true"],.mpick button[aria-pressed="true"]{
+  background:color-mix(in srgb,var(--accent) 88%,transparent);color:var(--accent-ink);border-color:color-mix(in srgb,#fff 40%,var(--accent));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.45),0 6px 16px color-mix(in srgb,var(--accent) 32%,transparent)}
+.mpick.need button{border-color:var(--warn)}
+/* in a browser the section bar is a floating glass pill; in the app, Apple's own tab bar replaces it */
+.navbar{left:50%;right:auto;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 10px);width:min(300px,calc(100% - 32px));
+  border-radius:999px;padding:4px;gap:4px}
+.navbar button{border-radius:999px;min-height:52px}
+.navbar button[aria-pressed="true"]{background:color-mix(in srgb,var(--accent) 15%,transparent)}
+.native-tabs .navbar{display:none!important}
+.native-tabs body{padding-bottom:max(calc(env(safe-area-inset-bottom,0px) + 24px),110px)}
+.updbar{position:fixed;z-index:30;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top,0px) + 8px);
+  display:flex;align-items:center;gap:12px;padding:6px 6px 6px 16px;border-radius:999px;font-size:14px;font-weight:600;white-space:nowrap}
+.updbar[hidden]{display:none}
+.updbar button{font:inherit;border:0;border-radius:999px;padding:7px 14px;background:var(--accent);color:var(--accent-ink);cursor:pointer}
 </style>
 </head>
 <body>
@@ -545,6 +576,7 @@ details.panel>summary{cursor:pointer;font-size:14px;font-weight:600;list-style-p
   </section>
 </div>
 
+<div class="updbar" id="updBar" role="status" hidden><span>New version ready</span><button id="updBtn">Reload</button></div>
 <nav class="navbar" id="navbar" aria-label="Section">
   <button data-sec="workout" aria-pressed="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11"/></svg>Workout</button>
   <button data-sec="food" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3v8M4.5 3v5a2.5 2.5 0 0 0 5 0V3M7 11v10M17 21V3c-2.2 1.2-3.5 3.6-3.5 7v4H17"/></svg>Food</button>
@@ -1171,7 +1203,14 @@ function showView(v){
   $("navbar").hidden=firstRun; $("gearBtn").hidden=firstRun;
   $("navbar").querySelectorAll("button[data-sec]").forEach(b=>b.setAttribute("aria-pressed",!OVERLAY.has(v)&&b.dataset.sec===section));
   $("gearBtn").setAttribute("aria-pressed",OVERLAY.has(v));
+  if(NATIVE)try{window.webkit.messageHandlers.liftlog.postMessage({type:"chrome",section,tabs:!firstRun})}catch(e){}   // the app's tab bar follows along
   rerender(); window.scrollTo(0,0);}
+// the app's own tab bar (Workout | Food) calls this; again = tapped the tab you're already on
+window.__nativeSection=o=>{const sec=o&&o.section;if(!SECTIONS[sec])return;
+  showView(o.again&&sec===section&&!OVERLAY.has(view)?SECTIONS[sec].tabs[0][0]:lastTab[sec])};
+// live updates: the app downloaded a newer version of this page
+window.__updateReady=()=>{$("updBar").hidden=false};
+$("updBtn").onclick=()=>{flush();try{window.webkit.messageHandlers.liftlog.postMessage({type:"reload"})}catch(e){location.reload()}};
 function rerender(){
   if(view==="settings")renderSettings();else if(view==="plan")renderPlanEditor();else if(view==="setup")renderSetup();else if(view==="hist")renderHist();else if(view==="stats")renderStats();else if(view==="food")renderFood();else if(view==="fhist")renderFoodHist();else render();}
 $("subTabs").addEventListener("click",ev=>{const b=ev.target.closest("button[data-view]");if(b&&b.dataset.view!==view)showView(b.dataset.view)});
@@ -1194,7 +1233,8 @@ $("eraseBtn").onclick=()=>{
 function renderSettings(){
   renderFoodSettings(); renderGoal(); renderPlanSum();
   const v=window.__LIFTLOG_VERSION__;
-  $("aboutLine").textContent=v?`Lift Log ${v}`:"Lift Log · test site (saves in this browser)";
+  const pg=window.__LIFTLOG_PAGE__;
+  $("aboutLine").textContent=v?`Lift Log ${v}${pg?` · page ${pg}`:""}`:"Lift Log · test site (saves in this browser)";
 }   // tapping the section you're in goes back to its Today
 
 /* ---- progress & stats ---- */
@@ -2048,6 +2088,7 @@ $("pWorkouts").addEventListener("click",ev=>{const b=ev.target.closest("button[d
 /* ---- boot ---- */
 if(plan&&!BOOT.plan)persist();   // an older log just got its plan: write it into the file now
 loadCur(); showView(view); status(SAVED_LABEL,"ok");
+if(NATIVE)try{window.webkit.messageHandlers.liftlog.postMessage({type:"booted"})}catch(e){}   // a live-updated page that never gets here is rolled back
 </script>
 </body>
 </html>

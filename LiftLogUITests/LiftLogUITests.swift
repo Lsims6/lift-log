@@ -52,7 +52,7 @@ final class LiftLogUITests: XCTestCase {
 
     func testLoggedSetSurvivesRelaunch() {
         let app = XCUIApplication()
-        app.launchArguments = ["-resetData"]
+        app.launchArguments = ["-resetData", "-noLiveUpdate"]   // always test the page built into this app
         app.launch()
 
         let web = app.webViews.firstMatch
@@ -102,7 +102,7 @@ final class LiftLogUITests: XCTestCase {
 
         // Close and reopen without resetting: the set must still be there.
         app.terminate()
-        app.launchArguments = []
+        app.launchArguments = ["-noLiveUpdate"]
         app.launch()
         let reopened = app.webViews.firstMatch
         XCTAssertTrue(reopened.waitForExistence(timeout: 30), "The app's page didn't come back after reopening")

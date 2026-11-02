@@ -1,21 +1,30 @@
 # Lift Log
 
-A workout and calorie tracker for iPhone. Everything is saved in a file on the phone. Nothing goes over the internet; even food estimates run on the phone.
+A workout and calorie tracker for iPhone. Everything is saved in a file on the phone, and food estimates run on the phone. The only thing the app fetches online is newer versions of its own screens (see Live updates); nothing from the log is ever sent.
 
 ## What's here
 
 - `LiftLog/Web/index.html`: the whole app screen (workouts, per-set logging, progressive overload, finish & lock, exercise swaps within each muscle group, cardio before and after every workout (stair climber by default, with minutes, level and floors), optional body-weight tracking, a Food tab for calorie tracking, progress charts, history, CSV import/export). Open it in any browser to try it out; there it saves to the browser instead of the phone.
 - `LiftLog/LiftLogApp.swift`: the small iPhone shell that shows the page and saves the log to `Documents/lift-log.json` (with a backup copy).
+- `LiftLog/AppShell.swift`: Apple's tab bar (Liquid Glass on iOS 26) for Workout | Food, around the page.
+- `LiftLog/LiveWeb.swift`: live updates of the page (below).
+- `scripts/web-version.py`: writes `version.json` (commit, time, file checksums) for live updates.
 - `LiftLogUITests/`: an automatic test on a simulated iPhone: logs a set, closes the app, reopens it, and checks the set is still there.
 - `project.yml`: the Xcode project definition (the build generates the `.xcodeproj` from it with XcodeGen).
-- `.github/workflows/build.yml`: builds and tests on a cloud Mac on every push.
+- `.github/workflows/build.yml`: builds on a cloud Mac on every push, uploads to TestFlight, then runs the simulator test.
 
 ## Getting the app
 
-1. Open the **Actions** tab and click the latest **Build Lift Log** run.
-2. Check that it has a green check mark, then download **LiftLog-ipa** under *Artifacts* and unzip it to get `LiftLog.ipa`.
-3. The **screenshots** artifact shows the app running on a simulated iPhone.
-4. Install `LiftLog.ipa` with AltStore: **My Apps → + →** pick the file.
+Every push to `main` builds the app and uploads it to TestFlight (see TestFlight below); it's there about 4 minutes after the push, plus Apple's processing time. The simulator test runs right after the upload, and the run turns red if it fails. The **screenshots** artifact shows the app running on a simulated iPhone.
+
+## Live updates
+
+Most changes are only to `LiftLog/Web`, and those don't need a TestFlight build. The *Publish test site* workflow puts the page on GitHub Pages with a `version.json`. When the app opens or comes back to the front, it checks that file, downloads a newer page, verifies every file's checksum and keeps it in Application Support. A **New version ready · Reload** bar appears; otherwise the new page shows the next time the app comes back to the front. Settings shows which page is running.
+
+- The log lives in `Documents`, separate from the page, so a page swap never touches it.
+- A downloaded page is only used if it's newer than the one built into the app and works with this app: `<meta name="liftlog-min-native">` in `index.html` must be at most `NATIVE_API` in `LiveWeb.swift`. Bump both when the page starts needing something new from the Swift side, and that page then waits for the matching TestFlight build.
+- If a downloaded page doesn't report that it started within 12 seconds, the app marks it bad and goes back to the built-in page.
+- Changes to the Swift files still need a TestFlight build.
 
 ## Workout plan
 
@@ -49,17 +58,7 @@ The **Food** tab tracks calories against a daily target range. In **Settings →
 - **Import CSV** reads a file exported from Lift Log (the web version or this app). Past days come in as finished workouts.
 - Body weight is exported as rows with the exercise "Body weight" and the weight in the Weight column, and comes back in on import.
 
-Your log lives inside the app. Refreshing it in AltStore keeps your data, but deleting the app deletes the log, so export a CSV now and then as a backup.
-
-## Appetize (try it in a browser)
-
-Every build that passes its test can be sent to [Appetize](https://appetize.io), which runs the app on a virtual iPhone in your browser.
-
-1. In Appetize, create an API token (account settings → API token).
-2. In this repo: **Settings → Secrets and variables → Actions → New repository secret**, name it `APPETIZE_API_TOKEN`, and paste the token.
-3. Optional, to keep one link that always has the newest build: open the app in your Appetize dashboard, copy its public key (the last part of its `appetize.io/app/...` link), and save it as a second secret named `APPETIZE_PUBLIC_KEY`.
-
-After that, each passing build updates Appetize automatically; the link is shown on the build's summary page.
+Your log lives inside the app. Updates (TestFlight or live) keep your data, but deleting the app deletes the log, so export a CSV now and then as a backup.
 
 ## Test site
 
@@ -67,7 +66,7 @@ The same screens are published to **https://lsims6.github.io/lift-log/** wheneve
 
 ## TestFlight (Apple Developer account)
 
-With these four repository secrets set (Settings → Secrets and variables → Actions), every build that passes its test is signed and uploaded to TestFlight:
+With these four repository secrets set (Settings → Secrets and variables → Actions), every build is signed and uploaded to TestFlight:
 
 - `ASC_KEY_ID`, `ASC_ISSUER_ID`: from App Store Connect → Users and Access → Integrations → App Store Connect API
 - `ASC_KEY_P8`: the full text of the downloaded `AuthKey_….p8` file
