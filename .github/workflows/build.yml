@@ -30,6 +30,10 @@ jobs:
       ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
       ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
       APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      # The stored signing certificate (see signing/README.md). With these set, every build signs with that one
+      # certificate instead of having Apple make a new one each run. Without them, builds sign the old way.
+      SIGNING_P12: ${{ secrets.SIGNING_P12 }}
+      SIGNING_P12_PASSWORD: ${{ secrets.SIGNING_P12_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
 
@@ -80,8 +84,8 @@ jobs:
       # The build goes to TestFlight before the simulator test, so it's there about 4 minutes in. The test
       # still runs right after and the run shows as failed if it doesn't pass. Every change is also
       # tried in a browser before it's pushed.
-      # Signs the app with the Apple Developer account through the App Store Connect API key
-      # (Xcode creates and renews the certificates itself). Runs only when the four secrets are set.
+      # Signs the app with the stored certificate when SIGNING_P12 is set, otherwise lets Xcode make a new
+      # certificate through the App Store Connect API key. Uploads need the four ASC secrets either way.
       - name: Check Apple secrets
         id: asc
         run: |
@@ -96,6 +100,30 @@ jobs:
             echo "ready=true" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Load the stored signing certificate
+        if: success() && steps.asc.outputs.ready == 'true'
+        run: |
+          if [ -z "$SIGNING_P12" ] || [ -z "$SIGNING_P12_PASSWORD" ]; then
+            echo "::notice::No stored certificate secrets; signing the old way (Apple makes a new certificate)."
+            echo "STORED_SIGNING=false" >> "$GITHUB_ENV"; exit 0
+          fi
+          KC="$RUNNER_TEMP/signing.keychain-db"; KCPW=$(uuidgen)
+          printf '%s' "$SIGNING_P12" | tr -d '\r\n ' | base64 --decode > "$RUNNER_TEMP/signing.p12"
+          security create-keychain -p "$KCPW" "$KC"
+          security set-keychain-settings -lut 21600 "$KC"
+          security unlock-keychain -p "$KCPW" "$KC"
+          security import "$RUNNER_TEMP/signing.p12" -k "$KC" -P "$SIGNING_P12_PASSWORD" -A -t cert -f pkcs12
+          security set-key-partition-list -S apple-tool:,apple: -k "$KCPW" "$KC" > /dev/null
+          security list-keychains -d user -s "$KC" $(security list-keychains -d user | tr -d '"')
+          rm -f "$RUNNER_TEMP/signing.p12"
+          security find-identity -v -p codesigning "$KC"
+          PROF=signing/LiftLog_AppStore.mobileprovision
+          UUID=$(security cms -D -i "$PROF" | plutil -extract UUID raw -o - -)
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          cp "$PROF" ~/Library/MobileDevice/Provisioning\ Profiles/"$UUID".mobileprovision
+          echo "Using the stored certificate and profile $UUID"
+          echo "STORED_SIGNING=true" >> "$GITHUB_ENV"
+
       - name: Archive signed app
         if: success() && steps.asc.outputs.ready == 'true'
         run: |
@@ -107,17 +135,22 @@ jobs:
           # every upload needs a higher build number than the last; the run number always goes up
           BUILD_NO=$(( ${{ github.run_number }} + 100 ))
           echo "BUILD_NO=$BUILD_NO" >> "$GITHUB_ENV"
+          if [ "$STORED_SIGNING" = "true" ]; then
+            # one stored certificate and profile: nothing new is created at Apple
+            SIGN=(CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY="Apple Distribution" PROVISIONING_PROFILE_SPECIFIER="Lift Log App Store CI")
+          else
+            # old way: Xcode asks Apple for a fresh certificate every run
+            SIGN=(-allowProvisioningUpdates -authenticationKeyPath "$KEY" -authenticationKeyID "$ASC_KEY_ID"
+                  -authenticationKeyIssuerID "$ASC_ISSUER_ID" CODE_SIGN_STYLE=Automatic)
+          fi
           set +e
           xcodebuild archive \
             -project LiftLog.xcodeproj -scheme LiftLog \
             -configuration Release -destination "generic/platform=iOS" \
             -archivePath build/LiftLog.xcarchive \
             -derivedDataPath build/archive \
-            -allowProvisioningUpdates \
-            -authenticationKeyPath "$KEY" \
-            -authenticationKeyID "$ASC_KEY_ID" \
-            -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
-            DEVELOPMENT_TEAM="$APPLE_TEAM_ID" CODE_SIGN_STYLE=Automatic \
+            "${SIGN[@]}" \
+            DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
             CURRENT_PROJECT_VERSION="$BUILD_NO" > build/archive.log 2>&1
           status=$?
           set -e
@@ -142,12 +175,19 @@ jobs:
             <key>manageAppVersionAndBuildNumber</key><false/>
           </dict></plist>
           EOF
+          EXTRA=(-allowProvisioningUpdates)
+          if [ "$STORED_SIGNING" = "true" ]; then
+            plutil -replace signingStyle -string manual build/ExportOptions.plist
+            plutil -insert signingCertificate -string "Apple Distribution" build/ExportOptions.plist
+            plutil -insert provisioningProfiles -json '{"com.lsims6.liftlog":"Lift Log App Store CI"}' build/ExportOptions.plist
+            EXTRA=()
+          fi
           set +e
           xcodebuild -exportArchive \
             -archivePath build/LiftLog.xcarchive \
             -exportOptionsPlist build/ExportOptions.plist \
             -exportPath build/export \
-            -allowProvisioningUpdates \
+            "${EXTRA[@]}" \
             -authenticationKeyPath "$KEY_PATH" \
             -authenticationKeyID "$ASC_KEY_ID" \
             -authenticationKeyIssuerID "$ASC_ISSUER_ID" > build/upload.log 2>&1
