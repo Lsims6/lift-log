@@ -236,6 +236,9 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .calbar .band{position:absolute;top:0;bottom:0;background:var(--done);opacity:.22}
 .calbar .fill{position:absolute;left:0;top:0;bottom:0;background:var(--accent);border-radius:999px}
 .calbar .fill.up{background:var(--done)} .calbar .fill.down{background:var(--warn)}
+.protrow{display:flex;flex-direction:column;gap:4px}
+.protlab{display:flex;justify-content:space-between;gap:10px;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.protlab .up{color:var(--done);font-weight:600}
 .ftext{font:inherit;font-size:16px;width:100%;min-height:64px;resize:vertical;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
 .fbtns{display:flex;gap:8px;flex-wrap:wrap}
 .fbtns .btn{flex:1;min-width:0}
@@ -522,6 +525,7 @@ header{position:sticky;top:0;z-index:20;
       <div class="fset">
         <label for="gWt">Goal weight (lb)</label>
         <input id="gWt" inputmode="decimal" placeholder="lb">
+        <div id="gProt" class="note" hidden></div>
         <div id="gOut"></div>
       </div>
     </div>
@@ -1634,7 +1638,7 @@ function renderFood(){
 }
 $("calSum").addEventListener("click",ev=>{if(ev.target.closest("[data-go=settings]"))showView("settings")});
 function renderCalSum(){
-  const eaten=dayCal(fDate), p=dayP(fDate), n=dayFood(fDate).length, {lo,hi}=foodTarget;
+  const eaten=dayCal(fDate), p=dayP(fDate), n=dayFood(fDate).length, {lo,hi}=foodTarget, pg=proteinGoal();
   let sub,cls="";
   if(!n)sub=`Target ${n0(lo)}–${n0(hi)} cal`;
   else if(eaten<lo)sub=`${n0(lo-eaten)}–${n0(hi-eaten)} cal to go`;
@@ -1643,9 +1647,15 @@ function renderCalSum(){
   const max=Math.max(hi*1.15,eaten,1), pct=v=>Math.min(100,v/max*100).toFixed(1);
   const when=fDate===todayStr()?"Today":nice(fDate);
   $("calSum").innerHTML=`<div class="calhead"><div><div class="cat">${when}</div><div class="calbig">${n0(eaten)}<small>cal</small></div></div>
-      <div class="calsub ${cls}">${sub}<br>${n?`${n0(p)} g protein`:""}</div></div>
+      <div class="calsub ${cls}">${sub}${!pg&&n?`<br>${n0(p)} g protein`:""}</div></div>
     <div class="calbar" role="img" aria-label="${n0(eaten)} of ${n0(lo)} to ${n0(hi)} calories"><div class="band" style="left:${pct(lo)}%;width:${(pct(hi)-pct(lo)).toFixed(1)}%"></div><div class="fill ${cls}" style="width:${pct(eaten)}%"></div></div>
+    ${pg?proteinRow(p,pg):""}
     <button class="calsum-link" data-go="settings">${calcTDEE()&&foodProfile.auto?`Target ${n0(lo)}–${n0(hi)} from your TDEE · Change`:"Work out your target from height, weight & age ›"}</button>`;
+}
+function proteinRow(p,goal){
+  const have=Math.round(p), hit=have>=goal;
+  return `<div class="protrow"><div class="protlab"><span>Protein</span><span class="${hit?"up":""}">${n0(have)} / ${n0(goal)} g · ${hit?"Goal hit ✓":`${n0(goal-have)} g to go`}</span></div>
+    <div class="calbar" role="img" aria-label="${n0(have)} of ${n0(goal)} grams of protein"><div class="fill ${hit?"up":""}" style="width:${Math.min(100,have/goal*100).toFixed(1)}%"></div></div></div>`;
 }
 function renderDraft(){
   const el=$("fDraft");
@@ -1924,11 +1934,13 @@ function renderCalc(){
   $("tMode").innerHTML=pr.auto&&matches?`<span class="keyok">✓ Set from your TDEE</span> and updates when your weight changes. Typing your own numbers here switches that off.`:"Set by hand.";
 }
 /* weight goal: how far to go, and roughly how long at your target range (extreme ≈ 2 lb/wk, mild ≈ ½ lb/wk) */
+function proteinGoal(){const g=foodProfile.goal;return g>0?Math.round(g):null} // 1 g per lb of goal weight
 function goalLeft(){const g=foodProfile.goal,L=latestBW();return g>0&&L?r1(L.w-g):null}
 function renderGoal(){
   const g=foodProfile.goal,L=latestBW();
   if(document.activeElement!==$("gWt"))$("gWt").value=g??"";
-  if(!(g>0)){$("gOut").innerHTML=`<div class="note">Set a goal and it shows on your body-weight chart and weigh-ins, with a rough time to get there.</div>`;return}
+  const pg=proteinGoal();$("gProt").hidden=!pg;$("gProt").textContent=pg?`Protein goal: ${n0(pg)} g a day (1 g per lb of goal weight)`:"";
+  if(!(g>0)){$("gOut").innerHTML=`<div class="note">Set a goal and it shows on your body-weight chart and weigh-ins, with a rough time to get there, and sets your daily protein goal at 1 g per lb.</div>`;return}
   if(!L){$("gOut").innerHTML=`<div class="note">Log a weigh-in on Workout › Today to see how far you are from ${g} lb.</div>`;return}
   const left=r1(L.w-g);
   if(left<=0){$("gOut").innerHTML=`<div class="note keyok">✓ You're at your goal (${L.w} lb on ${md(L.date)}).</div>`;return}
@@ -1940,7 +1952,7 @@ function renderGoal(){
     <div class="note">Rough guide, not medical advice: real weekly loss swings with water weight, so watch the 7-day average on Progress. Losing more than about 2 lb a week isn't recommended without a doctor's guidance.</div>`;
 }
 $("gWt").addEventListener("change",()=>{const v=$("gWt").value.trim(),n=Number(v);
-  foodProfile.goal=v===""||!(n>0&&n<1000)?null:r1(n);persist();renderGoal();});
+  foodProfile.goal=v===""||!(n>0&&n<1000)?null:r1(n);persist();renderGoal();renderCalSum();});
 function calcInput(){
   const num=id=>{const v=$(id).value.trim(),n=Number(v);return v===""||!(n>0)?null:n};
   foodProfile.age=num("tAge");foodProfile.ft=num("tFt");foodProfile.inch=$("tIn").value.trim()===""?null:Math.max(0,Number($("tIn").value)||0);

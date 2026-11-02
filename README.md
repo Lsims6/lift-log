@@ -37,7 +37,7 @@ Your workouts, their exercises and which day each one falls on are all editable:
 
 ## Layout
 
-The gear at the top right opens **Settings**: workout plan, calorie target (TDEE calculator), weight goal (shown on weigh-ins and the Progress chart, with a rough time to reach it), food estimate status, CSV export/import, privacy policy, erase all data, and the app version.
+The gear at the top right opens **Settings**: workout plan, calorie target (TDEE calculator), weight goal (shown on weigh-ins and the Progress chart, with a rough time to reach it; it also sets the daily protein goal on Food › Today, 1 g per lb of goal weight), food estimate status, CSV export/import, privacy policy, erase all data, and the app version.
 
 The bar along the bottom switches between **Workout** and **Food**. The tabs up top switch views inside each one: Workout has Today, Progress and History; Food has Today and History (daily totals vs your target, a 14-day chart, and every day's meals). The app reopens in the section you used last.
 
