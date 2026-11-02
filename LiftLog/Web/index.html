@@ -252,6 +252,13 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .qadd input.fcal::placeholder{font-family:var(--body);font-size:15px;font-weight:400}
 .qadd input.fcal{text-align:right;font-family:var(--display);font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
 .qadd .btn{height:44px;padding:0 16px}
+.mpick{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.mpick button{font:inherit;font-size:14px;font-weight:600;height:40px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer;padding:0 4px}
+.mpick button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.mpick.need button{border-color:var(--warn)}
+.mhd{display:flex;justify-content:space-between;align-items:baseline;margin:6px 2px -2px;font-family:var(--display);font-weight:700;font-size:15px;text-transform:uppercase;letter-spacing:.04em}
+.mhd small{font-family:var(--body);font-weight:500;font-size:13px;color:var(--muted);text-transform:none;letter-spacing:0}
+tr.mrow td{font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);padding-top:6px}
 .pbox{display:flex;flex-direction:column;gap:8px;padding:10px;border:1px dashed var(--line);border-radius:8px}
 .msearch{font:inherit;font-size:16px;width:100%;height:44px;padding:0 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
 .mlist{display:flex;flex-direction:column}
@@ -358,12 +365,13 @@ details.panel>summary{cursor:pointer;font-size:14px;font-weight:600;list-style-p
     <div class="panel" id="calSum"></div>
     <div class="panel">
       <h3>Add food</h3>
+      <div class="mpick" id="fMeals" role="group" aria-label="Which meal"></div>
       <div class="qadd" id="qAdd">
         <input id="qCal" class="fcal" inputmode="numeric" enterkeyhint="done" placeholder="cal" aria-label="Quick add calories">
         <input id="qName" enterkeyhint="done" autocomplete="off" placeholder="What was it?" aria-label="Quick add: what it was">
         <button class="btn" id="qBtn">Add</button>
       </div>
-      <div class="note" id="qNote">Quick add: just the calories, straight onto the day. Or find it below.</div>
+      <div class="note" id="qNote">Pick a meal above, then quick add the calories or find it below.</div>
       <button class="btn ghost" id="pOpen">Paste from Claude</button>
       <div class="pbox" id="pBox" hidden>
         <div class="cat">Paste from Claude</div>
@@ -1354,7 +1362,7 @@ function csv(){
     Object.entries(s.notes||{}).forEach(([id,t])=>out.push([d,workoutName(s.day,s),NAMES[id]||id,"Note","","","","","","","",t]));
     if(s.note)out.push([d,workoutName(s.day,s),NOTE_NAME,"Notes","","","","","","","",s.note]);
     // food: one row per item; Set says "Food 1", "Food 2"… per entry and Meal holds what was typed, so entries regroup on import
-    dayFood(d).forEach((e,k)=>e.items.forEach(x=>out.push([d,workoutName(s.day,s),x.name,"Food "+(k+1),"","","","","",x.cal,x.p??"",e.text])));});
+    dayFood(d).forEach((e,k)=>e.items.forEach(x=>out.push([d,workoutName(s.day,s),x.name,"Food "+(k+1)+(MEAL_NAME[e.meal]?" "+MEAL_NAME[e.meal]:""),"","","","","",x.cal,x.p??"",e.text])));});
   return out.map(r=>r.map(q).join(",")).join("\n");
 }
 /* ---- export: the iPhone share sheet in the app, a plain download in a browser ---- */
@@ -1410,7 +1418,7 @@ function importCSV(text){
       const cal=Number((r[iC]||"").trim()),p=Number((r[iP]||"").trim()),meal=iMeal>=0?(r[iMeal]||"").trim():"";
       if(!(cal>=0))return;
       const day=gotFood[d]||(gotFood[d]={}),key=ftag+"|"+(meal||name);
-      (day[key]||(day[key]={text:meal||name,items:[]})).items.push({name,cal:Math.round(cal),p:p>=0&&(r[iP]||"").trim()!==""?Math.round(p):null});
+      (day[key]||(day[key]={text:meal||name,meal:mealOf(ftag),items:[]})).items.push({name,cal:Math.round(cal),p:p>=0&&(r[iP]||"").trim()!==""?Math.round(p):null});
       return}
     let id=byName[name.toLowerCase()];
     if(!id){id="x-"+name.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
@@ -1431,7 +1439,8 @@ function importCSV(text){
   let fN=0;Object.entries(gotFood).forEach(([d,byMeal])=>{const had=dayFood(d).slice();Object.values(byMeal).forEach(e=>{
     const tot=e.items.reduce((a,x)=>a+x.cal,0), k=had.findIndex(x=>x.text===e.text&&entryCal(x)===tot);
     if(k>=0){had.splice(k,1);return}
-    food[d]=[...dayFood(d),{id:newId(),t:parse(d).getTime()+12*36e5,text:e.text,items:e.items}];fN++})});
+    const ne={id:newId(),t:parse(d).getTime()+12*36e5,text:e.text,items:e.items};if(e.meal)ne.meal=e.meal;
+    food[d]=[...dayFood(d),ne];fN++})});
   // notes: fill in days that don't have one yet (an imported note never overwrites one you wrote here)
   Object.entries(gotNote).forEach(([d,t])=>{if(got[d])got[d].note=got[d].note||t;
     else if(sessions[d]){if(!sessions[d].note)sessions[d].note=t}
@@ -1474,10 +1483,24 @@ function entryCal(e){return e.items.reduce((a,x)=>a+(+x.cal||0),0)}
 function entryP(e){return e.items.reduce((a,x)=>a+(+x.p||0),0)}
 function dayCal(d){return dayFood(d).reduce((a,e)=>a+entryCal(e),0)}
 function dayP(d){return dayFood(d).reduce((a,e)=>a+entryP(e),0)}
+/* meals: every new entry is filed under Breakfast, Lunch, Dinner or Snack. Nothing is guessed: you pick it each time.
+   Entries from before meals existed have no meal and show under "Not sorted" until you edit one and pick. */
+const MEALS=[["b","Breakfast"],["l","Lunch"],["d","Dinner"],["s","Snack"]], MEAL_NAME=Object.fromEntries(MEALS);
+let fMeal=null;
+function mealOf(t){const m=String(t||"").toLowerCase().match(/\b(breakfast|brunch|lunch|dinner|supper|snacks?)\b/);
+  return m?({breakfast:"b",brunch:"b",lunch:"l",dinner:"d",supper:"d",snack:"s",snacks:"s"})[m[1]]:null}
+function renderMeals(){
+  $("fMeals").innerHTML=MEALS.map(([k,n])=>`<button data-meal="${k}" aria-pressed="${fMeal===k}">${n}</button>`).join("");
+  $("fMeals").classList.remove("need")}
+function needMeal(){$("fMeals").classList.add("need");$("fMeals").scrollIntoView({behavior:"smooth",block:"nearest"})}
+$("fMeals").addEventListener("click",ev=>{const b=ev.target.closest("button[data-meal]");if(!b)return;
+  fMeal=fMeal===b.dataset.meal?null:b.dataset.meal;renderMeals();
+  if($("qNote").classList.contains("down")){$("qNote").textContent=QNOTE;$("qNote").className="note"}});
+const QNOTE="Pick a meal above, then quick add the calories or find it below.";
 
 function renderFood(){
   $("fDate").value=fDate;
-  renderCalSum(); renderDraft(); renderRecent(); renderMenu(); renderFoodList();
+  renderCalSum(); renderMeals(); renderDraft(); renderRecent(); renderMenu(); renderFoodList();
   $("fAiWrap").hidden=aiStatus!=="ready";
   const m=$("fMsg"); m.hidden=!fMsg; m.textContent=fMsg; m.className="note"+(/^(Couldn|That|The estimate|Apple|Turn on|Estimates need|Type)/.test(fMsg)?" down":"");
   $("fEst").disabled=fBusy; $("fManual").disabled=fBusy; $("fEst").textContent=fBusy?"Estimating…":"Estimate calories";
@@ -1501,9 +1524,9 @@ function renderDraft(){
   const el=$("fDraft");
   if(!fDraft){el.hidden=true;el.innerHTML="";return}
   el.hidden=false;
-  const rows=fDraft.items.map((x,k)=>`<div class="frow" data-k="${k}"><input data-f="name" aria-label="Item ${k+1} name" placeholder="Food" value="${esc(x.name)}"><input class="fcal" data-f="cal" inputmode="numeric" aria-label="Item ${k+1} calories" placeholder="0" value="${x.cal??""}"><span class="unit">cal</span><button class="fx" data-f="rm" aria-label="Remove item ${k+1}">×</button></div>`).join("");
+  const rows=fDraft.items.map((x,k)=>(x.m&&(k===0||fDraft.items[k-1].m!==x.m)?`<div class="cat">${MEAL_NAME[x.m]}</div>`:"")+`<div class="frow" data-k="${k}"><input data-f="name" aria-label="Item ${k+1} name" placeholder="Food" value="${esc(x.name)}"><input class="fcal" data-f="cal" inputmode="numeric" aria-label="Item ${k+1} calories" placeholder="0" value="${x.cal??""}"><span class="unit">cal</span><button class="fx" data-f="rm" aria-label="Remove item ${k+1}">×</button></div>`).join("");
   const savable=fDraft.items.some(x=>x.name.trim()&&!MENU_NAMES.has(x.name.trim().toLowerCase()));
-  el.innerHTML=`<div class="cat">${fDraft.edit?"Editing entry":"This meal · tap more foods below to add them"}</div>${rows}
+  el.innerHTML=`<div class="cat">${fDraft.edit?"Editing entry · tap a meal above to move it":"This meal · tap more foods below to add them"}</div>${rows}
     <div class="row"><button class="set addset" data-f="add">+ Item</button>${savable?`<button class="set addset" data-f="keep">☆ Save to My foods</button>`:""}</div>
     ${fDraft.note?`<div class="note">${esc(fDraft.note)}</div>`:""}
     <div class="ftot"><span>Total</span><span id="fDraftTot">${n0(entryCal(fDraft))} cal</span></div>
@@ -1522,13 +1545,16 @@ function renderRecent(){
 function renderFoodList(){
   const es=dayFood(fDate).slice().sort((a,b)=>a.t-b.t);
   if(!es.length){$("foodList").innerHTML=`<div class="empty">Nothing logged ${fDate===todayStr()?"today":"on this day"}. Search or pick a restaurant above and tap what you ate.</div>`;return}
-  $("foodList").innerHTML=es.map(e=>{
+  const order=[...MEALS.map(([k])=>k),""];
+  $("foodList").innerHTML=order.map(k=>{const g=es.filter(e=>(MEAL_NAME[e.meal]?e.meal:"")===k);if(!g.length)return"";
+    const c=g.reduce((a,e)=>a+entryCal(e),0);
+    return `<div class="mhd"><span>${k?MEAL_NAME[k]:"Not sorted"}</span><small>${n0(c)} cal</small></div>`+g.map(e=>{
     const time=todayStr(new Date(e.t))===fDate?new Date(e.t).toLocaleTimeString([],{hour:"numeric",minute:"2-digit"}):"";
     const rows=e.items.map(x=>`<tr><td>${esc(x.name)}</td><td>${n0(x.cal)} cal</td></tr>`).join("");
     const same=e.items.length===1&&e.items[0].name.trim().toLowerCase()===e.text.trim().toLowerCase();
     return `<div class="hcard fentry" data-eid="${e.id}"><h3><span>${n0(entryCal(e))} cal${entryP(e)?` · ${n0(entryP(e))} g protein`:""}</span><span class="t">${time}</span></h3>
       ${same?"":`<div class="q">${esc(e.text)}</div>`}<table>${rows}</table>
-      <div class="acts"><button data-fe="edit">Edit</button><button data-fe="del" class="del">${fDelArmed===e.id?"Tap again to delete":"Delete"}</button></div></div>`}).join("");
+      <div class="acts"><button data-fe="edit">Edit</button><button data-fe="del" class="del">${fDelArmed===e.id?"Tap again to delete":"Delete"}</button></div></div>`}).join("")}).join("");
 }
 function renderCalChart(){
   const today=todayStr(), ds=[];for(let i=13;i>=0;i--)ds.push(shift(today,-i));
@@ -1551,8 +1577,10 @@ function renderFoodHist(){
   $("foodHist").innerHTML=days.map(d=>{
     const c=dayCal(d), p=dayP(d), st=calStatus(c), es=dayFood(d).slice().sort((a,b)=>a.t-b.t);
     const max=Math.max(hi*1.15,c,1), pct=v=>Math.min(100,v/max*100).toFixed(1);
-    const rows=es.map(e=>{const one=e.items.length===1?e.items[0].name:(e.text||e.items.map(x=>x.name).join(", "));
-      return `<tr><td>${esc(one)}</td><td>${n0(entryCal(e))} cal</td></tr>`}).join("");
+    const anyMeal=es.some(e=>MEAL_NAME[e.meal]);
+    const rows=[...MEALS.map(([k])=>k),""].map(k=>{const g=es.filter(e=>(MEAL_NAME[e.meal]?e.meal:"")===k);if(!g.length)return"";
+      return (anyMeal?`<tr class="mrow"><td>${k?MEAL_NAME[k]:"Not sorted"}</td><td>${n0(g.reduce((a,e)=>a+entryCal(e),0))} cal</td></tr>`:"")+g.map(e=>{const one=e.items.length===1?e.items[0].name:(e.text||e.items.map(x=>x.name).join(", "));
+      return `<tr><td>${esc(one)}</td><td>${n0(entryCal(e))} cal</td></tr>`}).join("")}).join("");
     return `<div class="hcard fday"><h3><span>${nice(d)}${d===todayStr()?" · Today":""}</span><button data-fday="${d}">Open</button></h3>
       <div class="tot"><b>${n0(c)} cal</b><span><span class="r ${st.cls}">${st.t}</span>${p?` · ${n0(p)} g protein`:""}</span></div>
       <div class="calbar" aria-hidden="true"><div class="band" style="left:${pct(foodTarget.lo)}%;width:${(pct(hi)-pct(foodTarget.lo)).toFixed(1)}%"></div><div class="fill ${st.cls}" style="width:${pct(c)}%"></div></div>
@@ -1617,31 +1645,32 @@ $("fEst").onclick=async()=>{
 function quickAdd(){
   const v=$("qCal").value.trim(), n=Math.round(Number(v)), name=$("qName").value.trim();
   if(v===""||!(n>0&&n<10000)){$("qNote").textContent="Type the calories first, like 350.";$("qNote").className="note down";$("qCal").focus();return}
-  const t=fDate===todayStr()?Date.now():parse(fDate).getTime()+12*36e5;
-  food[fDate]=[...dayFood(fDate),{id:newId(),t,text:name||"Quick add",items:[{name:name||"Quick add",cal:n,p:null}]}];
+  if(!fMeal){$("qNote").textContent="Pick which meal it was first.";$("qNote").className="note down";needMeal();return}
+  const t=fDate===todayStr()?Date.now():parse(fDate).getTime()+12*36e5, meal=fMeal;
+  food[fDate]=[...dayFood(fDate),{id:newId(),t,meal,text:name||"Quick add",items:[{name:name||"Quick add",cal:n,p:null}]}];fMeal=null;
   $("qCal").value="";$("qName").value="";$("qCal").blur();$("qName").blur();
   persist();renderFood();
-  $("qNote").textContent=`Added ${n0(n)} cal${name?` for ${name}`:""}.`;$("qNote").className="note up";
+  $("qNote").textContent=`Added ${n0(n)} cal${name?` for ${name}`:""} to ${MEAL_NAME[meal]}.`;$("qNote").className="note up";
 }
 $("qBtn").onclick=quickAdd;
 ["qCal","qName"].forEach(id=>$(id).addEventListener("keydown",ev=>{if(ev.key==="Enter"){ev.preventDefault();
   if(id==="qCal"&&!$("qName").value.trim()&&$("qCal").value.trim())$("qName").focus();else quickAdd()}}));
-$("qCal").addEventListener("input",()=>{$("qNote").textContent="Quick add: just the calories, straight onto the day. Or find it below.";$("qNote").className="note"});
+$("qCal").addEventListener("input",()=>{$("qNote").textContent=QNOTE;$("qNote").className="note"});
 /* paste from Claude: one food per line ("Name - 520 cal, 30g protein"), read into the editable meal draft */
 function parsePasted(txt){
-  const items=[];
+  const items=[];let cur=null;
   txt.split(/\r?\n/).forEach(raw=>{
     let l=raw.replace(/[*_`]/g,"").replace(/^\s*(?:[-•–—>]|\d+[.)])\s+/,"").trim();
     if(!l||/^total\b/i.test(l))return;
     const c=l.match(/(\d[\d,]*)(?:\s*[-–]\s*(\d[\d,]*))?\s*(?:k?cals?|calories)\b/i);
-    if(!c&&!/\d/.test(l)&&/:$/.test(l))return;   // a heading like "Lunch:" or "Here's the list:"
+    if(!c&&!/\d/.test(l)&&(/:$/.test(l)||/^(breakfast|brunch|lunch|dinner|supper|snacks?)$/i.test(l))){cur=mealOf(l)||cur;return}   // a heading like "Dinner:" files what follows under it
     const num=v=>Number(String(v).replace(/,/g,""));
     let cal=null,name=l;
     if(c){cal=Math.round(c[2]?(num(c[1])+num(c[2]))/2:num(c[1]));name=l.slice(0,c.index)}
     const pm=l.match(/(\d+(?:\.\d+)?)\s*g\b(?:\s*(?:of\s*)?protein)?/i)||l.match(/protein\D{0,3}(\d+(?:\.\d+)?)/i);
     name=name.replace(/[\s\-–—:|,(~=]+$/,"").replace(/\b(?:about|approx\.?|around)$/i,"").replace(/[\s\-–—:|,(~=]+$/,"").trim();
     if(!name&&cal==null)return;
-    items.push({name:name||"Food",cal:cal>=0&&cal<10000?cal:null,p:pm&&c?Math.round(Number(pm[1])):null});
+    items.push({name:name||"Food",cal:cal>=0&&cal<10000?cal:null,p:pm&&c?Math.round(Number(pm[1])):null,m:cur});
   });
   return items;
 }
@@ -1649,10 +1678,12 @@ function pNote(t,cls){$("pNote").textContent=t;$("pNote").className="note"+(cls?
 function readPasted(){
   const items=parsePasted($("pText").value);
   if(!items.length){pNote("Nothing to read yet. Paste the list from Claude first.","down");$("pText").focus();return}
+  if(items.every(x=>x.m)&&new Set(items.map(x=>x.m)).size===1){fMeal=items[0].m;items.forEach(x=>{x.m=null})}  // one meal: just pick it
   if(fDraft&&!fDraft.edit){fDraft.text="";fDraft.items=fDraft.items.filter(x=>x.name.trim()||x.cal!=null).concat(items)}
   else fDraft={text:"",items,note:""};
   const miss=items.filter(x=>x.cal==null).length;
-  fDraft.note=`Read ${items.length} item${items.length>1?"s":""} from your paste. `+(miss?`${miss} had no calories, so fill ${miss>1?"those":"it"} in, then tap Add.`:"Check the numbers, then tap Add.");
+  const ms=[...new Set(items.map(x=>x.m).filter(Boolean))];
+  fDraft.note=`Read ${items.length} item${items.length>1?"s":""} from your paste${fMeal&&!ms.length?` for ${MEAL_NAME[fMeal]}`:ms.length?` across ${ms.map(k=>MEAL_NAME[k]).join(", ")}`:""}. `+(!fMeal&&items.some(x=>!x.m)?"Pick a meal at the top. ":"")+(miss?`${miss} had no calories, so fill ${miss>1?"those":"it"} in, then tap Add.`:"Check the numbers, then tap Add.");
   $("pText").value="";$("pBox").hidden=true;$("pOpen").hidden=false;fMsg="";renderFood();
   $("fDraft").scrollIntoView({behavior:"smooth",block:"nearest"});
 }
@@ -1678,21 +1709,27 @@ $("fDraft").addEventListener("change",ev=>{if(ev.target.matches("input[data-f=na
 $("fDraft").addEventListener("click",ev=>{const b=ev.target.closest("button[data-f]");if(!b||!fDraft)return;const a=b.dataset.f;
   if(a==="rm"){fDraft.items.splice(+b.closest(".frow").dataset.k,1);if(!fDraft.items.length)fDraft.items.push({name:"",cal:null,p:null})}
   else if(a==="add")fDraft.items.push({name:"",cal:null,p:null});
-  else if(a==="cancel"){fDraft=null;fMsg=""}
+  else if(a==="cancel"){if(fDraft.edit)fMeal=null;fDraft=null;fMsg=""}
   else if(a==="keep"){let n=0;
     fDraft.items.forEach(x=>{const nm=x.name.trim();if(!nm||!(x.cal>0)||MENU_NAMES.has(nm.toLowerCase()))return;
       const old=myFoods.find(f=>f.n.toLowerCase()===nm.toLowerCase());
       if(old){old.cal=x.cal;old.p=x.p??null}else myFoods.push({id:newId(),n:nm,cal:x.cal,p:x.p??null});n++});
     persist();buildFoodIndex();fMsg=n?`Saved ${n} to My foods. Find ${n>1?"them":"it"} by searching or under My foods.`:"Give it a name and calories first.";}
   else if(a==="save"){
-    const items=fDraft.items.map(x=>({name:x.name.trim(),cal:x.cal||0,p:x.p}))
+    const all=fDraft.items.map(x=>({name:x.name.trim(),cal:x.cal||0,p:x.p,m:x.m||null}))
       .filter(x=>x.name||x.cal).map(x=>({...x,name:x.name||"Food"}));
-    if(!items.length){fMsg="Add at least one item with calories.";renderFood();return}
-    const text=fDraft.text||items.map(x=>x.name).join(", ");
-    if(fDraft.edit){food[fDate]=dayFood(fDate).map(e=>e.id===fDraft.edit?{...e,text,items}:e)}
-    else{const now=new Date(),t=fDate===todayStr()?now.getTime():parse(fDate).getTime()+12*36e5;
-      food[fDate]=[...dayFood(fDate),{id:newId(),t,text,items}];$("fText").value=""}
-    fDraft=null;fMsg="";$("mSearch").value="";persist();
+    if(!all.length){fMsg="Add at least one item with calories.";renderFood();return}
+    const strip=xs=>xs.map(({m,...x})=>x);
+    if(fDraft.edit){const items=strip(all),text=fDraft.text||items.map(x=>x.name).join(", ");
+      food[fDate]=dayFood(fDate).map(e=>{if(e.id!==fDraft.edit)return e;const o={...e,text,items};if(fMeal)o.meal=fMeal;return o})}
+    else{
+      if(!fMeal&&all.some(x=>!x.m)){fMsg="Pick which meal it was at the top of Add food.";renderFood();needMeal();return}
+      const now=new Date(),t=fDate===todayStr()?now.getTime():parse(fDate).getTime()+12*36e5, groups={};
+      all.forEach(x=>{const k=x.m||fMeal;(groups[k]||(groups[k]=[])).push(x)});
+      const keys=Object.keys(groups), add=MEALS.map(([k])=>k).filter(k=>groups[k]).map((k,i)=>{const items=strip(groups[k]);
+        return {id:newId(),t:t+i,meal:k,text:(keys.length===1&&fDraft.text)||items.map(x=>x.name).join(", "),items}});
+      food[fDate]=[...dayFood(fDate),...add];$("fText").value=""}
+    fDraft=null;fMeal=null;fMsg="";$("mSearch").value="";persist();
   }
   renderFood();
   if(a==="add"){const ns=$("fDraft").querySelectorAll("input[data-f=name]");ns[ns.length-1].focus()}
@@ -1702,13 +1739,13 @@ $("fRecent").addEventListener("click",ev=>{const b=ev.target.closest("button[dat
   fDraft={text:e.text,items:e.items.map(x=>({...x})),note:""};fMsg="";renderFood();});
 $("foodList").addEventListener("click",ev=>{const b=ev.target.closest("button[data-fe]");if(!b)return;
   const id=b.closest("[data-eid]").dataset.eid, e=dayFood(fDate).find(x=>x.id===id);if(!e)return;
-  if(b.dataset.fe==="edit"){fDraft={edit:id,text:e.text,items:e.items.map(x=>({...x})),note:""};fDelArmed=null;renderFood();
-    window.scrollTo({top:$("fDraft").getBoundingClientRect().top+scrollY-120,behavior:"smooth"});return}
+  if(b.dataset.fe==="edit"){fDraft={edit:id,text:e.text,items:e.items.map(x=>({...x})),note:""};fMeal=e.meal||null;fDelArmed=null;renderFood();
+    window.scrollTo({top:$("fMeals").getBoundingClientRect().top+scrollY-120,behavior:"smooth"});return}
   if(fDelArmed!==id){fDelArmed=id;renderFoodList();setTimeout(()=>{if(fDelArmed===id){fDelArmed=null;if(view==="food")renderFoodList()}},4000);return}
   fDelArmed=null;food[fDate]=dayFood(fDate).filter(x=>x.id!==id);if(!food[fDate].length)delete food[fDate];
   if(fDraft&&fDraft.edit===id)fDraft=null;persist();renderFood();});
-function goFood(d){fDate=d;fDraft=null;fMsg="";fDelArmed=null;
-  $("qNote").textContent="Quick add: just the calories, straight onto the day. Or find it below.";$("qNote").className="note";renderFood()}
+function goFood(d){fDate=d;fDraft=null;fMeal=null;fMsg="";fDelArmed=null;
+  $("qNote").textContent=QNOTE;$("qNote").className="note";renderFood()}
 $("fPrev").onclick=()=>goFood(shift(fDate,-1));
 $("fNext").onclick=()=>goFood(shift(fDate,1));
 $("fDate").addEventListener("change",ev=>{if(ev.target.value)goFood(ev.target.value)});
