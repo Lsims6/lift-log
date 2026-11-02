@@ -1,0 +1,4 @@
+ok
+HealthKit turned on
+removed old profile 73U86LMZ2H
+profile: Lift Log App Store CI uuid 31960485-9db1-4f8b-b57f-743e5faa7269 expires 2027-11-02T20:45:29.000+00:00
