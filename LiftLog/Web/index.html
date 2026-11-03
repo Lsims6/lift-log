@@ -151,6 +151,9 @@ h1{font-family:var(--display);font-weight:700;font-size:30px;letter-spacing:.01e
 .xnote{width:100%;box-sizing:border-box;min-height:52px;resize:vertical;border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:inherit;font-size:16px;line-height:1.4;background:transparent;color:var(--ink)}
 .xprev{font-size:12.5px;color:var(--muted);line-height:1.4;white-space:pre-wrap;border-left:2px solid var(--line);padding-left:8px}
 .xprev span{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;font-weight:600}
+.xlab{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;font-weight:600;color:var(--muted)}
+.xlab textarea{display:block;margin-top:3px;text-transform:none;letter-spacing:normal;font-weight:400}
+.xadd{display:flex;flex-wrap:wrap;gap:4px 16px}
 .lnote{font-size:12.5px;color:var(--muted);font-style:italic;white-space:pre-wrap;padding:0 0 4px}
 .lockpill{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:2px 7px;border-radius:999px;border:1px solid var(--done);color:var(--done);font-family:var(--body);vertical-align:2px;margin-left:6px}
 .addset{border-style:solid;font-size:13px;font-family:var(--body)}
@@ -740,6 +743,8 @@ if(!plan&&(Object.keys(sessions).length||Object.keys(bodyweight).length||Object.
 // how each exercise is loaded and how far its weight jumps: gear[exercise id] = {t:"plates"|"machine"|"db", step:lb}.
 // Kept apart from the plan, so it follows the exercise into every plan and every day it shows up.
 let gear=Object.assign({},BOOT.gear||{});
+// one permanent note per exercise: exNotes[exercise id] = text. It follows the exercise like gear does.
+let exNotes=Object.assign({},BOOT.exNotes||{});
 let savedPlans=Array.isArray(BOOT.savedPlans)?BOOT.savedPlans:[];   // other plans you can switch back to: [{id,name,savedAt,workouts,order,schedule}]
 if(plan){plan.custom=plan.custom||[];plan.schedule=Object.assign({mon:null,tue:null,wed:null,thu:null,fri:null,sat:null,sun:null},plan.schedule)}
 rebuildPlan();
@@ -868,6 +873,7 @@ function cardioHTML(slot){
       <button class="set ${on?"on":""}" data-c="done" aria-pressed="${on}" aria-label="Log cardio ${lbl}" style="margin-left:auto">${on?"Done ✓":"Log it"}</button></div>
     ${c.ex==="walk"||c.ex==="run"?"":`<div class="row"><span class="unit">Level</span><div class="stepper small"><button data-c="lvl-" aria-label="Lower level">−</button><input data-c="lvl" inputmode="numeric" aria-label="Machine level ${lbl}" placeholder="—" value="${c.lvl??""}"><button data-c="lvl+" aria-label="Higher level">+</button></div>
       ${c.ex==="stairs"?`<span class="unit">Floors</span><input class="reps" data-c="fl" inputmode="numeric" aria-label="Floors climbed ${lbl}" placeholder="—" value="${c.fl??""}">`:""}</div>`}
+    ${notesHTML(c.ex,NAMES[c.ex]||c.ex,c.note,lastCardioNote(slot,date),"c-"+slot)}
   </div>`;
 }
 function commitC(slot,c){delete c._draft;cur.cardio=Object.assign({},cur.cardio,{[slot]:c});markDirty()}
@@ -965,20 +971,42 @@ function render(){
 }
 
 /* ---- exercise notes ----
-   Each exercise card has its own note for that day, saved on the session as notes:{exercise id: text}.
-   It's kept apart from the sets, so writing a note never counts as logging the exercise. The card also shows the
-   last note you wrote for that exercise, so seat settings and cues from last time are right there.
+   Every exercise and cardio card has two notes, both kept apart from the sets, so writing one never counts as logging.
+   Permanent: one note per exercise, in exNotes, for seat settings and cues. It shows every time and you edit that same note.
+   Daily: for this date, saved on the session as notes:{exercise id: text}, or as cardio[slot].note on a cardio card so
+   the before and after cards stay separate even on the same machine. The card also shows the last daily note you wrote.
    (1.10 had one note per workout, saved as session.note; those still show in History and the CSV.) */
 let noteOpen=null;
 function lastNote(id,before){
   const ds=Object.keys(sessions).filter(d=>d<before&&sessions[d].notes&&sessions[d].notes[id]).sort();
   return ds.length?{date:ds[ds.length-1],t:sessions[ds[ds.length-1]].notes[id]}:null}
-function noteHTML(item){
-  const t=cur.notes&&cur.notes[item.id], L=lastNote(item.id,date);
-  const prev=L?`<div class="xprev"><span>Last note · ${nice(L.date,{month:"short",day:"numeric"})}</span>${esc(L.t)}</div>`:"";
-  if(!t&&noteOpen!==item.id)return `${prev}<button class="gearlink" data-act="noteopen">+ Note</button>`;
-  return `${prev}<textarea class="xnote" data-act="note" rows="2" placeholder="Seat settings, how it felt, what to change…" aria-label="Note for ${item.name}">${esc(t||"")}</textarea>`;
+function lastCardioNote(slot,before){
+  const ds=Object.keys(sessions).filter(d=>d<before&&sessions[d].cardio&&sessions[d].cardio[slot]&&sessions[d].cardio[slot].note).sort();
+  return ds.length?{date:ds[ds.length-1],t:sessions[ds[ds.length-1]].cardio[slot].note}:null}
+function notesHTML(id,name,day,L,spot){
+  const perm=exNotes[id]||"", pk="p-"+spot, dk="d-"+spot, when=date===todayStr()?"today":"this day";
+  const box=(k,kind,t,lab,ph)=>{const rows=Math.max(2,t.split("\n").reduce((n,l)=>n+Math.max(1,Math.ceil(l.length/40)),0));
+    return `<label class="xlab">${lab}<textarea class="xnote" data-note="${kind}" data-n="${k}" data-ex="${id}" rows="${rows}" placeholder="${ph}" aria-label="${lab} for ${name}">${esc(t)}</textarea></label>`};
+  const add=(k,lab)=>`<button class="gearlink" data-note-open="${k}">+ ${lab}</button>`;
+  const showP=perm||noteOpen===pk, showD=day||noteOpen===dk;
+  const adds=(showP?"":add(pk,"Permanent note"))+(showD?"":add(dk,`Note for ${when}`));
+  return (showP?box(pk,"perm",perm,"Permanent note","Seat settings, grip, cues to remember…"):"")
+    +(L?`<div class="xprev"><span>Last note · ${nice(L.date,{month:"short",day:"numeric"})}</span>${esc(L.t)}</div>`:"")
+    +(showD?box(dk,"day",day||"",`Note for ${when}`,"How it felt, what to change…"):"")
+    +(adds?`<div class="xadd">${adds}</div>`:"");
 }
+function noteHTML(item){return notesHTML(item.id,item.name,cur.notes&&cur.notes[item.id],lastNote(item.id,date),item.id)}
+function noteOpenClick(ev){const b=ev.target.closest("button[data-note-open]");if(!b)return;
+  noteOpen=b.dataset.noteOpen;render();const t=document.querySelector(`textarea.xnote[data-n="${noteOpen}"]`);if(t)t.focus()}
+function noteChange(ev){const nt=ev.target.closest("textarea.xnote");if(!nt)return;
+  const card=nt.closest(".card"), slot=card.dataset.cslot, id=nt.dataset.ex, v=nt.value.trim();
+  if(slot?cardioLocked(card):cur.locked)return;
+  if(nt.dataset.note==="perm"){
+    if(v!==(exNotes[id]||"")){if(v)exNotes[id]=v;else delete exNotes[id];persist()}
+    document.querySelectorAll(`textarea.xnote[data-note="perm"][data-ex="${id}"]`).forEach(o=>{if(o!==nt)o.value=v})}   // before and after cards can be the same machine
+  else if(slot){const c=cardioFor(slot);if(v!==(c.note||"")){if(v)c.note=v;else delete c.note;commitC(slot,c)}}
+  else if(v!==((cur.notes&&cur.notes[id])||"")){const n=Object.assign({},cur.notes);if(v)n[id]=v;else delete n[id];cur.notes=n;markDirty()}
+  if(noteOpen===nt.dataset.n&&!v)noteOpen=null}   // no re-render here: it would swallow the tap that blurred the box
 /* ---- finish & lock ---- */
 let unlockArmed=false;
 function renderLocked(items){
@@ -992,7 +1020,7 @@ function renderLocked(items){
   Object.entries(cur.entries).forEach(([id,e])=>{if(items.some(i=>i.id===id))return;
     if(e.min>0)done.push([NAMES[id]||id,e.min+" min"]);else{const sd=setsDone(e);if(sd.length)done.push([NAMES[id]||id,fmtSets(sd)])}});
   ["pre","post"].forEach(k=>{const c=cur.cardio&&cur.cardio[k];if(!cDone(c))return;min+=c.min;
-    const row=["Cardio "+CSLOT[k]+" · "+(NAMES[c.ex]||c.ex),fmtCardio(c,false)];if(k==="pre")done.unshift(row);else done.push(row)});
+    const row=["Cardio "+CSLOT[k]+" · "+(NAMES[c.ex]||c.ex),fmtCardio(c,false),null,c.note];if(k==="pre")done.unshift(row);else done.push(row)});
   const when=cur.lockedAt?new Date(cur.lockedAt).toLocaleTimeString([], {hour:"numeric",minute:"2-digit"}):"";
   const b=$("lockBanner");b.hidden=false;
   b.innerHTML=`<div><b>Workout finished</b><span>${nice(date)}${when?" · locked "+when:""}</span></div>
@@ -1000,7 +1028,7 @@ function renderLocked(items){
   const facts=[[sets,"sets"],[kfmt(vol),"lb moved"]];if(min)facts.push([min,"cardio min"]);
   $("list").innerHTML=`<div class="card complete">
       <div class="facts">${facts.map(([v,l])=>fact(v,l)).join("")}</div>
-      ${done.map(([n,v,id])=>`<div class="sumrow"><span class="name">${n}</span><span class="v">${v}</span></div>${id&&cur.notes&&cur.notes[id]?`<div class="lnote">${esc(cur.notes[id])}</div>`:""}`).join("")||`<div class="note">Nothing was logged for this day.</div>`}
+      ${done.map(([n,v,id,cn])=>{const t=cn||(id&&cur.notes&&cur.notes[id]);return `<div class="sumrow"><span class="name">${n}</span><span class="v">${v}</span></div>${t?`<div class="lnote">${esc(t)}</div>`:""}`}).join("")||`<div class="note">Nothing was logged for this day.</div>`}
       ${skipped.length?`<div class="note">Skipped: ${skipped.join(", ")}</div>`:""}
     </div>`;
   $("finishBar").innerHTML="";
@@ -1076,7 +1104,6 @@ $("list").addEventListener("click",ev=>{
     const sk=Object.assign({},cur.skips);
     if(act==="skip"){sk[item.slot]=true;delete cur.entries[item.id]}else delete sk[item.slot];
     cur.skips=sk;markDirty();render();return}
-  if(act==="noteopen"){noteOpen=item.id;render();const t=$("list").querySelector(`.card[data-slot="${item.slot}"] textarea.xnote`);if(t)t.focus();return}
   if(act==="gear"){gearOpen=gearOpen===item.id?null:item.id;render();return}
   if(act==="gt"||act==="gs"){const g=Object.assign({},gearOf(item));
     if(act==="gt"){g.t=b.dataset.v;if(!(g.step>0)||!GEAR[g.t].steps.includes(g.step))g.step=GEAR[g.t].steps.includes(stepOf(item))?stepOf(item):5}
@@ -1096,12 +1123,7 @@ $("list").addEventListener("click",ev=>{
 });
 $("list").addEventListener("change",ev=>{
   if(cur.locked||ev.target.closest("[data-cslot]"))return;
-  const nt=ev.target.closest("textarea.xnote");
-  if(nt){const id=nt.closest(".card").dataset.id, v=nt.value.trim(), n=Object.assign({},cur.notes);
-    if(v)n[id]=v;else delete n[id];
-    if(v!==((cur.notes&&cur.notes[id])||"")){cur.notes=n;markDirty()}
-    if(noteOpen===id&&!v)noteOpen=null;   // no re-render here: it would swallow the tap that blurred the box
-    return}
+  if(ev.target.closest("textarea.xnote"))return;
   const sel=ev.target.closest("select.exsel");
   if(sel){const card=sel.closest(".card"),old=card.dataset.id;
     cur.swaps=Object.assign({},cur.swaps,{[card.dataset.slot]:sel.value});
@@ -1138,7 +1160,8 @@ function cardioChange(ev){
     c[a]=n==null?(a==="min"?0:null):Math.round(n)}
   commitC(slot,c); render();
 }
-["list","lunchRow"].forEach(id=>{$(id).addEventListener("click",cardioClick);$(id).addEventListener("change",cardioChange)});
+["list","lunchRow"].forEach(id=>{$(id).addEventListener("click",cardioClick);$(id).addEventListener("change",cardioChange);
+  $(id).addEventListener("click",noteOpenClick);$(id).addEventListener("change",noteChange)});
 /* Changing a set also updates the not-yet-done sets after it that matched its old value,
    so bumping your top set carries down the remaining top sets but never touches the warm-up above it. */
 function setW(e,k,v){const old=e.sets[k].w;e.sets[k].w=v;
@@ -1225,7 +1248,7 @@ $("bwRange").addEventListener("click",ev=>{const b=ev.target.closest("button[dat
 /* ---- saving ---- */
 const SAVED_LABEL=NATIVE?"Saved on this iPhone":"Saved in this browser";
 function persist(fromHealth){
-  const payload={version:1,savedAt:Date.now(),names:customNames,sessions,bodyweight,food,foodTarget,myFoods,foodProfile,plan,savedPlans,gear,health};
+  const payload={version:1,savedAt:Date.now(),names:customNames,sessions,bodyweight,food,foodTarget,myFoods,foodProfile,plan,savedPlans,gear,exNotes,health};
   if(!fromHealth)healthSoon();
   try{
     if(NATIVE)window.webkit.messageHandlers.liftlog.postMessage({type:"save",json:JSON.stringify(payload)});
@@ -1251,7 +1274,8 @@ function renderHist(){
       const sd=setsDone(e); if(!sd.length)return "";
       return `<tr><td>${NAMES[id]||id}</td><td>${fmtSets(sd)}</td></tr>${nrow(id)}`}).join("");
     rows+=Object.keys(xn).map(id=>`<tr><td>${NAMES[id]||id}</td><td>note</td></tr>${nrow(id)}`).join("");
-    const crow=k=>{const c=s.cardio&&s.cardio[k];return cDone(c)?`<tr><td>Cardio ${CSLOT[k]} · ${NAMES[c.ex]||c.ex}</td><td>${fmtCardio(c,false)}</td></tr>`:""};
+    const crow=k=>{const c=s.cardio&&s.cardio[k], on=cDone(c);if(!on&&!(c&&c.note))return "";
+      return `<tr><td>Cardio ${CSLOT[k]} · ${NAMES[c.ex]||c.ex}</td><td>${on?fmtCardio(c,false):"note"}</td></tr>${c.note?`<tr class="xn"><td class="hnote" colspan="2">${esc(c.note)}</td></tr>`:""}`};
     rows=crow("lunch")+crow("pre")+rows+crow("post");
     const w=bodyweight[d], noteRow=s.note?`<tr><td class="hnote" colspan="2">${esc(s.note)}</td></tr>`:"";
     if(!rows&&w==null&&!noteRow)return "";
@@ -1316,7 +1340,7 @@ $("eraseBtn").onclick=()=>{
     setTimeout(()=>{if(eraseArmed){eraseArmed=false;$("eraseBtn").textContent="Erase all data";$("eraseNote").hidden=true}},5000);return}
   eraseArmed=false;
   sessions={};customNames={};bodyweight={};food={};myFoods=[];foodTarget={lo:2500,hi:3000};
-  foodProfile={sex:null,age:null,ft:null,inch:null,wt:null,act:1.55,auto:false,goal:null};plan=null;savedPlans=[];gear={};
+  foodProfile={sex:null,age:null,ft:null,inch:null,wt:null,act:1.55,auto:false,goal:null};plan=null;savedPlans=[];gear={};exNotes={};
   try{["ll.data","ll.apikey","ll.section","ll.mChain","ll.bwRange","gl.statEx"].forEach(k=>localStorage.removeItem(k))}catch(e){}
   rebuildPlan();persist();loadCur();$("eraseBtn").textContent="Erase all data";$("eraseNote").hidden=true;showView("setup");
 };
@@ -1484,7 +1508,8 @@ function csv(){
   days.forEach(d=>{const s=sessions[d]||{entries:{}};
     if(bodyweight[d]!=null)out.push([d,workoutName(s.day,s),BW_NAME,"",bodyweight[d],"",""]);
     // before/after cardio: the Set column says "Before" or "After"
-    const crow=k=>{const c=s.cardio&&s.cardio[k];if(cDone(c))out.push([d,workoutName(s.day,s),NAMES[c.ex]||c.ex,({pre:"Before",post:"After",lunch:"Lunch"})[k],"","",c.min,c.lvl??"",c.fl??""])};
+    const crow=k=>{const c=s.cardio&&s.cardio[k], tag=({pre:"Before",post:"After",lunch:"Lunch"})[k];if(cDone(c))out.push([d,workoutName(s.day,s),NAMES[c.ex]||c.ex,tag,"","",c.min,c.lvl??"",c.fl??""]);
+      if(c&&c.note)out.push([d,workoutName(s.day,s),NAMES[c.ex]||c.ex,tag+" note","","","","","","","",c.note])};
     crow("lunch");crow("pre");
     Object.entries(s.entries||{}).forEach(([id,e])=>{
       if(e.min!=null){if(e.min>0)out.push([d,workoutName(s.day,s),NAMES[id]||id,"","","",e.min]);return}
@@ -1494,6 +1519,8 @@ function csv(){
     if(s.note)out.push([d,workoutName(s.day,s),NOTE_NAME,"Notes","","","","","","","",s.note]);
     // food: one row per item; Set says "Food 1", "Food 2"… per entry and Meal holds what was typed, so entries regroup on import
     dayFood(d).forEach((e,k)=>e.items.forEach(x=>out.push([d,workoutName(s.day,s),x.name,"Food "+(k+1)+(MEAL_NAME[e.meal]?" "+MEAL_NAME[e.meal]:""),"","","","","",x.cal,x.p??"",e.text])));});
+  // permanent exercise notes aren't tied to a day; the Date column is just when the file was made
+  Object.entries(exNotes).forEach(([id,t])=>out.push([todayStr(),"",NAMES[id]||id,"Exercise note","","","","","","","",t]));
   return out.map(r=>r.map(q).join(",")).join("\n");
 }
 /* ---- export: the iPhone share sheet in the app, a plain download in a browser ---- */
@@ -1535,7 +1562,7 @@ function importCSV(text){
   const iD=col("date"),iDay=col("day"),iEx=col("exercise"),iW=col("weight"),iR=col("reps"),iM=col("min"),iSet=col("set"),iL=col("level"),iF=col("floor"),iC=col("cal"),iP=col("protein"),iMeal=col("meal");
   if(iD<0||iEx<0)throw new Error("header");
   const byName={};Object.entries(NAMES).forEach(([id,n])=>byName[n.toLowerCase()]=id);
-  const got={};let bwN=0;const gotFood={},gotNote={},gotX={};
+  const got={};let bwN=0;const gotFood={},gotNote={},gotX={},gotPerm=[],gotC=[];
   rows.forEach(r=>{
     const d=(r[iD]||"").trim(), name=(r[iEx]||"").trim();
     if(!/^\d{4}-\d{2}-\d{2}$/.test(d)||!name)return;
@@ -1544,6 +1571,8 @@ function importCSV(text){
     if(name.toLowerCase()===NOTE_NAME.toLowerCase()){const t=iMeal>=0?(r[iMeal]||"").trim():"";
       if(t)(gotNote[d]=t);return}
     const ftag=iSet>=0?(r[iSet]||"").trim().toLowerCase():"";
+    if(/^(before|after|lunch) note$/.test(ftag)){const t=iMeal>=0?(r[iMeal]||"").trim():"";if(t)gotC.push([d,({before:"pre",after:"post",lunch:"lunch"})[ftag.split(" ")[0]],name,t]);return}
+    if(ftag==="exercise note"){const t=iMeal>=0?(r[iMeal]||"").trim():"";if(t)gotPerm.push([name,t]);return}
     if(ftag==="note"){const t=iMeal>=0?(r[iMeal]||"").trim():"";if(t)(gotX[d]=gotX[d]||[]).push([name,t]);return}
     if(/^food\b/.test(ftag)){
       const cal=Number((r[iC]||"").trim()),p=Number((r[iP]||"").trim()),meal=iMeal>=0?(r[iMeal]||"").trim():"";
@@ -1582,13 +1611,26 @@ function importCSV(text){
     if(!id){id="x-"+name.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");customNames[id]=name;NAMES[id]=name;byName[name.toLowerCase()]=id}
     const tgt=got[d]||sessions[d]||(got[d]={date:d,day:defaultDay(d),entries:{}});
     tgt.notes=tgt.notes||{}; if(!tgt.notes[id])tgt.notes[id]=t}));
-  const ds=Object.keys(got), bwMsg=(bwN?` and ${bwN} weigh-in${bwN>1?"s":""}`:"")+(fN?` and ${fN} food entr${fN>1?"ies":"y"}`:"");
-  if(!ds.length){if(bwN||fN){persist();rerender();return `Imported${bwMsg.replace(/^ and/,"")}.`}
+  // cardio notes: same rule. A note can sit on a cardio card that was never logged, so that card may need making.
+  gotC.forEach(([d,k,name,t])=>{
+    let id=byName[name.toLowerCase()];
+    if(!id){id="x-"+name.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");customNames[id]=name;NAMES[id]=name;byName[name.toLowerCase()]=id}
+    const tgt=got[d]||sessions[d]||(got[d]={date:d,day:defaultDay(d),entries:{}});
+    tgt.cardio=tgt.cardio||{}; const c=tgt.cardio[k];
+    if(c){if(!c.note)c.note=t}else tgt.cardio[k]={ex:id,min:0,lvl:null,fl:null,note:t}});
+  // permanent exercise notes: same rule, a note already on the exercise stays
+  let pN=0;gotPerm.forEach(([name,t])=>{
+    let id=byName[name.toLowerCase()];
+    if(!id){id="x-"+name.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");customNames[id]=name;NAMES[id]=name;byName[name.toLowerCase()]=id}
+    if(!exNotes[id]){exNotes[id]=t;pN++}});
+  const ds=Object.keys(got), bwMsg=(bwN?` and ${bwN} weigh-in${bwN>1?"s":""}`:"")+(fN?` and ${fN} food entr${fN>1?"ies":"y"}`:"")+(pN?` and ${pN} exercise note${pN>1?"s":""}`:"");
+  if(!ds.length){if(bwN||fN||pN){persist();rerender();return `Imported${bwMsg.replace(/^ and/,"")}.`}
     return Object.keys(gotFood).length?"Everything in that file is already logged.":"No workouts found in that file."}
   let merged=0; const today=todayStr();
   ds.forEach(d=>{
     if(sessions[d]){merged++;Object.assign(sessions[d].entries,got[d].entries);
-      if(got[d].cardio)sessions[d].cardio=Object.assign({},sessions[d].cardio,got[d].cardio);
+      if(got[d].cardio){const had=sessions[d].cardio||{};sessions[d].cardio=Object.assign({},had,got[d].cardio);
+        Object.keys(got[d].cardio).forEach(k=>{if(had[k]&&had[k].note)sessions[d].cardio[k].note=had[k].note})}
       if(got[d].note&&!sessions[d].note)sessions[d].note=got[d].note;
       if(got[d].notes)sessions[d].notes=Object.assign({},got[d].notes,sessions[d].notes);return}
     sessions[d]={...got[d],locked:d<today};   // past days come in finished, so they can't be changed by accident
