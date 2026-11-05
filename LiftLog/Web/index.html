@@ -21,15 +21,16 @@ input,select{font-size:16px}
 :root{
   --bg:#eef0f3; --surface:#ffffff; --ink:#15181d; --muted:#5d6570; --line:#d6dae0;
   --accent:#1f56c9; --accent-ink:#ffffff; --done:#1e7a4a; --warn:#a15c00;
+  --sun:#ff8a3d;
   --display:"Barlow Condensed","Arial Narrow",Impact,sans-serif;
   --body:"Archivo",-apple-system,"Segoe UI",Roboto,sans-serif;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#000000; --surface:#0c0e11; --ink:#f4f6f8; --muted:#a0a8b3; --line:#262b33;
-  --accent:#5b8cff; --accent-ink:#0b0f16; --done:#4cc387; --warn:#e3a14a; color-scheme:dark}}
+  --bg:#000000; --surface:#000000; --ink:#f6f5fb; --muted:#aaa8bf; --line:#35304f;
+  --accent:#27c6cc; --accent-ink:#031a1b; --done:#ffc53d; --warn:#ff4fa3; color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#000000; --surface:#0c0e11; --ink:#f4f6f8; --muted:#a0a8b3; --line:#262b33;
-  --accent:#5b8cff; --accent-ink:#0b0f16; --done:#4cc387; --warn:#e3a14a; color-scheme:dark}
+  --bg:#000000; --surface:#000000; --ink:#f6f5fb; --muted:#aaa8bf; --line:#35304f;
+  --accent:#27c6cc; --accent-ink:#031a1b; --done:#ffc53d; --warn:#ff4fa3; color-scheme:dark}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.4;
@@ -251,9 +252,10 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .mbar .val.down b{color:var(--warn)}
 .mbar .calbar{height:6px;margin-top:3px}
 .emac{font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
-.ftabs{display:flex;gap:18px;border-bottom:1px solid var(--line)}
-.ftabs button{font:inherit;font-size:14px;font-weight:600;color:var(--muted);background:none;border:0;border-bottom:2px solid transparent;margin-bottom:-1px;padding:8px 0;cursor:pointer}
-.ftabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.ftabs{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);border:1.5px solid var(--accent);border-radius:10px;overflow:hidden}
+.ftabs button{font:inherit;font-size:14px;font-weight:600;color:var(--ink);background:transparent;border:0;padding:10px 4px;cursor:pointer}
+.ftabs button+button{border-left:1.5px solid var(--accent)}
+.ftabs button[aria-selected="true"]{background:var(--accent);color:var(--accent-ink);font-weight:700}
 .note:empty{display:none}
 .fmac{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
 .fmac label{display:flex;align-items:center;gap:6px;min-width:0;font-size:12px;font-weight:600;color:var(--muted)}
@@ -357,8 +359,8 @@ details.panel>summary{cursor:pointer;font-size:14px;font-weight:600;list-style-p
 @media (prefers-reduced-motion:no-preference){.set,.card{transition:background .12s,border-color .12s}}
 /* ---- Liquid Glass look, to match the iOS 26 tab bar: see-through, blurred, with a bright edge ---- */
 :root{--glass:rgba(255,255,255,.58);--glass-edge:rgba(255,255,255,.9);--glass-hi:rgba(255,255,255,.95);--glass-shade:rgba(22,34,58,.10)}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--glass:rgba(24,27,32,.62);--glass-edge:rgba(255,255,255,.12);--glass-hi:rgba(255,255,255,.16);--glass-shade:rgba(0,0,0,.6)}}
-:root[data-theme="dark"]{--glass:rgba(24,27,32,.62);--glass-edge:rgba(255,255,255,.12);--glass-hi:rgba(255,255,255,.16);--glass-shade:rgba(0,0,0,.6)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--glass:#100e1c;--glass-edge:#35304f;--glass-hi:transparent;--glass-shade:transparent}}
+:root[data-theme="dark"]{--glass:#100e1c;--glass-edge:#35304f;--glass-hi:transparent;--glass-shade:transparent}
 .tabs button:not(.back),.gear,.daybar button,.mpick button,.navbar,.updbar{
   background:var(--glass);-webkit-backdrop-filter:blur(18px) saturate(1.8);backdrop-filter:blur(18px) saturate(1.8);
   border:1px solid var(--glass-edge);
@@ -383,8 +385,8 @@ details.panel>summary{cursor:pointer;font-size:14px;font-weight:600;list-style-p
 /* ---- 2.02: more Liquid Glass. The header sticks to the top as a frosted bar that the page scrolls under,
    and cards become glass panels: see-through fill, bright top edge, soft lift. ---- */
 :root{--glass-card:rgba(255,255,255,.72)}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--glass-card:rgba(16,18,22,.8)}}
-:root[data-theme="dark"]{--glass-card:rgba(16,18,22,.8)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--glass-card:#000000}}
+:root[data-theme="dark"]{--glass-card:#000000}
 header{position:sticky;top:0;z-index:20;
   margin:calc(-1 * (env(safe-area-inset-top,0px) + 12px)) -16px 0;
   padding:calc(env(safe-area-inset-top,0px) + 12px) 16px 10px;
@@ -398,13 +400,24 @@ header{position:sticky;top:0;z-index:20;
   display:flex;align-items:center;gap:12px;padding:6px 6px 6px 16px;border-radius:999px;font-size:14px;font-weight:600;white-space:nowrap}
 .updbar[hidden]{display:none}
 .updbar button{font:inherit;border:0;border-radius:999px;padding:7px 14px;background:var(--accent);color:var(--accent-ink);cursor:pointer}
+/* AMOLED: the header sits on solid black, with a thin line under it instead of frosted glass */
+header{background:#000;-webkit-backdrop-filter:none;backdrop-filter:none;box-shadow:none;border-bottom:2px solid var(--sun)}
+.tabs button[aria-pressed="true"]:not(.back),.daybar button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);box-shadow:none}
+.seg button[aria-pressed="true"],.mpick button[aria-pressed="true"],.chips button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+/* The save status only appears if saving fails. Tabs and the settings button share one row. */
+header{flex-wrap:wrap;align-items:center}
+header>div:first-child{order:2;flex-basis:100%}
+header>div:first-child:not(:has(.status.off)){display:none}
+#subTabs{order:0;flex:1 1 0;min-width:0}
+#gearBtn{order:1;margin-left:auto}
+/* controls inside a card get a faint fill, so it isn't outlined boxes inside outlined boxes */
+.stepper,.reps{background:#100e1c;border-color:transparent}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
     <div>
-      <h1>Lift Log</h1>
       <div id="status" class="status">Loading…</div>
     </div>
     <button id="gearBtn" class="gear" aria-label="Settings" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>

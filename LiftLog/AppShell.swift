@@ -89,7 +89,7 @@ extension UIColor {
     /// The page's --accent token in light and dark mode.
     static let liftLogAccent = UIColor { traits in
         traits.userInterfaceStyle == .dark
-            ? UIColor(red: 0x5B / 255, green: 0x8C / 255, blue: 0xFF / 255, alpha: 1)
+            ? UIColor(red: 0x27 / 255, green: 0xC6 / 255, blue: 0xCC / 255, alpha: 1)
             : UIColor(red: 0x1F / 255, green: 0x56 / 255, blue: 0xC9 / 255, alpha: 1)
     }
 }
