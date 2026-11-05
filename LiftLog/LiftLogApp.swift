@@ -100,17 +100,17 @@ enum FoodAI {
     }
 
     static let instructions = """
-        You estimate the calories and protein in food someone says they ate.
+        You estimate the calories, protein, carbs and fat in food someone says they ate.
         Split the description into separate items: each sandwich, entree, side, sauce and drink gets its own item.
         For chain restaurant menu items, use that chain's published nutrition numbers for the standard size unless a size or count is given. A "meal" or "combo" includes its usual side and drink.
         When menu numbers are listed with the request and one matches an item, use those numbers exactly.
         For home-made or generic food, assume one typical portion unless amounts are given.
-        Diet sodas, water, unsweetened tea and black coffee are 0 calories.
-        Round calories to the nearest 10 and protein to the nearest gram.
+        Diet sodas, water, unsweetened tea and black coffee are 0 calories, with 0 g of everything.
+        Round calories to the nearest 10, and protein, carbs and fat to the nearest gram.
         Give each item a short name that includes the restaurant (if any) and the portion.
         """
 
-    /// Answers with ["items": [[name, calories, protein]], "note": String] or ["error": String], on the main thread.
+    /// Answers with ["items": [[name, calories, protein, carbs, fat]], "note": String] or ["error": String], on the main thread.
     static func estimate(text: String, reference: String, done: @escaping ([String: Any]) -> Void) {
         #if canImport(FoundationModels)
         if #available(iOS 26.0, *) {
@@ -134,7 +134,7 @@ enum FoodAI {
             let session = LanguageModelSession(instructions: instructions)
             let response = try await session.respond(to: prompt, generating: FoodEstimate.self)
             let items: [[String: Any]] = response.content.items.map {
-                ["name": $0.name, "calories": $0.calories, "protein": $0.protein]
+                ["name": $0.name, "calories": $0.calories, "protein": $0.protein, "carbs": $0.carbs, "fat": $0.fat]
             }
             return ["items": items, "note": response.content.note]
         } catch let error as LanguageModelSession.GenerationError {
@@ -183,6 +183,10 @@ struct FoodEstimateItem {
     var calories: Int
     @Guide(description: "Estimated grams of protein")
     var protein: Int
+    @Guide(description: "Estimated grams of carbohydrates")
+    var carbs: Int
+    @Guide(description: "Estimated grams of fat")
+    var fat: Int
 }
 #endif
 

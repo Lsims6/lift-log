@@ -239,9 +239,25 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .calbar .band{position:absolute;top:0;bottom:0;background:var(--done);opacity:.22}
 .calbar .fill{position:absolute;left:0;top:0;bottom:0;background:var(--accent);border-radius:999px}
 .calbar .fill.up{background:var(--done)} .calbar .fill.down{background:var(--warn)}
-.protrow{display:flex;flex-direction:column;gap:4px}
-.protlab{display:flex;justify-content:space-between;gap:10px;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
-.protlab .up{color:var(--done);font-weight:600}
+.mbars{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.mbar{min-width:0;display:flex;flex-direction:column;gap:2px;font-variant-numeric:tabular-nums}
+.mbar .lab{font-size:12px;font-weight:600;color:var(--muted)}
+.mbar .val{font-size:12px;color:var(--muted);white-space:nowrap}
+.mbar .val b{font-size:15px;font-weight:700;color:var(--ink)}
+.mbar .val.up b{color:var(--done)}
+.mbar .val.down b{color:var(--warn)}
+.mbar .calbar{height:6px;margin-top:3px}
+.emac{font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.ftabs{display:flex;gap:18px;border-bottom:1px solid var(--line)}
+.ftabs button{font:inherit;font-size:14px;font-weight:600;color:var(--muted);background:none;border:0;border-bottom:2px solid transparent;margin-bottom:-1px;padding:8px 0;cursor:pointer}
+.ftabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.note:empty{display:none}
+.fmac{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.fmac label{display:flex;align-items:center;gap:6px;min-width:0;font-size:12px;font-weight:600;color:var(--muted)}
+.fmac input{width:100%;height:34px;text-align:right}
+.qmac{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.qmac label{display:flex;align-items:center;gap:6px;min-width:0;font-size:12px;font-weight:600;color:var(--muted)}
+.qmac input{font:inherit;font-size:16px;width:100%;min-width:0;height:40px;padding:0 8px;text-align:right;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
 .ftext{font:inherit;font-size:16px;width:100%;min-height:64px;resize:vertical;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
 .fbtns{display:flex;gap:8px;flex-wrap:wrap}
 .fbtns .btn{flex:1;min-width:0}
@@ -419,29 +435,41 @@ header{position:sticky;top:0;z-index:20;
     <div class="panel">
       <h3>Add food</h3>
       <div class="mpick" id="fMeals" role="group" aria-label="Which meal"></div>
+      <div id="fDraft" class="wrap" style="gap:8px" hidden></div>
+      <div class="ftabs" id="fTabs" role="tablist" aria-label="How to add food">
+        <button role="tab" data-ftab="menu">Menu</button>
+        <button role="tab" data-ftab="quick">Quick add</button>
+        <button role="tab" data-ftab="paste">Paste</button>
+        <button role="tab" data-ftab="ai" id="fAiTab" hidden>Describe</button>
+      </div>
+      <div class="wrap" style="gap:8px" data-fpane="quick" hidden>
       <div class="qadd" id="qAdd">
         <input id="qCal" class="fcal" inputmode="numeric" enterkeyhint="done" placeholder="cal" aria-label="Quick add calories">
         <input id="qName" enterkeyhint="done" autocomplete="off" placeholder="What was it?" aria-label="Quick add: what it was">
         <button class="btn" id="qBtn">Add</button>
       </div>
-      <div class="note" id="qNote">Pick a meal above, then quick add the calories or find it below.</div>
-      <button class="btn ghost" id="pOpen">Paste from Claude</button>
-      <div class="pbox" id="pBox" hidden>
-        <div class="cat">Paste from Claude</div>
-        <textarea id="pText" class="ftext" rows="3" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="Cane's 3 Finger Combo - 1250 cal, 47g protein&#10;Diet Coke - 0 cal" aria-label="Pasted food list"></textarea>
-        <div class="fbtns"><button class="btn ghost" id="pPaste">Paste</button><button class="btn" id="pRead">Read it</button></div>
-        <div class="note" id="pNote">One food per line with its calories. The items land in the meal below so you can check them before adding.</div>
+      <div class="qmac">
+        <label>P<input id="qP" inputmode="decimal" placeholder="g" aria-label="Quick add protein grams"></label>
+        <label>C<input id="qC" inputmode="decimal" placeholder="g" aria-label="Quick add carbs grams"></label>
+        <label>F<input id="qF" inputmode="decimal" placeholder="g" aria-label="Quick add fat grams"></label>
       </div>
-      <div id="fDraft" class="wrap" style="gap:8px" hidden></div>
-      <div id="fRecentWrap" hidden><div class="cat">Eat this a lot? Tap to log it again</div><div class="chips" id="fRecent" role="group" aria-label="Recent foods"></div></div>
+      </div>
+      <div class="note" id="qNote"></div>
+      <div class="pbox" id="pBox" data-fpane="paste" hidden>
+        <textarea id="pText" class="ftext" rows="3" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="Cane's 3 Finger Combo - 1050 cal, 48g protein, 83g carbs, 59g fat&#10;Diet Coke - 0 cal" aria-label="Pasted food list"></textarea>
+        <div class="fbtns"><button class="btn ghost" id="pPaste">Paste</button><button class="btn" id="pRead">Read it</button></div>
+        <div class="note" id="pNote"></div>
+      </div>
+      <div class="wrap" style="gap:8px" data-fpane="menu">
+      <div id="fRecentWrap" hidden><div class="cat">Recent</div><div class="chips" id="fRecent" role="group" aria-label="Recent foods"></div></div>
       <input id="mSearch" class="msearch" type="search" enterkeyhint="search" autocomplete="off" autocorrect="off" placeholder="Search: biscuit, 3 finger, footlong…" aria-label="Search the menu">
       <div class="chips" id="mChains" role="group" aria-label="Restaurant"></div>
       <div id="mResults" class="mlist"></div>
-      <button class="btn ghost" id="fManual">Not on the list? Enter it myself</button>
-      <div id="fAiWrap" class="wrap" style="gap:8px" hidden>
-        <div class="cat">Or describe it and get an estimate</div>
+      <button class="gearlink" id="fManual">Not on the list? Enter it myself</button>
+      </div>
+      <div id="fAiWrap" class="wrap" style="gap:8px" data-fpane="ai" hidden>
         <textarea id="fText" class="ftext" rows="2" enterkeyhint="done" placeholder="Cane's 3 finger combo, diet coke" aria-label="What you ate"></textarea>
-        <button class="btn" id="fEst">Estimate calories</button>
+        <button class="btn" id="fEst">Estimate it</button>
       </div>
       <div class="note" id="fMsg" hidden></div>
     </div>
@@ -523,12 +551,18 @@ header{position:sticky;top:0;z-index:20;
         <div class="note" id="tMode"></div>
       </div>
         </div>
+    <div class="panel" id="mSet">
+      <h3>Macro targets</h3>
+      <div class="seg three" id="mSplit" role="group" aria-label="Macro split"></div>
+      <label class="cat" for="mPLo" style="margin:4px 0 0">Protein goal (g a day)</label>
+      <div class="fset" style="gap:0"><div class="two"><input id="mPLo" inputmode="numeric" placeholder="auto" aria-label="Protein target low"><span class="unit">to</span><input id="mPHi" inputmode="numeric" placeholder="auto" aria-label="Protein target high"></div></div>
+      <div class="note" id="mOut"></div>
+    </div>
     <div class="panel" id="gSet">
       <h3>Weight goal</h3>
       <div class="fset">
         <label for="gWt">Goal weight (lb)</label>
         <input id="gWt" inputmode="decimal" placeholder="lb">
-        <div id="gProt" class="note" hidden></div>
         <div id="gOut"></div>
       </div>
     </div>
@@ -608,6 +642,7 @@ header{position:sticky;top:0;z-index:20;
   <button data-sec="food" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3v8M4.5 3v5a2.5 2.5 0 0 0 5 0V3M7 11v10M17 21V3c-2.2 1.2-3.5 3.6-3.5 7v4H17"/></svg>Food</button>
 </nav>
 <script src="menu.js"></script>
+<script src="cues.js"></script>
 <script>
 /* ---- exercise library ----
    Every exercise belongs to a muscle group. A workout slot's dropdown only offers exercises from that same
@@ -745,6 +780,14 @@ if(!plan&&(Object.keys(sessions).length||Object.keys(bodyweight).length||Object.
 let gear=Object.assign({},BOOT.gear||{});
 // one permanent note per exercise: exNotes[exercise id] = text. It follows the exercise like gear does.
 let exNotes=Object.assign({},BOOT.exNotes||{});
+// Each built-in exercise's note starts with its cues from cues.js: where to feel it and how to do it. cuesAdded remembers
+// which ones have gone in, so an edited or cleared note stays that way. A note already there keeps its text, cues below it.
+// This runs in memory on every open and reaches the file with the next save, so opening the app alone never writes the log.
+const CUES=window.CUES||{};
+let cuesAdded=Object.assign({},BOOT.cuesAdded||{});
+function addCues(){Object.keys(CUES).forEach(id=>{if(cuesAdded[id])return;
+  cuesAdded[id]=1;exNotes[id]=exNotes[id]?exNotes[id]+"\n\n"+CUES[id]:CUES[id]})}
+addCues();
 let savedPlans=Array.isArray(BOOT.savedPlans)?BOOT.savedPlans:[];   // other plans you can switch back to: [{id,name,savedAt,workouts,order,schedule}]
 if(plan){plan.custom=plan.custom||[];plan.schedule=Object.assign({mon:null,tue:null,wed:null,thu:null,fri:null,sat:null,sun:null},plan.schedule)}
 rebuildPlan();
@@ -973,6 +1016,7 @@ function render(){
 /* ---- exercise notes ----
    Every exercise and cardio card has two notes, both kept apart from the sets, so writing one never counts as logging.
    Permanent: one note per exercise, in exNotes, for seat settings and cues. It shows every time and you edit that same note.
+   Built-in exercises start with mind-muscle and form cues from cues.js.
    Daily: for this date, saved on the session as notes:{exercise id: text}, or as cardio[slot].note on a cardio card so
    the before and after cards stay separate even on the same machine. The card also shows the last daily note you wrote.
    (1.10 had one note per workout, saved as session.note; those still show in History and the CSV.) */
@@ -1248,7 +1292,7 @@ $("bwRange").addEventListener("click",ev=>{const b=ev.target.closest("button[dat
 /* ---- saving ---- */
 const SAVED_LABEL=NATIVE?"Saved on this iPhone":"Saved in this browser";
 function persist(fromHealth){
-  const payload={version:1,savedAt:Date.now(),names:customNames,sessions,bodyweight,food,foodTarget,myFoods,foodProfile,plan,savedPlans,gear,exNotes,health};
+  const payload={version:1,savedAt:Date.now(),names:customNames,sessions,bodyweight,food,foodTarget,myFoods,foodProfile,plan,savedPlans,gear,exNotes,cuesAdded,health};
   if(!fromHealth)healthSoon();
   try{
     if(NATIVE)window.webkit.messageHandlers.liftlog.postMessage({type:"save",json:JSON.stringify(payload)});
@@ -1340,12 +1384,23 @@ $("eraseBtn").onclick=()=>{
     setTimeout(()=>{if(eraseArmed){eraseArmed=false;$("eraseBtn").textContent="Erase all data";$("eraseNote").hidden=true}},5000);return}
   eraseArmed=false;
   sessions={};customNames={};bodyweight={};food={};myFoods=[];foodTarget={lo:2500,hi:3000};
-  foodProfile={sex:null,age:null,ft:null,inch:null,wt:null,act:1.55,auto:false,goal:null};plan=null;savedPlans=[];gear={};exNotes={};
+  foodProfile={sex:null,age:null,ft:null,inch:null,wt:null,act:1.55,auto:false,goal:null};plan=null;savedPlans=[];gear={};exNotes={};cuesAdded={};addCues();
   try{["ll.data","ll.apikey","ll.section","ll.mChain","ll.bwRange","gl.statEx"].forEach(k=>localStorage.removeItem(k))}catch(e){}
   rebuildPlan();persist();loadCur();$("eraseBtn").textContent="Erase all data";$("eraseNote").hidden=true;showView("setup");
 };
+function renderMacroSet(){const g=macroGoals(), pc=v=>Math.round(v*100);
+  $("mSplit").innerHTML=Object.entries(SPLITS).map(([k,v])=>`<button data-v="${k}" aria-pressed="${v===g.s}">${v.n.replace(" carb","")}</button>`).join("");
+  if(![$("mPLo"),$("mPHi")].includes(document.activeElement)){$("mPLo").value=foodProfile.pLo||"";$("mPHi").value=foodProfile.pHi>foodProfile.pLo?foodProfile.pHi:""}   // a single goal shows in the first box, so clearing it clears the goal
+  const amt=([a,b])=>a===b?n0(a):`${n0(a)}–${n0(b)}`;
+  $("mOut").textContent=(g.mine?`Protein is your own goal. The rest of your ${n0(foodTarget.lo)}–${n0(foodTarget.hi)} calories go to carbs and fat in the ${g.s.n} proportions.`:`${g.s.n}: ${pc(g.s.p)}% protein, ${pc(g.s.f)}% fat, ${pc(g.s.c)}% carbs of your ${n0(foodTarget.lo)}–${n0(foodTarget.hi)} calorie target.`)
+    +` That's ${amt(g.p)} g protein, ${amt(g.c)} g carbs and ${amt(g.f)} g fat a day. Splits are from tdeecalculator.net. Leave protein blank to use the split.`}
+function saveProt(){const n=id=>{const v=Math.round(Number($(id).value.trim()));return v>0?v:0};
+  let a=n("mPLo"),b=n("mPHi"); if(!a)a=b; if(!b)b=a; if(a>b)[a,b]=[b,a];   // one number sets a single goal
+  foodProfile.pLo=a;foodProfile.pHi=b;persist();renderMacroSet()}
+$("mPLo").addEventListener("change",saveProt);$("mPHi").addEventListener("change",saveProt);
+$("mSplit").addEventListener("click",ev=>{const b=ev.target.closest("button[data-v]");if(!b)return;foodProfile.split=b.dataset.v;persist();renderMacroSet()});
 function renderSettings(){
-  renderFoodSettings(); renderGoal(); renderPlanSum(); renderHealth();
+  renderFoodSettings();renderMacroSet(); renderGoal(); renderPlanSum(); renderHealth();
   const v=window.__LIFTLOG_VERSION__;
   const pg=window.__LIFTLOG_PAGE__;
   $("aboutLine").textContent=v?`Lift Log ${v}${pg?` · page ${pg}`:""}`:"Lift Log · test site (saves in this browser)";
@@ -1503,7 +1558,7 @@ function barChart(el,pts,o={}){
 const NOTE_NAME="Workout notes";
 function csv(){
   const q=v=>{v=v==null?"":String(v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
-  const out=[["Date","Day","Exercise","Set","Weight (lb)","Reps","Minutes","Level","Floors","Calories","Protein (g)","Meal"]];
+  const out=[["Date","Day","Exercise","Set","Weight (lb)","Reps","Minutes","Level","Floors","Calories","Protein (g)","Meal","Carbs (g)","Fat (g)"]];
   const days=[...new Set([...Object.keys(sessions),...Object.keys(bodyweight),...Object.keys(food)])].sort();
   days.forEach(d=>{const s=sessions[d]||{entries:{}};
     if(bodyweight[d]!=null)out.push([d,workoutName(s.day,s),BW_NAME,"",bodyweight[d],"",""]);
@@ -1518,9 +1573,9 @@ function csv(){
     Object.entries(s.notes||{}).forEach(([id,t])=>out.push([d,workoutName(s.day,s),NAMES[id]||id,"Note","","","","","","","",t]));
     if(s.note)out.push([d,workoutName(s.day,s),NOTE_NAME,"Notes","","","","","","","",s.note]);
     // food: one row per item; Set says "Food 1", "Food 2"… per entry and Meal holds what was typed, so entries regroup on import
-    dayFood(d).forEach((e,k)=>e.items.forEach(x=>out.push([d,workoutName(s.day,s),x.name,"Food "+(k+1)+(MEAL_NAME[e.meal]?" "+MEAL_NAME[e.meal]:""),"","","","","",x.cal,x.p??"",e.text])));});
+    dayFood(d).forEach((e,k)=>e.items.forEach(x=>out.push([d,workoutName(s.day,s),x.name,"Food "+(k+1)+(MEAL_NAME[e.meal]?" "+MEAL_NAME[e.meal]:""),"","","","","",x.cal,x.p??"",e.text,x.c??"",x.f??""])));});
   // permanent exercise notes aren't tied to a day; the Date column is just when the file was made
-  Object.entries(exNotes).forEach(([id,t])=>out.push([todayStr(),"",NAMES[id]||id,"Exercise note","","","","","","","",t]));
+  Object.entries(exNotes).filter(([id,t])=>t!==CUES[id]).forEach(([id,t])=>out.push([todayStr(),"",NAMES[id]||id,"Exercise note","","","","","","","",t]));
   return out.map(r=>r.map(q).join(",")).join("\n");
 }
 /* ---- export: the iPhone share sheet in the app, a plain download in a browser ---- */
@@ -1559,7 +1614,7 @@ function importCSV(text){
   const rows=parseCSV(text.replace(/^﻿/,"")).filter(r=>r.some(c=>c.trim()));
   if(!rows.length)throw new Error("empty");
   const head=rows.shift().map(h=>h.trim().toLowerCase()), col=n=>head.findIndex(h=>h.startsWith(n));
-  const iD=col("date"),iDay=col("day"),iEx=col("exercise"),iW=col("weight"),iR=col("reps"),iM=col("min"),iSet=col("set"),iL=col("level"),iF=col("floor"),iC=col("cal"),iP=col("protein"),iMeal=col("meal");
+  const iD=col("date"),iDay=col("day"),iEx=col("exercise"),iW=col("weight"),iR=col("reps"),iM=col("min"),iSet=col("set"),iL=col("level"),iF=col("floor"),iC=col("cal"),iP=col("protein"),iMeal=col("meal"),iCb=col("carb"),iFt=col("fat");
   if(iD<0||iEx<0)throw new Error("header");
   const byName={};Object.entries(NAMES).forEach(([id,n])=>byName[n.toLowerCase()]=id);
   const got={};let bwN=0;const gotFood={},gotNote={},gotX={},gotPerm=[],gotC=[];
@@ -1576,9 +1631,10 @@ function importCSV(text){
     if(ftag==="note"){const t=iMeal>=0?(r[iMeal]||"").trim():"";if(t)(gotX[d]=gotX[d]||[]).push([name,t]);return}
     if(/^food\b/.test(ftag)){
       const cal=Number((r[iC]||"").trim()),p=Number((r[iP]||"").trim()),meal=iMeal>=0?(r[iMeal]||"").trim():"";
+      const gram=i=>{const v=i>=0?(r[i]||"").trim():"",n=Number(v);return v!==""&&n>=0?n:null};
       if(!(cal>=0))return;
       const day=gotFood[d]||(gotFood[d]={}),key=ftag+"|"+(meal||name);
-      (day[key]||(day[key]={text:meal||name,meal:mealOf(ftag),items:[]})).items.push({name,cal:Math.round(cal),p:p>=0&&(r[iP]||"").trim()!==""?Math.round(p):null});
+      (day[key]||(day[key]={text:meal||name,meal:mealOf(ftag),items:[]})).items.push({name,cal:Math.round(cal),p:p>=0&&(r[iP]||"").trim()!==""?Math.round(p):null,c:gram(iCb),f:gram(iFt)});
       return}
     let id=byName[name.toLowerCase()];
     if(!id){id="x-"+name.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
@@ -1618,11 +1674,11 @@ function importCSV(text){
     const tgt=got[d]||sessions[d]||(got[d]={date:d,day:defaultDay(d),entries:{}});
     tgt.cardio=tgt.cardio||{}; const c=tgt.cardio[k];
     if(c){if(!c.note)c.note=t}else tgt.cardio[k]={ex:id,min:0,lvl:null,fl:null,note:t}});
-  // permanent exercise notes: same rule, a note already on the exercise stays
+  // permanent exercise notes: same rule, a note already on the exercise stays (the untouched starting cues don't count)
   let pN=0;gotPerm.forEach(([name,t])=>{
     let id=byName[name.toLowerCase()];
     if(!id){id="x-"+name.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");customNames[id]=name;NAMES[id]=name;byName[name.toLowerCase()]=id}
-    if(!exNotes[id]){exNotes[id]=t;pN++}});
+    if(!exNotes[id]||exNotes[id]===CUES[id]){exNotes[id]=t;pN++}});
   const ds=Object.keys(got), bwMsg=(bwN?` and ${bwN} weigh-in${bwN>1?"s":""}`:"")+(fN?` and ${fN} food entr${fN>1?"ies":"y"}`:"")+(pN?` and ${pN} exercise note${pN>1?"s":""}`:"");
   if(!ds.length){if(bwN||fN||pN){persist();rerender();return `Imported${bwMsg.replace(/^ and/,"")}.`}
     return Object.keys(gotFood).length?"Everything in that file is already logged.":"No workouts found in that file."}
@@ -1656,6 +1712,24 @@ function entryCal(e){return e.items.reduce((a,x)=>a+(+x.cal||0),0)}
 function entryP(e){return e.items.reduce((a,x)=>a+(+x.p||0),0)}
 function dayCal(d){return dayFood(d).reduce((a,e)=>a+entryCal(e),0)}
 function dayP(d){return dayFood(d).reduce((a,e)=>a+entryP(e),0)}
+const entrySum=(e,k)=>e.items.reduce((a,x)=>a+(+x[k]||0),0), dayMac=(d,k)=>dayFood(d).reduce((a,e)=>a+entrySum(e,k),0);
+// carbs and fat are x.c and x.f on an item. Food logged before 3.01 has neither, so it counts as unknown, not zero.
+const macLine=(p,c,f)=>[["P",p],["C",c],["F",f]].filter(([,v])=>v>0).map(([l,v])=>`${l} ${n0(v)}`).join(" · ");   // an unknown or zero macro is left out
+const noMac=d=>dayFood(d).reduce((a,e)=>a+e.items.filter(x=>x.cal>0&&(x.c==null||x.f==null)).length,0);
+// macro targets are ranges: a split from tdeecalculator.net applied to the low and high ends of the calorie target.
+// Percentages are protein / fat / carbs. Protein and carbs have 4 calories a gram, fat has 9.
+const SPLITS={mod:{n:"Moderate carb",p:.3,f:.35,c:.35},low:{n:"Lower carb",p:.4,f:.4,c:.2},high:{n:"Higher carb",p:.3,f:.2,c:.5}};
+// A protein target you set yourself (foodProfile.pLo to pHi) replaces the split's protein. The calories left over are shared
+// between carbs and fat in the split's proportions, so the three still add up to the calorie target.
+function macroGoals(){const s=SPLITS[foodProfile.split]||SPLITS.mod, {lo,hi}=foodTarget, r=(pct,kc)=>[Math.round(lo*pct/kc),Math.round(hi*pct/kc)];
+  const pLo=foodProfile.pLo, pHi=foodProfile.pHi;
+  if(!(pLo>0))return {p:r(s.p,4),c:r(s.c,4),f:r(s.f,9),s,mine:false};
+  const rest=(share,kc)=>[Math.max(0,lo-pLo*4),Math.max(0,hi-pHi*4)].map(v=>Math.round(v*share/(s.c+s.f)/kc)).sort((a,b)=>a-b);
+  return {p:[pLo,pHi],c:rest(s.c,4),f:rest(s.f,9),s,mine:true}}
+function macBar(label,have,[lo,hi]){const v=Math.round(have), over=v>hi, inR=v>=lo&&!over, keepGreen=over&&label==="Protein";
+  const cls=inR||keepGreen?"up":over?"down":"", max=Math.max(hi*1.15,v,1), pct=x=>Math.min(100,x/max*100).toFixed(1);
+  return `<div class="mbar"><span class="lab">${label}</span><span class="val ${cls}"><b>${n0(v)}</b> g</span><span class="val">${lo===hi?n0(lo):`${n0(lo)}–${n0(hi)}`} g</span>
+    <div class="calbar" role="img" aria-label="${n0(v)} grams of ${label.toLowerCase()}, target ${n0(lo)} to ${n0(hi)}"><div class="band" style="left:${pct(lo)}%;width:${Math.max(2,pct(hi)-pct(lo)).toFixed(1)}%"></div><div class="fill ${cls}" style="width:${pct(v)}%"></div></div></div>`}
 /* meals: every new entry is filed under Breakfast, Lunch, Dinner or Snack. Nothing is guessed: you pick it each time.
    Entries from before meals existed have no meal and show under "Not sorted" until you edit one and pick. */
 const MEALS=[["b","Breakfast"],["l","Lunch"],["d","Dinner"],["s","Snack"]], MEAL_NAME=Object.fromEntries(MEALS);
@@ -1669,18 +1743,26 @@ function needMeal(){$("fMeals").classList.add("need");$("fMeals").scrollIntoView
 $("fMeals").addEventListener("click",ev=>{const b=ev.target.closest("button[data-meal]");if(!b)return;
   fMeal=fMeal===b.dataset.meal?null:b.dataset.meal;renderMeals();
   if($("qNote").classList.contains("down")){$("qNote").textContent=QNOTE;$("qNote").className="note"}});
-const QNOTE="Pick a meal above, then quick add the calories or find it below.";
+const QNOTE="";
+// Add food shows one way of adding at a time. The one you used last comes back next time.
+let fTab=ls.get("ll.fTab","menu");
+function renderFTabs(){
+  const ai=aiStatus==="ready"; $("fAiTab").hidden=!ai; if(fTab==="ai"&&!ai)fTab="menu";
+  document.querySelectorAll("#fTabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.ftab===fTab));
+  document.querySelectorAll("[data-fpane]").forEach(p=>p.hidden=p.dataset.fpane!==fTab)}
+$("fTabs").addEventListener("click",ev=>{const b=ev.target.closest("button[data-ftab]");if(!b)return;
+  fTab=b.dataset.ftab;ls.set("ll.fTab",fTab);$("qNote").textContent="";$("qNote").className="note";renderFTabs()});
 
 function renderFood(){
   $("fDate").value=fDate;
   renderCalSum(); renderMeals(); renderDraft(); renderRecent(); renderMenu(); renderFoodList();
-  $("fAiWrap").hidden=aiStatus!=="ready";
+  renderFTabs();
   const m=$("fMsg"); m.hidden=!fMsg; m.textContent=fMsg; m.className="note"+(/^(Couldn|That|The estimate|Apple|Turn on|Estimates need|Type)/.test(fMsg)?" down":"");
-  $("fEst").disabled=fBusy; $("fManual").disabled=fBusy; $("fEst").textContent=fBusy?"Estimating…":"Estimate calories";
+  $("fEst").disabled=fBusy; $("fManual").disabled=fBusy; $("fEst").textContent=fBusy?"Estimating…":"Estimate it";
 }
 $("calSum").addEventListener("click",ev=>{if(ev.target.closest("[data-go=settings]"))showView("settings")});
 function renderCalSum(){
-  const eaten=dayCal(fDate), p=dayP(fDate), n=dayFood(fDate).length, {lo,hi}=foodTarget, pg=proteinGoal();
+  const eaten=dayCal(fDate), n=dayFood(fDate).length, {lo,hi}=foodTarget, g=macroGoals(), miss=noMac(fDate);
   let sub,cls="";
   if(!n)sub=`Target ${n0(lo)}–${n0(hi)} cal`;
   else if(eaten<lo)sub=`${n0(lo-eaten)}–${n0(hi-eaten)} cal to go`;
@@ -1689,26 +1771,23 @@ function renderCalSum(){
   const max=Math.max(hi*1.15,eaten,1), pct=v=>Math.min(100,v/max*100).toFixed(1);
   const when=fDate===todayStr()?"Today":nice(fDate);
   $("calSum").innerHTML=`<div class="calhead"><div><div class="cat">${when}</div><div class="calbig">${n0(eaten)}<small>cal</small></div></div>
-      <div class="calsub ${cls}">${sub}${!pg&&n?`<br>${n0(p)} g protein`:""}</div></div>
+      <div class="calsub ${cls}">${sub}</div></div>
     <div class="calbar" role="img" aria-label="${n0(eaten)} of ${n0(lo)} to ${n0(hi)} calories"><div class="band" style="left:${pct(lo)}%;width:${(pct(hi)-pct(lo)).toFixed(1)}%"></div><div class="fill ${cls}" style="width:${pct(eaten)}%"></div></div>
-    ${pg?proteinRow(p,pg):""}
-    <button class="calsum-link" data-go="settings">${calcTDEE()&&foodProfile.auto?`Target ${n0(lo)}–${n0(hi)} from your TDEE · Change`:"Work out your target from height, weight & age ›"}</button>`;
+    <div class="mbars">${macBar("Protein",dayP(fDate),g.p)}${macBar("Carbs",dayMac(fDate,"c"),g.c)}${macBar("Fat",dayMac(fDate,"f"),g.f)}</div>
+    ${miss?`<div class="note">Carbs and fat leave out ${miss} item${miss>1?"s":""} logged without them.</div>`:""}
+    ${calcTDEE()&&foodProfile.auto?"":`<button class="calsum-link" data-go="settings">Work out your target from height, weight & age ›</button>`}`;
 }
-function proteinRow(p,goal){
-  const have=Math.round(p), hit=have>=goal;
-  return `<div class="protrow"><div class="protlab"><span>Protein</span><span class="${hit?"up":""}">${n0(have)} / ${n0(goal)} g · ${hit?"Goal hit ✓":`${n0(goal-have)} g to go`}</span></div>
-    <div class="calbar" role="img" aria-label="${n0(have)} of ${n0(goal)} grams of protein"><div class="fill ${hit?"up":""}" style="width:${Math.min(100,have/goal*100).toFixed(1)}%"></div></div></div>`;
-}
+function draftTot(){return `${n0(entryCal(fDraft))} cal${macLine(entryP(fDraft),entrySum(fDraft,"c"),entrySum(fDraft,"f"))?" · "+macLine(entryP(fDraft),entrySum(fDraft,"c"),entrySum(fDraft,"f")):""}`}
 function renderDraft(){
   const el=$("fDraft");
   if(!fDraft){el.hidden=true;el.innerHTML="";return}
   el.hidden=false;
-  const rows=fDraft.items.map((x,k)=>(x.m&&(k===0||fDraft.items[k-1].m!==x.m)?`<div class="cat">${MEAL_NAME[x.m]}</div>`:"")+`<div class="frow" data-k="${k}"><input data-f="name" aria-label="Item ${k+1} name" placeholder="Food" value="${esc(x.name)}"><input class="fcal" data-f="cal" inputmode="numeric" aria-label="Item ${k+1} calories" placeholder="0" value="${x.cal??""}"><span class="unit">cal</span><button class="fx" data-f="rm" aria-label="Remove item ${k+1}">×</button></div>`).join("");
+  const rows=fDraft.items.map((x,k)=>(x.m&&(k===0||fDraft.items[k-1].m!==x.m)?`<div class="cat">${MEAL_NAME[x.m]}</div>`:"")+`<div class="frow" data-k="${k}"><input data-f="name" aria-label="Item ${k+1} name" placeholder="Food" value="${esc(x.name)}"><input class="fcal" data-f="cal" inputmode="numeric" aria-label="Item ${k+1} calories" placeholder="0" value="${x.cal??""}"><span class="unit">cal</span><button class="fx" data-f="rm" aria-label="Remove item ${k+1}">×</button><div class="fmac">${[["p","P","protein"],["c","C","carbs"],["f","F","fat"]].map(([m,l,w])=>`<label>${l}<input data-f="${m}" inputmode="decimal" aria-label="Item ${k+1} ${w} grams" placeholder="g" value="${x[m]??""}"></label>`).join("")}</div></div>`).join("");
   const savable=fDraft.items.some(x=>x.name.trim()&&!MENU_NAMES.has(x.name.trim().toLowerCase()));
   el.innerHTML=`<div class="cat">${fDraft.edit?"Editing entry · tap a meal above to move it":"This meal · tap more foods below to add them"}</div>${rows}
     <div class="row"><button class="set addset" data-f="add">+ Item</button>${savable?`<button class="set addset" data-f="keep">☆ Save to My foods</button>`:""}</div>
     ${fDraft.note?`<div class="note">${esc(fDraft.note)}</div>`:""}
-    <div class="ftot"><span>Total</span><span id="fDraftTot">${n0(entryCal(fDraft))} cal</span></div>
+    <div class="ftot"><span>Total</span><span id="fDraftTot">${draftTot()}</span></div>
     <div class="fbtns"><button class="btn" data-f="save">${fDraft.edit?"Save changes":"Add to "+(fDate===todayStr()?"today":nice(fDate))}</button><button class="btn ghost" data-f="cancel">${fDraft.edit?"Cancel":"Discard"}</button></div>`;
 }
 function recentFoods(){
@@ -1718,7 +1797,7 @@ function recentFoods(){
   return Object.values(seen).sort((a,b)=>b.n-a.n||b.e.t-a.e.t).slice(0,8).map(r=>r.e);
 }
 function renderRecent(){
-  const rs=recentFoods(); $("fRecentWrap").hidden=!rs.length||!!fDraft;
+  const rs=recentFoods(); $("fRecentWrap").hidden=!rs.length||!!fDraft||!!mChain||!!$("mSearch").value.trim();
   $("fRecent").innerHTML=rs.map(e=>`<button data-rid="${e.id}">${esc(e.text.length>32?e.text.slice(0,30)+"…":e.text)} · ${n0(entryCal(e))}</button>`).join("");
 }
 function renderFoodList(){
@@ -1731,8 +1810,9 @@ function renderFoodList(){
     const time=todayStr(new Date(e.t))===fDate?new Date(e.t).toLocaleTimeString([],{hour:"numeric",minute:"2-digit"}):"";
     const rows=e.items.map(x=>`<tr><td>${esc(x.name)}</td><td>${n0(x.cal)} cal</td></tr>`).join("");
     const same=e.items.length===1&&e.items[0].name.trim().toLowerCase()===e.text.trim().toLowerCase();
-    return `<div class="hcard fentry" data-eid="${e.id}"><h3><span>${n0(entryCal(e))} cal${entryP(e)?` · ${n0(entryP(e))} g protein`:""}</span><span class="t">${time}</span></h3>
-      ${same?"":`<div class="q">${esc(e.text)}</div>`}<table>${rows}</table>
+    return `<div class="hcard fentry" data-eid="${e.id}"><h3><span>${n0(entryCal(e))} cal</span><span class="t">${time}</span></h3>
+      ${macLine(entryP(e),entrySum(e,"c"),entrySum(e,"f"))?`<div class="emac">${macLine(entryP(e),entrySum(e,"c"),entrySum(e,"f"))}</div>`:""}
+      ${same?"":`<div class="q">${esc(e.text)}</div><table>${rows}</table>`}
       <div class="acts"><button data-fe="edit">Edit</button><button data-fe="del" class="del">${fDelArmed===e.id?"Tap again to delete":"Delete"}</button></div></div>`}).join("")}).join("");
 }
 function renderCalChart(){
@@ -1761,7 +1841,8 @@ function renderFoodHist(){
       return (anyMeal?`<tr class="mrow"><td>${k?MEAL_NAME[k]:"Not sorted"}</td><td>${n0(g.reduce((a,e)=>a+entryCal(e),0))} cal</td></tr>`:"")+g.map(e=>{const one=e.items.length===1?e.items[0].name:(e.text||e.items.map(x=>x.name).join(", "));
       return `<tr><td>${esc(one)}</td><td>${n0(entryCal(e))} cal</td></tr>`}).join("")}).join("");
     return `<div class="hcard fday"><h3><span>${nice(d)}${d===todayStr()?" · Today":""}</span><button data-fday="${d}">Open</button></h3>
-      <div class="tot"><b>${n0(c)} cal</b><span><span class="r ${st.cls}">${st.t}</span>${p?` · ${n0(p)} g protein`:""}</span></div>
+      <div class="tot"><b>${n0(c)} cal</b><span><span class="r ${st.cls}">${st.t}</span></span></div>
+      ${macLine(p,dayMac(d,"c"),dayMac(d,"f"))?`<div class="emac">${macLine(p,dayMac(d,"c"),dayMac(d,"f"))}</div>`:""}
       <div class="calbar" aria-hidden="true"><div class="band" style="left:${pct(foodTarget.lo)}%;width:${(pct(hi)-pct(foodTarget.lo)).toFixed(1)}%"></div><div class="fill ${st.cls}" style="width:${pct(c)}%"></div></div>
       <table>${rows}</table></div>`}).join("");
 }
@@ -1795,7 +1876,7 @@ function menuHints(text){
     FOODS.filter(f=>f.chain!==MY).map(f=>({f,n:ws.filter(w=>f.hay.includes(w.length>=4?w:" "+w)).length}))
       .filter(x=>x.n>=need).sort((a,b)=>b.n-a.n).slice(0,3)
       .forEach(({f})=>{if(seen.has(f.key))return;seen.add(f.key);
-        out.push(`${f.chain.name} · ${f.n}: ${f.cal} cal${f.p!=null?`, ${f.p} g protein`:""}`)});
+        out.push(`${f.chain.name} · ${f.n}: ${f.cal} cal${f.p!=null?`, ${f.p} g protein`:""}${f.c!=null?`, ${f.c} g carbs`:""}${f.f!=null?`, ${f.f} g fat`:""}`)});
   });
   return out.slice(0,12).join("\n");
 }
@@ -1805,7 +1886,7 @@ function estimateFood(text){
     window.webkit.messageHandlers.liftlog.postMessage({type:"estimate",id,text,reference:menuHints(text)})})
   .then(r=>{
     if(r.error)throw new Error(r.error);
-    const items=(r.items||[]).map(x=>({name:String(x.name||"").trim(),cal:Math.max(0,Math.round((+x.calories||0)/10)*10),p:Math.max(0,Math.round(+x.protein||0))})).filter(x=>x.name);
+    const items=(r.items||[]).map(x=>({name:String(x.name||"").trim(),cal:Math.max(0,Math.round((+x.calories||0)/10)*10),p:Math.max(0,Math.round(+x.protein||0)),c:x.carbs==null?null:Math.max(0,Math.round(+x.carbs||0)),f:x.fat==null?null:Math.max(0,Math.round(+x.fat||0))})).filter(x=>x.name);
     if(!items.length)throw new Error("Couldn't find any food in that. Try naming each thing you ate.");
     return {items,note:String(r.note||"").trim()};
   });
@@ -1826,8 +1907,9 @@ function quickAdd(){
   if(v===""||!(n>0&&n<10000)){$("qNote").textContent="Type the calories first, like 350.";$("qNote").className="note down";$("qCal").focus();return}
   if(!fMeal){$("qNote").textContent="Pick which meal it was first.";$("qNote").className="note down";needMeal();return}
   const t=fDate===todayStr()?Date.now():parse(fDate).getTime()+12*36e5, meal=fMeal;
-  food[fDate]=[...dayFood(fDate),{id:newId(),t,meal,text:name||"Quick add",items:[{name:name||"Quick add",cal:n,p:null}]}];fMeal=null;
-  $("qCal").value="";$("qName").value="";$("qCal").blur();$("qName").blur();
+  const gram=id=>{const v=$(id).value.trim(),g=Number(v);return v!==""&&g>=0?g:null};
+  food[fDate]=[...dayFood(fDate),{id:newId(),t,meal,text:name||"Quick add",items:[{name:name||"Quick add",cal:n,p:gram("qP"),c:gram("qC"),f:gram("qF")}]}];fMeal=null;
+  ["qCal","qName","qP","qC","qF"].forEach(id=>{$(id).value="";$(id).blur()});
   persist();renderFood();
   $("qNote").textContent=`Added ${n0(n)} cal${name?` for ${name}`:""} to ${MEAL_NAME[meal]}.`;$("qNote").className="note up";
 }
@@ -1846,10 +1928,12 @@ function parsePasted(txt){
     const num=v=>Number(String(v).replace(/,/g,""));
     let cal=null,name=l;
     if(c){cal=Math.round(c[2]?(num(c[1])+num(c[2]))/2:num(c[1]));name=l.slice(0,c.index)}
-    const pm=l.match(/(\d+(?:\.\d+)?)\s*g\b(?:\s*(?:of\s*)?protein)?/i)||l.match(/protein\D{0,3}(\d+(?:\.\d+)?)/i);
+    const gram=w=>{const m=l.match(new RegExp("(\\d+(?:\\.\\d+)?)\\s*g\\b\\s*(?:of\\s*)?(?:"+w+")\\b","i"))||l.match(new RegExp("\\b(?:"+w+")\\b\\D{0,3}(\\d+(?:\\.\\d+)?)","i"));return m&&c?Number(m[1]):null};
+    const carbs=gram("carbs?|carbohydrates?"), fat=gram("fats?"), bare=l.match(/(\d+(?:\.\d+)?)\s*g\b/i);
+    const prot=gram("protein")??(carbs==null&&fat==null&&bare&&c?Number(bare[1]):null);   // a lone "30g" has always meant protein
     name=name.replace(/[\s\-–—:|,(~=]+$/,"").replace(/\b(?:about|approx\.?|around)$/i,"").replace(/[\s\-–—:|,(~=]+$/,"").trim();
     if(!name&&cal==null)return;
-    items.push({name:name||"Food",cal:cal>=0&&cal<10000?cal:null,p:pm&&c?Math.round(Number(pm[1])):null,m:cur});
+    items.push({name:name||"Food",cal:cal>=0&&cal<10000?cal:null,p:prot==null?null:Math.round(prot),c:carbs,f:fat,m:cur});
   });
   return items;
 }
@@ -1863,16 +1947,15 @@ function readPasted(){
   const miss=items.filter(x=>x.cal==null).length;
   const ms=[...new Set(items.map(x=>x.m).filter(Boolean))];
   fDraft.note=`Read ${items.length} item${items.length>1?"s":""} from your paste${fMeal&&!ms.length?` for ${MEAL_NAME[fMeal]}`:ms.length?` across ${ms.map(k=>MEAL_NAME[k]).join(", ")}`:""}. `+(!fMeal&&items.some(x=>!x.m)?"Pick a meal at the top. ":"")+(miss?`${miss} had no calories, so fill ${miss>1?"those":"it"} in, then tap Add.`:"Check the numbers, then tap Add.");
-  $("pText").value="";$("pBox").hidden=true;$("pOpen").hidden=false;fMsg="";renderFood();
+  $("pText").value="";pNote("");fMsg="";renderFood();
   $("fDraft").scrollIntoView({behavior:"smooth",block:"nearest"});
 }
-$("pOpen").onclick=()=>{$("pBox").hidden=false;$("pOpen").hidden=true;pNote("One food per line with its calories. The items land in the meal below so you can check them before adding.");$("pText").focus()};
 $("pPaste").onclick=async()=>{
   try{const t=await navigator.clipboard.readText();if(!t||!t.trim())throw 0;$("pText").value=t;readPasted()}
   catch(e){pNote("Couldn't read the clipboard. Press and hold in the box and tap Paste, then Read it.","down");$("pText").focus()}};
 $("pRead").onclick=readPasted;
 $("fManual").onclick=()=>{const q=$("mSearch").value.trim();   // starts the name from whatever you searched for
-  const row={name:q,cal:null,p:null};
+  const row={name:q,cal:null,p:null,c:null,f:null};
   if(fDraft){fDraft.text="";fDraft.items.push(row)}else fDraft={text:"",items:[row],note:""};
   fMsg="";renderFood();
   const rs=$("fDraft").querySelectorAll(".frow"),last=rs[rs.length-1];
@@ -1880,22 +1963,23 @@ $("fManual").onclick=()=>{const q=$("mSearch").value.trim();   // starts the nam
 $("fDraft").addEventListener("input",ev=>{const i=ev.target.closest("input[data-f]");if(!i||!fDraft)return;
   const x=fDraft.items[+i.closest(".frow").dataset.k];
   if(i.dataset.f==="name")x.name=i.value;
-  else{const n=Number(i.value.trim());x.cal=i.value.trim()===""||!isFinite(n)?null:Math.max(0,Math.round(n));x.p=null}  // a hand-edited number drops the estimate's protein guess for that item
-  $("fDraftTot").textContent=n0(entryCal(fDraft))+" cal";});
+  else{const n=Number(i.value.trim()),none=i.value.trim()===""||!isFinite(n),k=i.dataset.f;
+    if(k==="cal")x.cal=none?null:Math.max(0,Math.round(n));else x[k]=none?null:Math.max(0,n)}
+  $("fDraftTot").textContent=draftTot();});
 $("fDraft").addEventListener("change",ev=>{if(ev.target.matches("input[data-f=name]")&&fDraft){  // show "Save to My foods" once a typed name is in
   const has=!!$("fDraft").querySelector("[data-f=keep]"),want=fDraft.items.some(x=>x.name.trim()&&!MENU_NAMES.has(x.name.trim().toLowerCase()));
   if(has!==want)renderDraft()}});
 $("fDraft").addEventListener("click",ev=>{const b=ev.target.closest("button[data-f]");if(!b||!fDraft)return;const a=b.dataset.f;
-  if(a==="rm"){fDraft.items.splice(+b.closest(".frow").dataset.k,1);if(!fDraft.items.length)fDraft.items.push({name:"",cal:null,p:null})}
-  else if(a==="add")fDraft.items.push({name:"",cal:null,p:null});
+  if(a==="rm"){fDraft.items.splice(+b.closest(".frow").dataset.k,1);if(!fDraft.items.length)fDraft.items.push({name:"",cal:null,p:null,c:null,f:null})}
+  else if(a==="add")fDraft.items.push({name:"",cal:null,p:null,c:null,f:null});
   else if(a==="cancel"){if(fDraft.edit)fMeal=null;fDraft=null;fMsg=""}
   else if(a==="keep"){let n=0;
     fDraft.items.forEach(x=>{const nm=x.name.trim();if(!nm||!(x.cal>0)||MENU_NAMES.has(nm.toLowerCase()))return;
       const old=myFoods.find(f=>f.n.toLowerCase()===nm.toLowerCase());
-      if(old){old.cal=x.cal;old.p=x.p??null}else myFoods.push({id:newId(),n:nm,cal:x.cal,p:x.p??null});n++});
+      if(old){old.cal=x.cal;old.p=x.p??null;old.c=x.c??null;old.f=x.f??null}else myFoods.push({id:newId(),n:nm,cal:x.cal,p:x.p??null,c:x.c??null,f:x.f??null});n++});
     persist();buildFoodIndex();fMsg=n?`Saved ${n} to My foods. Find ${n>1?"them":"it"} by searching or under My foods.`:"Give it a name and calories first.";}
   else if(a==="save"){
-    const all=fDraft.items.map(x=>({name:x.name.trim(),cal:x.cal||0,p:x.p,m:x.m||null}))
+    const all=fDraft.items.map(x=>({name:x.name.trim(),cal:x.cal||0,p:x.p,c:x.c??null,f:x.f??null,m:x.m||null}))
       .filter(x=>x.name||x.cal).map(x=>({...x,name:x.name||"Food"}));
     if(!all.length){fMsg="Add at least one item with calories.";renderFood();return}
     const strip=xs=>xs.map(({m,...x})=>x);
@@ -1976,13 +2060,11 @@ function renderCalc(){
   $("tMode").innerHTML=pr.auto&&matches?`<span class="keyok">✓ Set from your TDEE</span> and updates when your weight changes. Typing your own numbers here switches that off.`:"Set by hand.";
 }
 /* weight goal: how far to go, and roughly how long at your target range (extreme ≈ 2 lb/wk, mild ≈ ½ lb/wk) */
-function proteinGoal(){const g=foodProfile.goal;return g>0?Math.round(g):null} // 1 g per lb of goal weight
 function goalLeft(){const g=foodProfile.goal,L=latestBW();return g>0&&L?r1(L.w-g):null}
 function renderGoal(){
   const g=foodProfile.goal,L=latestBW();
   if(document.activeElement!==$("gWt"))$("gWt").value=g??"";
-  const pg=proteinGoal();$("gProt").hidden=!pg;$("gProt").textContent=pg?`Protein goal: ${n0(pg)} g a day (1 g per lb of goal weight)`:"";
-  if(!(g>0)){$("gOut").innerHTML=`<div class="note">Set a goal and it shows on your body-weight chart and weigh-ins, with a rough time to get there, and sets your daily protein goal at 1 g per lb.</div>`;return}
+  if(!(g>0)){$("gOut").innerHTML=`<div class="note">Set a goal and it shows on your body-weight chart and weigh-ins, with a rough time to get there.</div>`;return}
   if(!L){$("gOut").innerHTML=`<div class="note">Log a weigh-in on Workout › Today to see how far you are from ${g} lb.</div>`;return}
   const left=r1(L.w-g);
   if(left<=0){$("gOut").innerHTML=`<div class="note keyok">✓ You're at your goal (${L.w} lb on ${md(L.date)}).</div>`;return}
@@ -2020,9 +2102,9 @@ let FOODS=[], mChain=ls.get("ll.mChain",null), mDelArmed=null, mOpen=new Set(); 
 const fnorm=t=>String(t).toLowerCase().replace(/"/g," inch ").replace(/['’.®™]/g,"").replace(/&/g," and ").replace(/[^a-z0-9]+/g," ").trim();
 function buildFoodIndex(){
   FOODS=[];MENU_NAMES.clear();
-  MENU.chains.forEach(c=>c.items.forEach(([n,cal,p,sec])=>{const full=c.short+" · "+n;MENU_NAMES.add(full.toLowerCase());
-    FOODS.push({key:c.id+"|"+n,chain:c,n,full,cal,p,sec,hay:" "+fnorm(c.name+" "+(c.alias||"")+" "+c.short+" "+n+" "+sec)})}));
-  myFoods.forEach(f=>FOODS.push({key:"my|"+f.id,id:f.id,chain:MY,n:f.n,full:f.n,cal:f.cal,p:f.p,sec:"My foods",hay:" "+fnorm("my "+f.n)}));
+  MENU.chains.forEach(c=>c.items.forEach(([n,cal,p,sec,cb,ft])=>{const full=c.short+" · "+n;MENU_NAMES.add(full.toLowerCase());
+    FOODS.push({key:c.id+"|"+n,chain:c,n,full,cal,p,c:cb,f:ft,sec,hay:" "+fnorm(c.name+" "+(c.alias||"")+" "+c.short+" "+n+" "+sec)})}));
+  myFoods.forEach(f=>FOODS.push({key:"my|"+f.id,id:f.id,chain:MY,n:f.n,full:f.n,cal:f.cal,p:f.p,c:f.c,f:f.f,sec:"My foods",hay:" "+fnorm("my "+f.n)}));
 }
 buildFoodIndex();
 function searchFoods(q){
@@ -2033,7 +2115,7 @@ function searchFoods(q){
 }
 function mRow(f,showChain){
   const inN=fDraft?fDraft.items.filter(x=>x.name===f.full).length:0;
-  return `<div class="mrow"><button class="add" data-mk="${esc(f.key)}"><span class="nm">${esc(f.n)}${inN?`<span class="in">✓${inN>1?" ×"+inN:""}</span>`:""}${showChain?`<small>${esc(f.chain.name)}</small>`:""}</span><span class="cl">${n0(f.cal)}<small>cal</small></span></button>${f.chain===MY?`<button class="rmf" data-mdel="${f.id}">${mDelArmed===f.id?"Tap to remove":"Remove"}</button>`:""}</div>`;
+  return `<div class="mrow"><button class="add" data-mk="${esc(f.key)}"><span class="nm">${esc(f.n)}${inN?`<span class="in">✓${inN>1?" ×"+inN:""}</span>`:""}<small>${showChain?esc(f.chain.name)+(macLine(f.p,f.c,f.f)?" · ":""):""}${macLine(f.p,f.c,f.f)}</small></span><span class="cl">${n0(f.cal)}<small>cal</small></span></button>${f.chain===MY?`<button class="rmf" data-mdel="${f.id}">${mDelArmed===f.id?"Tap to remove":"Remove"}</button>`:""}</div>`;
 }
 function renderMenu(){
   const chains=(myFoods.length?[MY]:[]).concat(MENU.chains);
@@ -2045,7 +2127,7 @@ function renderMenuResults(){
   const q=$("mSearch").value.trim(), el=$("mResults");
   if(q){const hits=searchFoods(q);
     el.innerHTML=hits.length?hits.map(f=>mRow(f,true)).join(""):`<div class="mhint">Nothing matches “${esc(q)}”. Tap Enter it myself below to add it with your own number.</div>`;return}
-  if(!mChain){el.innerHTML=`<div class="mhint">Pick a restaurant or search. Tap foods to build your meal.</div>`;return}
+  if(!mChain){el.innerHTML="";return}
   const list=FOODS.filter(f=>f.chain.id===mChain);
   if(!list.length){el.innerHTML=`<div class="mhint">No saved foods yet. Enter one yourself, then tap ☆ Save to My foods.</div>`;return}
   if(mChain==="my"){el.innerHTML=list.map(f=>mRow(f,false)).join("");return}   // My foods is short: no dropdowns
@@ -2054,10 +2136,10 @@ function renderMenuResults(){
     const inMeal=fDraft?g.items.filter(f=>fDraft.items.some(x=>x.name===f.full)).length:0;
     return `<div class="mgrp"><button class="mhead" data-msec="${esc(k)}" aria-expanded="${open}"><span>${esc(g.sec)}</span><span class="ct">${inMeal?`<b>✓ ${inMeal}</b> · `:""}${g.items.length}</span><span class="chev" aria-hidden="true"></span></button>${open?`<div class="mbody">${g.items.map(f=>mRow(f,false)).join("")}</div>`:""}</div>`}).join("");
 }
-$("mSearch").addEventListener("input",renderMenuResults);
+$("mSearch").addEventListener("input",()=>{renderMenuResults();renderRecent()});
 $("mSearch").addEventListener("keydown",ev=>{if(ev.key==="Enter"){ev.preventDefault();$("mSearch").blur()}});
 $("mChains").addEventListener("click",ev=>{const b=ev.target.closest("button[data-chain]");if(!b)return;
-  mChain=mChain===b.dataset.chain?null:b.dataset.chain;ls.set("ll.mChain",mChain);mDelArmed=null;renderMenu();});
+  mChain=mChain===b.dataset.chain?null:b.dataset.chain;ls.set("ll.mChain",mChain);mDelArmed=null;renderMenu();renderRecent();});
 $("mResults").addEventListener("click",ev=>{
   const h=ev.target.closest("button[data-msec]");
   if(h){const k=h.dataset.msec;mOpen.has(k)?mOpen.delete(k):mOpen.add(k);renderMenuResults();return}
@@ -2067,7 +2149,7 @@ $("mResults").addEventListener("click",ev=>{
     mDelArmed=null;myFoods=myFoods.filter(f=>f.id!==id);persist();buildFoodIndex();renderMenu();return}
   const b=ev.target.closest("button[data-mk]");if(!b)return;
   const f=FOODS.find(x=>x.key===b.dataset.mk);if(!f)return;
-  const row={name:f.full,cal:f.cal,p:f.p};
+  const row={name:f.full,cal:f.cal,p:f.p,c:f.c??null,f:f.f??null};
   if(!fDraft)fDraft={text:"",items:[],note:""};
   fDraft.items=fDraft.items.filter(x=>x.name.trim()||x.cal);   // drop an empty starter row
   fDraft.items.push(row);if(!fDraft.edit)fDraft.text="";
