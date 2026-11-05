@@ -410,6 +410,10 @@ header>div:first-child{order:2;flex-basis:100%}
 header>div:first-child:not(:has(.status.off)){display:none}
 #subTabs{order:0;flex:1 1 0;min-width:0}
 #gearBtn{order:1;margin-left:auto}
+/* progress: in range is magenta, over is yellow */
+.calbar .band{background:var(--warn)}
+.calbar .fill.up{background:var(--warn)} .calbar .fill.down{background:var(--done)}
+.mbar .val.up b,.calsub.up{color:var(--warn)} .mbar .val.down b,.calsub.down{color:var(--done)}
 /* controls inside a card get a faint fill, so it isn't outlined boxes inside outlined boxes */
 .stepper,.reps{background:#100e1c;border-color:transparent}
 </style>
