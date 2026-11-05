@@ -27,7 +27,7 @@ extension UIColor {
     /// Matches the page's --bg token in light and dark mode, so there is no flash behind the page.
     static let liftLogBackground = UIColor { traits in
         traits.userInterfaceStyle == .dark
-            ? UIColor(red: 0x11 / 255, green: 0x14 / 255, blue: 0x18 / 255, alpha: 1)
+            ? UIColor.black
             : UIColor(red: 0xEE / 255, green: 0xF0 / 255, blue: 0xF3 / 255, alpha: 1)
     }
 }
