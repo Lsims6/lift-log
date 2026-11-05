@@ -21,8 +21,7 @@ input,select{font-size:16px}
 :root{
   --bg:#eef0f3; --surface:#ffffff; --ink:#15181d; --muted:#5d6570; --line:#d6dae0;
   --accent:#1f56c9; --accent-ink:#ffffff; --done:#1e7a4a; --warn:#a15c00;
-  --sun:#ff8a3d;
-  --display:"Barlow Condensed","Arial Narrow",Impact,sans-serif;
+    --display:"Barlow Condensed","Arial Narrow",Impact,sans-serif;
   --body:"Archivo",-apple-system,"Segoe UI",Roboto,sans-serif;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
@@ -401,9 +400,9 @@ header{position:sticky;top:0;z-index:20;
 .updbar[hidden]{display:none}
 .updbar button{font:inherit;border:0;border-radius:999px;padding:7px 14px;background:var(--accent);color:var(--accent-ink);cursor:pointer}
 /* AMOLED: the header sits on solid black, with a thin line under it instead of frosted glass */
-header{background:#000;-webkit-backdrop-filter:none;backdrop-filter:none;box-shadow:none;border-bottom:2px solid var(--sun)}
+header{background:#000;-webkit-backdrop-filter:none;backdrop-filter:none;box-shadow:none;border-bottom:2px solid var(--warn)}
 .tabs button[aria-pressed="true"]:not(.back),.daybar button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);box-shadow:none}
-.seg button[aria-pressed="true"],.mpick button[aria-pressed="true"],.chips button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.mpick button[aria-pressed="true"],.chips button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 /* The save status only appears if saving fails. Tabs and the settings button share one row. */
 header{flex-wrap:wrap;align-items:center}
 header>div:first-child{order:2;flex-basis:100%}
@@ -424,7 +423,14 @@ header>div:first-child:not(:has(.status.off)){display:none}
 .slimbtn b{font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .slimbtn small{font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
 .slimbtn .smeta{flex:none;font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
-.card.isopen{border-color:var(--accent)}
+.card.isopen{border-color:var(--warn)}
+.card.isopen .cat{color:var(--warn)}
+.dayhead h2{color:var(--warn)}
+#dayBar .fill{background:var(--warn)}
+.ftabs{border-color:var(--warn)}
+.ftabs button+button{border-left-color:var(--warn)}
+.ftabs button[aria-selected="true"]{background:var(--warn);color:#1a0410}
+.seg button[aria-pressed="true"]{background:var(--warn);color:#1a0410}
 .card.isopen.complete{border-color:var(--done)}
 .tright{display:flex;align-items:center;gap:8px;flex:none}
 .coll{font:inherit;font-size:16px;line-height:1;color:var(--muted);background:none;border:0;width:32px;height:32px;margin:-4px -6px 0 0;cursor:pointer}
