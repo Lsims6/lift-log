@@ -33,7 +33,7 @@ Your workouts, their exercises and which day each one falls on are all editable:
 
 ## Workout extras
 
-- **Lunch-break cardio:** a card above the workout every day (Walk by default, or any cardio machine). It stays editable after the workout is locked, counts toward cardio minutes, and a lunch-only day isn't counted as a gym day.
+- **Lunch-break cardio:** a card below the workout every day (Walk by default, or any cardio machine). It stays editable after the workout is locked, counts toward cardio minutes, and a lunch-only day isn't counted as a gym day.
 - **Notes:** every exercise and cardio card has two. The *permanent note* is one per exercise, for seat settings and cues: it shows every time that exercise comes up, on any day and in any plan, as small locked text, and tapping *Edit* opens that same note. Built-in exercises start with where to feel the lift and one or two form points; a note you already had stays on top, and text you edit or clear doesn't come back. The *note for today* belongs to that date; the next time, the card shows it as *Last note*. On cardio, the before, after and lunch cards each keep their own daily note.
 - **Skip today:** each exercise has a *Skip today* button that hides it for that date only. The plan doesn't change; tap *Undo* to bring it back. If sets were already logged, it asks for a second tap before clearing them.
 

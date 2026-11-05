@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
-<meta name="liftlog-min-native" content="2">
+<meta name="liftlog-min-native" content="3">
 <title>Lift Log</title>
 <script>if(window.__LIFTLOG_TABBAR__)document.documentElement.classList.add("native-tabs")   // the app shows Apple's tab bar instead of the page's</script>
 <style>
@@ -414,6 +414,29 @@ header>div:first-child:not(:has(.status.off)){display:none}
 .calbar .band{background:var(--warn)}
 .calbar .fill.up{background:var(--warn)} .calbar .fill.down{background:var(--done)}
 .mbar .val.up b,.calsub.up{color:var(--warn)} .mbar .val.down b,.calsub.down{color:var(--done)}
+/* Workout tab: one card open, the rest slim rows */
+.card{scroll-margin-top:calc(env(safe-area-inset-top,0px) + 84px)}
+.card.slim{padding:0}
+.slimbtn{font:inherit;color:var(--ink);background:none;border:0;width:100%;display:flex;align-items:center;gap:10px;padding:11px 12px;text-align:left;cursor:pointer;min-height:56px}
+.slimbtn .tick{flex:none;width:22px;height:22px;border-radius:50%;border:1.5px solid var(--line);display:grid;place-items:center;font-size:13px;font-weight:700;color:#000}
+.card.slim.complete .tick{background:var(--done);border-color:var(--done)}
+.slimbtn .stxt{flex:1;min-width:0;display:flex;flex-direction:column}
+.slimbtn b{font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.slimbtn small{font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
+.slimbtn .smeta{flex:none;font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.card.isopen{border-color:var(--accent)}
+.card.isopen.complete{border-color:var(--done)}
+.tright{display:flex;align-items:center;gap:8px;flex:none}
+.coll{font:inherit;font-size:16px;line-height:1;color:var(--muted);background:none;border:0;width:32px;height:32px;margin:-4px -6px 0 0;cursor:pointer}
+.goal{border:0;padding:0}
+.goal.up{border:0}
+#dayBar{height:6px;margin-top:-6px}
+.datebar input{padding:6px 10px}
+.datebar .btn{padding:6px 12px}
+.bw{padding:8px 12px}
+.bw:not(.has):not(.open) .lbl span{display:none}
+.bw .btn{padding:6px 12px}
+.plansel{margin-top:-4px}
 /* controls inside a card get a faint fill, so it isn't outlined boxes inside outlined boxes */
 .stepper,.reps{background:#100e1c;border-color:transparent}
 </style>
@@ -436,13 +459,14 @@ header>div:first-child:not(:has(.status.off)){display:none}
     </div>
     <div class="daybar" id="daybar" role="group" aria-label="Workout day"></div>
     <div class="bw" id="bwRow"></div>
-    <div id="lunchRow"></div>
     <div class="dayhead"><h2 id="dayTitle"></h2><small id="dayCount"></small></div>
+    <div class="calbar" id="dayBar" hidden><div class="fill"></div></div>
     <label class="plansel"><span>Workout</span><select id="planSel" aria-label="Workout for this day"></select></label>
     <div id="lockBanner" class="banner" hidden></div>
     <div class="list" id="list"></div>
     <div id="finishBar" class="finish"></div>
-    <p class="note" id="logNote">Each set has its own weight and reps, so log a lighter warm-up and your top sets separately. Sets start at what you did last time. Tap ✓ when a set is done. Log your warm-up and cool-down cardio in the cards above and below the lifts. Everything saves on your phone as you go.</p>
+    <div class="cat" style="margin:6px 0 -6px">Also today</div>
+    <div id="lunchRow"></div>
   </section>
 
   <section id="foodView" class="wrap" style="gap:12px" hidden>
@@ -925,12 +949,40 @@ function cardioFor(slot){
   return L?{ex:L.c.ex,min:L.c.min,lvl:L.c.lvl??null,fl:null,_draft:true}:{...CDEF[slot],lvl:null,fl:null,_draft:true}}
 function fmtCardio(c,withName=true){
   return (withName?(NAMES[c.ex]||c.ex)+" · ":"")+c.min+" min"+(c.lvl?" · L"+c.lvl:"")+(c.fl?" · "+c.fl+" floors":"")}
+/* ---- one card open at a time ----
+   The Workout tab runs in gym order: warm-up, lifts, cool-down. Only the card you're on is open; the others are one-line
+   rows you can tap. Finishing a card moves you to the next unfinished one. Tapping a row picks a card by hand. */
+let openK=null, openDate=null;   // a card picked by hand, for this date; "none" closes them all
+const itemKey=i=>"s-"+i.slot;
+function autoKey(){
+  const act=dayItems().filter(i=>!isSkipped(i));
+  const started=act.some(i=>hasWork(cur.entries[i.id]));
+  if(!started&&!cDone(cur.cardio&&cur.cardio.pre))return "c-pre";
+  const next=act.find(i=>!isComplete(i,cur.entries[i.id]));
+  if(next)return itemKey(next);
+  return cDone(cur.cardio&&cur.cardio.post)?null:"c-post"}
+function activeKey(){return openK&&openDate===date?openK:autoKey()}
+function showOpen(){requestAnimationFrame(()=>{const c=document.querySelector(".card.isopen");if(c)c.scrollIntoView({behavior:"smooth",block:"start"})})}
+function nextCard(){openK=null;render();showOpen()}
+function slimHTML(key,attrs,cls,label,sub,meta,aria){
+  return `<div class="card slim ${cls}" ${attrs}><button class="slimbtn" data-open="${key}" aria-expanded="false" aria-label="${aria}">
+    <span class="tick" aria-hidden="true">${cls==="complete"?"✓":""}</span><span class="stxt"><b>${label}</b><small>${sub}</small></span><span class="smeta">${meta}</span></button></div>`}
+function slimItem(item){
+  const e=cur.entries[item.id], key=itemKey(item), done=isComplete(item,e);
+  if(item.cardio)return slimHTML(key,`data-id="${item.id}" data-slot="${item.slot}"`,done?"complete":"",item.name,done?`${e.min} min`:"Cardio","",`Open ${item.name}`);
+  const sd=setsDone(e), adv=advice(item,lastFor(item.id,date)), total=(e&&e.sets?e.sets.length:item.sets);
+  const sub=sd.length?fmtSets(sd):adv.first?`${adv.lo}–${adv.hi} reps`:`Goal ${fmtW(adv.w)}${adv.w?" lb":""} × ${adv.reps}`;
+  return slimHTML(key,`data-id="${item.id}" data-slot="${item.slot}"`,done?"complete":"",item.name,sub,done?"":sd.length?`${sd.length}/${total}`:`${total} set${total===1?"":"s"}`,`Open ${item.name}`)}
+function closeBtn(name){return `<button class="coll" data-open="none" aria-label="Close ${name}">⌃</button>`}
+$("logView").addEventListener("click",ev=>{const b=ev.target.closest("button[data-open]");if(!b)return;
+  openK=b.dataset.open;openDate=date;render();if(openK!=="none")showOpen()});
 function cardioHTML(slot){
   const c=cardioFor(slot), on=!c._draft&&cDone(c), L=lastCardio(slot,date), lbl=CLABEL[slot];
+  if(activeKey()!=="c-"+slot)return slimHTML("c-"+slot,`data-cslot="${slot}"`,on?"complete":"",`Cardio · ${lbl}`,on?fmtCardio(c,true):(NAMES[c.ex]||c.ex)+" · optional","",`Open cardio ${lbl}`);
   const last=L?`Last: ${fmtCardio(L.c,L.c.ex!==c.ex)} · ${nice(L.date,{month:"short",day:"numeric"})}`:({pre:"Warm-up",post:"Cool-down",lunch:"On your lunch break"})[slot]+" · optional";
   const opts=(BYGROUP.cardio||[]).map(o=>`<option value="${o.id}"${o.id===c.ex?" selected":""}>${o.name}</option>`).join("");
-  return `<div class="card cardio ${on?"complete":""}" data-cslot="${slot}">
-    <div class="top"><div><div class="cat">Cardio · ${lbl}</div><label class="exwrap"><select class="exsel" data-c="ex" aria-label="Cardio ${lbl}: machine">${opts}</select></label><div class="last">${last}</div></div><div class="target">MIN</div></div>
+  return `<div class="card cardio isopen ${on?"complete":""}" data-cslot="${slot}">
+    <div class="top"><div><div class="cat">Cardio · ${lbl}</div><label class="exwrap"><select class="exsel" data-c="ex" aria-label="Cardio ${lbl}: machine">${opts}</select></label><div class="last">${last}</div></div>${closeBtn("cardio "+lbl)}</div>
     <div class="row"><div class="stepper"><button data-c="min-" aria-label="Less cardio time ${lbl}">−</button><input data-c="min" inputmode="numeric" aria-label="Cardio minutes ${lbl}" value="${c.min??""}"><button data-c="min+" aria-label="More cardio time ${lbl}">+</button></div>
       <span class="unit">minutes</span>
       <button class="set ${on?"on":""}" data-c="done" aria-pressed="${on}" aria-label="Log cardio ${lbl}" style="margin-left:auto">${on?"Done ✓":"Log it"}</button></div>
@@ -1012,24 +1064,26 @@ function render(){
     const wk=s&&s.day?s.day:(ds===date&&cur.day?cur.day:plan.schedule[d]), rest=!(wk&&PLAN[wk]);
     return `<button data-date="${ds}" aria-pressed="${ds===date}" aria-label="${nice(ds,{weekday:"long",month:"short",day:"numeric"})}${rest?", rest day":""}${s&&s.locked?", finished":""}"><b>${WDNAME[d]}</b><span>${parse(ds).getDate()}${mark}</span>${rest?"<i>Rest</i>":""}</button>`}).join("");
   renderBW();
-  $("lunchRow").innerHTML=cardioHTML("lunch");
   renderPlanSel();
+  $("lunchRow").innerHTML=cardioHTML("lunch");
   const W=PLAN[cur.day];
   $("dayTitle").textContent=W?W.label:(cur.day&&cur.label?cur.label:"Rest day");
   const items=dayItems(), act=items.filter(i=>!isSkipped(i));
   const doneN=act.filter(i=>isComplete(i,cur.entries[i.id])).length, skipN=items.length-act.length;
   $("dayCount").textContent=`${nice(date)} · ${doneN}/${act.length} done${skipN?` · ${skipN} skipped`:""}`;
-  $("logNote").hidden=!!cur.locked;
+  $("dayBar").hidden=!W||!!cur.locked||!act.length;
+  $("dayBar").firstElementChild.style.width=(act.length?doneN/act.length*100:0).toFixed(1)+"%";
   if(cur.locked){renderLocked(items);return}
   $("lockBanner").hidden=true;
   if(!W){   // rest day (or a workout you've since removed from your plan)
     $("dayCount").textContent=nice(date);
     $("list").innerHTML=`<div class="empty">${DAYS.length?"Rest day. Training anyway? Pick a workout above.":"Your plan has no workouts yet. Add one in Settings › Workout plan."}</div>`;
     $("finishBar").innerHTML="";return}
-  $("list").innerHTML=cardioHTML("pre")+items.map(i=>isSkipped(i)?skipHTML(i):cardHTML(i,new Set(items.filter(x=>x.slot!==i.slot).map(x=>x.id)))).join("")+cardioHTML("post");
+  const openNow=activeKey();
+  $("list").innerHTML=cardioHTML("pre")+items.map(i=>isSkipped(i)?skipHTML(i):itemKey(i)===openNow?cardHTML(i,new Set(items.filter(x=>x.slot!==i.slot).map(x=>x.id))):slimItem(i)).join("")+cardioHTML("post");
   const any=Object.values(cur.entries).some(e=>e.min>0||setsDone(e).length)||gymCardio(cur).length>0;
   $("finishBar").innerHTML=any
-    ?`<button class="btn" id="finishBtn">Finish workout &amp; lock</button><span class="note">Locks today's entries so they can't be changed by accident. You can unlock later.</span>`
+    ?`<button class="btn" id="finishBtn">Finish workout &amp; lock</button>`
     :"";
 }
 
@@ -1128,8 +1182,8 @@ function cardHTML(item,taken=new Set()){
   const hint=item.hint?` · ${item.hint}`:"";
   const comp=!e._draft&&isComplete(item,e);
   if(item.cardio){
-    return `<div class="card ${comp?"complete":""}" data-id="${item.id}" data-slot="${item.slot}">
-      <div class="top"><div>${exPick(item,taken)}<div class="last">${lastTxt}</div></div><div class="target">MIN</div></div>
+    return `<div class="card isopen ${comp?"complete":""}" data-id="${item.id}" data-slot="${item.slot}">
+      <div class="top"><div>${exPick(item,taken)}<div class="last">${lastTxt}</div></div>${closeBtn(item.name)}</div>
       <div class="row"><div class="stepper"><button data-act="min-" aria-label="Less time">−</button><input data-act="min" inputmode="numeric" aria-label="${item.name} minutes" value="${e.min??""}"><button data-act="min+" aria-label="More time">+</button></div>
       <span class="unit">minutes</span>
       <button class="set ${comp?"on":""}" data-act="cardiodone" style="margin-left:auto">${comp?"Done ✓":"Log it"}</button></div>
@@ -1144,14 +1198,14 @@ function cardHTML(item,taken=new Set()){
       <input class="reps" data-act="r" inputmode="numeric" aria-label="Set ${k+1} reps" value="${s.reps??""}">
       <button class="chk" data-act="set" aria-pressed="${on}" aria-label="Set ${k+1} done"></button>
     </div>`}).join("");
-  return `<div class="card ${comp?"complete":""}" data-id="${item.id}" data-slot="${item.slot}">
-    <div class="top"><div>${exPick(item,taken)}<div class="last">${lastTxt}${hint}</div>${gearOpen===item.id?"":gearHTML(item)}</div><div class="target">${adv.lo}–${adv.hi}<small> reps</small></div></div>
-    ${gearOpen===item.id?gearHTML(item):""}
+  return `<div class="card isopen ${comp?"complete":""}" data-id="${item.id}" data-slot="${item.slot}">
+    <div class="top"><div>${exPick(item,taken)}<div class="last">${lastTxt}${hint}</div></div><div class="tright"><div class="target">${adv.lo}–${adv.hi}<small> reps</small></div>${closeBtn(item.name)}</div></div>
     ${goalHTML(item,e,adv)}
     <div class="shead"><span>Set</span><span>Weight (lb)</span><span>Reps</span><span>Done</span></div>
     <div class="srows">${rows}</div>
-    ${noteHTML(item)}
     <div class="row"><button class="set addset" data-act="addset">+ Add set</button>${e.sets.length>1?`<button class="set addset" data-act="rmset">− Remove last</button>`:""}${skipBtn(item,e)}</div>
+    ${gearHTML(item)}
+    ${noteHTML(item)}
   </div>`;
 }
 
@@ -1176,7 +1230,7 @@ $("list").addEventListener("click",ev=>{
     if(act==="gt"){g.t=b.dataset.v;if(!(g.step>0)||!GEAR[g.t].steps.includes(g.step))g.step=GEAR[g.t].steps.includes(stepOf(item))?stepOf(item):5}
     else g.step=+b.dataset.v;
     gear[item.id]=g;persist();render();return}
-  const e=entryFor(item);
+  const e=entryFor(item), wasDone=!e._draft&&isComplete(item,e);
   const step=stepOf(item), row=b.closest(".srow"), k=row?+row.dataset.k:-1, s=k>=0?e.sets[k]:null;
   if(act==="w-")setW(e,k,Math.max(0,(+s.w||0)-step));
   else if(act==="w+")setW(e,k,(+s.w||0)+step);
@@ -1186,7 +1240,8 @@ $("list").addEventListener("click",ev=>{
   else if(act==="min-")e.min=Math.max(0,(+e.min||0)-5);
   else if(act==="min+")e.min=(+e.min||0)+5;
   else if(act==="cardiodone"){ if(!(e.min>0))e.min=20; }
-  commit(item,e); render();
+  commit(item,e);
+  if(!wasDone&&(act==="set"||act==="cardiodone")&&isComplete(item,e))nextCard();else render();
 });
 $("list").addEventListener("change",ev=>{
   if(cur.locked||ev.target.closest("[data-cslot]"))return;
@@ -1217,7 +1272,8 @@ function cardioClick(ev){
   else if(a==="lvl-")c.lvl=Math.max(1,(+c.lvl||1)-1);
   else if(a==="lvl+")c.lvl=(+c.lvl||0)+1;
   else if(a==="done"){if(!(c.min>0))c.min=CDEF[slot].min;c.done=!(c.done&&!c._draft)}
-  commitC(slot,c); render();
+  commitC(slot,c);
+  if(a==="done"&&c.done)nextCard();else render();
 }
 function cardioChange(ev){
   const card=ev.target.closest("[data-cslot]"), f=ev.target.closest("[data-c]"); if(!card||!f||cardioLocked(card))return;
@@ -1236,7 +1292,7 @@ function setW(e,k,v){const old=e.sets[k].w;e.sets[k].w=v;
 function setR(e,k,v){const old=e.sets[k].reps;e.sets[k].reps=v;
   for(let i=k+1;i<e.sets.length;i++){const s=e.sets[i];if(s.done||s.reps!==old)break;s.reps=v}}
 $("daybar").addEventListener("click",ev=>{const b=ev.target.closest("button[data-date]");if(!b||b.dataset.date===date)return;
-  flush();date=b.dataset.date;unlockArmed=false;loadCur();render();});
+  flush();date=b.dataset.date;unlockArmed=false;openK=null;loadCur();render();});
 function renderPlanSel(){
   const opts=DAYS.map(id=>{const ds=wdsFor(id).map(d=>WDNAME[d]).join(", ");return `<option value="${id}">${esc(PLAN[id].label)}${ds?` (${ds})`:""}</option>`});
   if(cur.day&&!PLAN[cur.day])opts.push(`<option value="${cur.day}">${esc(cur.label||"Removed workout")}</option>`);

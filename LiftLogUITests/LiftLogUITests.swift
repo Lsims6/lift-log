@@ -82,7 +82,7 @@ final class LiftLogUITests: XCTestCase {
         // Log the warm-up cardio card above the lifts (it starts on the stair climber).
         let warmup = control(web, "Log cardio before workout")
         XCTAssertTrue(warmup.waitForExistence(timeout: 15), "The before-workout cardio card wasn't shown")
-        XCTAssertTrue(control(web, "Log cardio lunch break").exists, "The lunch-break cardio card wasn't shown")
+        XCTAssertTrue(control(web, "Open cardio lunch break").exists, "The lunch-break cardio card wasn't shown")
         shot(app, "1-monday")
         XCTAssertTrue(scrollTo(warmup, in: app), "The before-workout cardio card wasn't reachable")
         warmup.tap()
