@@ -482,14 +482,14 @@ header>div:first-child:not(:has(.status.off)){display:none}
     </div>
     <div class="daybar" id="daybar" role="group" aria-label="Workout day"></div>
     <div class="bw" id="bwRow"></div>
+    <div id="lunchRow"></div>
     <div class="dayhead"><h2 id="dayTitle"></h2><small id="dayCount"></small></div>
     <div class="calbar" id="dayBar" hidden><div class="fill"></div></div>
     <label class="plansel"><span>Workout</span><select id="planSel" aria-label="Workout for this day"></select></label>
     <div id="lockBanner" class="banner" hidden></div>
     <div class="list" id="list"></div>
     <div id="finishBar" class="finish"></div>
-    <div class="cat" style="margin:6px 0 -6px">Also today</div>
-    <div id="lunchRow"></div>
+    <div id="addRow"></div>
   </section>
 
   <section id="foodView" class="wrap" style="gap:12px" hidden>
@@ -1097,13 +1097,14 @@ function render(){
   $("dayCount").textContent=`${nice(date)} · ${doneN}/${act.length} done${skipN?` · ${skipN} skipped`:""}`;
   $("dayBar").hidden=!W||!!cur.locked||!act.length;
   $("dayBar").firstElementChild.style.width=(act.length?doneN/act.length*100:0).toFixed(1)+"%";
+  $("addRow").innerHTML=cur.locked?"":addPicker();   // always the last thing on the page
   if(cur.locked){renderLocked(items);return}
   $("lockBanner").hidden=true;
   if(!W&&!items.length){   // rest day (or a workout you've since removed from your plan)
     $("dayCount").textContent=nice(date);
-    $("list").innerHTML=`<div class="empty">${DAYS.length?"Rest day. Training anyway? Pick a workout above, or add to just this day below.":"Your plan has no workouts yet. Add one in Settings › Workout plan."}</div>`+addPicker();
+    $("list").innerHTML=`<div class="empty">${DAYS.length?"Rest day. Training anyway? Pick a workout above, or add to just this day below.":"Your plan has no workouts yet. Add one in Settings › Workout plan."}</div>`;
     $("finishBar").innerHTML="";return}
-  $("list").innerHTML=cardioHTML("pre")+items.map(i=>isSkipped(i)?skipHTML(i):closedNow().has(itemKey(i))?slimItem(i):cardHTML(i,new Set(items.filter(x=>x.slot!==i.slot).map(x=>x.id)))).join("")+addPicker()+cardioHTML("post");
+  $("list").innerHTML=cardioHTML("pre")+items.map(i=>isSkipped(i)?skipHTML(i):closedNow().has(itemKey(i))?slimItem(i):cardHTML(i,new Set(items.filter(x=>x.slot!==i.slot).map(x=>x.id)))).join("")+cardioHTML("post");
   const any=Object.values(cur.entries).some(e=>e.min>0||setsDone(e).length)||gymCardio(cur).length>0;
   $("finishBar").innerHTML=any
     ?`<button class="btn" id="finishBtn">Finish workout &amp; lock</button>`
@@ -1203,7 +1204,7 @@ function addPicker(){const have=new Set(dayItems().map(i=>i.id));
   const wk=Object.keys(PLAN).filter(id=>id!==cur.day&&PLAN[id].items.some(o=>!have.has(o.id))).map(id=>`<option value="w:${id}">${esc(PLAN[id].label)}</option>`).join("");
   const groups=Object.keys(BYGROUP).map(g=>{const xs=BYGROUP[g].filter(x=>!have.has(x.id));return xs.length?`<optgroup label="${esc(GLABEL[g]||"Other")}">${xs.map(x=>`<option value="${x.id}">${esc(x.name)}</option>`).join("")}</optgroup>`:""}).join("");
   return `<select class="addex" id="addEx" aria-label="Add to this day"><option value="">+ Add to this day</option>${wk?`<optgroup label="Whole workouts">${wk}</optgroup>`:""}${groups}</select>`}
-$("list").addEventListener("change",ev=>{if(ev.target.id!=="addEx"||!ev.target.value)return;const v=ev.target.value;
+$("addRow").addEventListener("change",ev=>{if(ev.target.id!=="addEx"||!ev.target.value)return;const v=ev.target.value;
   const add=v.startsWith("w:")?PLAN[v.slice(2)].items.map(o=>o.id):[v];
   cur.extras=[...new Set([...(cur.extras||[]),...add])];markDirty();render()});
 function cardHTML(item,taken=new Set()){
