@@ -4,7 +4,7 @@ A workout and calorie tracker for iPhone. Everything is saved in a file on the p
 
 ## What's here
 
-- `LiftLog/Web/index.html`: the whole app screen (workouts, per-set logging, progressive overload, finish & lock, exercise swaps within each muscle group, cardio before and after every workout (stair climber by default, with minutes, level and floors), optional body-weight tracking, a Food tab for calorie tracking, progress charts, history, CSV import/export). Open it in any browser to try it out; there it saves to the browser instead of the phone.
+- `LiftLog/Web/index.html`: the whole app screen (workouts, exercises added to a single day, per-set logging, progressive overload, finish & lock, exercise swaps within each muscle group, cardio before and after every workout (stair climber by default, with minutes, level and floors), optional body-weight tracking, a Food tab for calorie tracking, progress charts, history, CSV import/export). Open it in any browser to try it out; there it saves to the browser instead of the phone.
 - `LiftLog/Web/cues.js`: the starting mind-muscle and form cues for each built-in exercise's permanent note.
 - `LiftLog/LiftLogApp.swift`: the small iPhone shell that shows the page and saves the log to `Documents/lift-log.json` (with a backup copy).
 - `LiftLog/AppShell.swift`: Apple's tab bar (Liquid Glass on iOS 26) for Workout | Food, around the page.
@@ -41,7 +41,7 @@ Your workouts, their exercises and which day each one falls on are all editable:
 
 The gear at the top right opens **Settings**: workout plan, calorie target (TDEE calculator), macro targets, weight goal (shown on weigh-ins and the Progress chart, with a rough time to reach it), food estimate status, CSV export/import, privacy policy, erase all data, and the app version.
 
-The bar along the bottom switches between **Workout** and **Food**. The tabs up top switch views inside each one: Workout has Today, Progress and History; Food has Today and History (daily totals vs your target, a 14-day chart, and every day's meals). The app reopens in the section you used last.
+The bar along the bottom switches between **Workout** and **Food**. The tabs up top switch views inside each one: Workout has Today, Progress (with weight, reps and volume charts for every exercise) and History; Food has Today and History (daily totals vs your target, a 14-day chart, and every day's meals). The app reopens in the section you used last.
 
 ## Food & calories
 

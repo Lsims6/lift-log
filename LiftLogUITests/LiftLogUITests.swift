@@ -77,12 +77,18 @@ final class LiftLogUITests: XCTestCase {
         // Go to Monday (legs), whose first exercise sits near the top of the screen.
         let monday = mondayButton(web)
         XCTAssertTrue(monday.waitForExistence(timeout: 30), "The week strip didn't load")
-        monday.tap()
+        // The page can still be settling after setup, so check the day really changed and retry the tap if not.
+        let mondayHeading = web.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH 'Mon, '")).firstMatch
+        for _ in 0..<4 where !mondayHeading.exists {
+            monday.tap()
+            _ = mondayHeading.waitForExistence(timeout: 3)
+        }
+        XCTAssertTrue(mondayHeading.exists, "Tapping Monday didn't open Monday")
 
         // Log the warm-up cardio card above the lifts (it starts on the stair climber).
         let warmup = control(web, "Log cardio before workout")
         XCTAssertTrue(warmup.waitForExistence(timeout: 15), "The before-workout cardio card wasn't shown")
-        XCTAssertTrue(control(web, "Open cardio lunch break").exists, "The lunch-break cardio card wasn't shown")
+        XCTAssertTrue(control(web, "Log cardio lunch break").exists, "The lunch-break cardio card wasn't shown")
         shot(app, "1-monday")
         XCTAssertTrue(scrollTo(warmup, in: app), "The before-workout cardio card wasn't reachable")
         warmup.tap()
