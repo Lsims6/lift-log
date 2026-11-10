@@ -219,6 +219,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .bwhead{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
 .chart .goal{stroke:var(--done);stroke-width:1.5;stroke-dasharray:6 4}
 .chart .goaltx{fill:var(--done);font-weight:600}
+.chart .ln.trend{stroke:var(--warn);stroke-width:2.5}
 .chart .ln.avg{stroke:var(--ink);stroke-width:1.5;opacity:.55;stroke-dasharray:4 3}
 .cat{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;margin-bottom:3px}
 .exwrap{position:relative;display:inline-block;max-width:100%}
@@ -552,7 +553,7 @@ header>div:first-child:not(:has(.status.off)){display:none}
       <div class="tiles" id="fTiles"></div>
       <div class="bwhead"><h2 class="sec" style="margin:0">Trends</h2>
         <div class="chips" id="fsRange" role="group" aria-label="Food chart range">
-          <button data-r="30" aria-pressed="true">30 days</button><button data-r="90" aria-pressed="false">90 days</button><button data-r="0" aria-pressed="false">All</button>
+          <button data-r="7" aria-pressed="false">7 days</button><button data-r="30" aria-pressed="true">30 days</button><button data-r="90" aria-pressed="false">90 days</button><button data-r="0" aria-pressed="false">All</button>
         </div></div>
       <div class="panel">
         <h3 id="calTitle">Calories</h3>
@@ -1696,7 +1697,7 @@ function lineChart(el,pts,unit,overlay,goal){
   hover(el,pts,xs,ys);
 }
 function barChart(el,pts,o={}){
-  const max=Math.max(...pts.map(p=>p.v),1,o.band?o.band[1]:0),{lo,hi,s}=niceRange(0,max);
+  const max=Math.max(...pts.map(p=>p.v),1,o.band?o.band[1]:0,...(o.line||[]).filter(v=>v!=null)),{lo,hi,s}=niceRange(0,max);
   const y=v=>PT+(1-(v-0)/(hi-0))*(H-PT-PB),base=H-PB;
   const bw=(W-PL-PR)/pts.length,barW=bw>14?bw-8:Math.max(1.5,bw*.65), every=o.every||2;
   const xs=pts.map((p,i)=>PL+i*bw+bw/2);
@@ -1705,6 +1706,7 @@ function barChart(el,pts,o={}){
     return `<path class="bar${p.now?" now":""}" d="M${x0},${base}V${top+r}Q${x0},${top} ${x0+r},${top}H${x1-r}Q${x1},${top} ${x1},${top+r}V${base}Z"/>`};
   el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${o.label||"Weekly volume, last 8 weeks"}">${o.band?`<rect x="${PL}" width="${W-PL-PR}" y="${y(Math.min(o.band[1],hi))}" height="${Math.max(0,y(Math.min(o.band[0],hi))-y(Math.min(o.band[1],hi)))}" fill="var(--done)" opacity=".15"/>`:""}${yAxis(0,hi,s,y)}
     ${pts.map(rect).join("")}
+    ${o.line?`<path class="ln trend" d="${o.line.map((v,i)=>v==null?"":`${xs[i].toFixed(1)},${y(v).toFixed(1)}`).reduce((a,c,i,arr)=>c?a+(a&&arr[i-1]?"L":"M")+c:a,"")}"/>`:""}
     ${pts.map((p,i)=>(pts.length-1-i)%every===0?`<text class="axis" x="${xs[i]}" y="${H-6}" text-anchor="middle">${p.now?(o.now||"This wk"):p.label}</text>`:"").join("")}</svg>`;
   hover(el,pts,xs,pts.map(p=>Math.min(y(p.v),base-4)));
 }
@@ -1970,7 +1972,7 @@ function renderFoodList(){
       <div class="acts"><button data-fe="edit">Edit</button><button data-fe="del" class="del">${fDelArmed===e.id?"Tap again to delete":"Delete"}</button></div></div>`}).join("")}).join("");
 }
 /* ---- food progress ----
-   Tiles always cover the last 7 days. The range chips (30 days, 90 days, All) set everything below them.
+   Tiles always cover the last 7 days. The range chips (7 days, 30 days, 90 days, All) set everything below them.
    30 days or less is one bar a day; longer ranges are a bar a week (or a month past 40 weeks), each the average of the days
    with food logged in it, so a skipped log never looks like a zero-calorie day. Carbs and fat only count days that have them,
    since food logged before 3.01 has no carbs or fat. */
@@ -2024,11 +2026,15 @@ function renderFoodStats(){
 
   $("fsRange").querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",+b.dataset.r===fsDays));
   const {unit,list}=foodBuckets(), has=d=>dayFood(d).length>0, rangeDays=list.flatMap(b=>b.days).filter(has);
-  $("calTitle").innerHTML=`Calories <span class="note">(${unit==="day"?"per day":unit==="week"?"weekly average":"monthly average"})</span>`;
+  $("calTitle").innerHTML=`Calories <span class="note">(${unit==="day"?"per day · pink line is the 7-day average":unit==="week"?"weekly average":"monthly average"})</span>`;
   const pts=list.map(b=>{const v=bAvg(b,dayCal,has);return {label:bLabel(b,unit),v:v||0,now:b.now,
     tip:`${bLabel(b,unit,true)}: ${v==null?"nothing logged":n0(v)+" cal"+(unit==="day"?"":" avg")}`}});
-  barChart($("calChart"),pts,{label:"Calories over time",now:unit==="day"?"Today":unit==="week"?"This wk":"This mo",band:[lo,hi],
-    every:Math.max(2,Math.ceil(pts.length/6))});
+  // 7-day trend: each day's average over it and the 6 days before (days with food only), so it looks back past the range's start
+  const roll=d=>{const ds=[];for(let i=0;i<7;i++){const x=shift(d,-i);if(has(x))ds.push(x)}return ds.length?ds.reduce((a,x)=>a+dayCal(x),0)/ds.length:null};
+  const line=unit==="day"?list.map(b=>roll(b.key)):null;
+  if(line)pts.forEach((p,i)=>{if(line[i]!=null)p.tip+=` · 7-day avg ${n0(line[i])}`});
+  barChart($("calChart"),pts,{label:"Calories over time",now:unit==="day"?"Today":unit==="week"?"This wk":"This mo",band:[lo,hi],line,
+    every:Math.max(unit==="day"&&pts.length<=7?1:2,Math.ceil(pts.length/6))});
   const rAvg=rangeDays.length?rangeDays.reduce((a,d)=>a+dayCal(d),0)/rangeDays.length:0;
   $("calFacts").innerHTML=fact(rangeDays.length?n0(rAvg):"—","avg cal")+fact(`${rangeDays.filter(inRange).length}/${rangeDays.length}`,"days in range")+fact(String(rangeDays.length),"days logged");
 
