@@ -459,6 +459,9 @@ header>div:first-child:not(:has(.status.off)){display:none}
 .spark .plot{position:relative;height:44px}
 .spark svg{display:block;width:100%;height:44px;overflow:visible}
 .spark path{fill:none;stroke:var(--accent);stroke-width:2;stroke-linejoin:round;stroke-linecap:round;vector-effect:non-scaling-stroke}
+.spark rect.b{fill:var(--accent)}
+.spark rect.b.now{fill:var(--warn)}
+.spark rect.band{fill:var(--done);opacity:.18}
 .spark .pt{position:absolute;display:block;width:8px;height:8px;margin:-4px 0 0 -4px;border-radius:50%;background:var(--warn);pointer-events:none}
 /* controls inside a card get a faint fill, so it isn't outlined boxes inside outlined boxes */
 .stepper,.reps{background:#100e1c;border-color:transparent}
@@ -543,12 +546,36 @@ header>div:first-child:not(:has(.status.off)){display:none}
     <div class="hist" id="foodList"></div>
   </section>
 
-  <section id="foodHistView" class="wrap" style="gap:12px" hidden>
-    <div class="panel">
-      <h3>Last 14 days</h3>
-      <div class="chart" id="calChart"></div>
-      <div class="facts" id="calFacts"></div>
+  <section id="foodStatsView" class="wrap" style="gap:12px" hidden>
+    <div id="fsEmpty" class="empty" hidden>Your food progress shows up here once you log something on the Today tab.</div>
+    <div id="fsBody" class="wrap" style="gap:12px">
+      <div class="tiles" id="fTiles"></div>
+      <div class="bwhead"><h2 class="sec" style="margin:0">Trends</h2>
+        <div class="chips" id="fsRange" role="group" aria-label="Food chart range">
+          <button data-r="30" aria-pressed="true">30 days</button><button data-r="90" aria-pressed="false">90 days</button><button data-r="0" aria-pressed="false">All</button>
+        </div></div>
+      <div class="panel">
+        <h3 id="calTitle">Calories</h3>
+        <div class="chart" id="calChart"></div>
+        <div class="facts" id="calFacts"></div>
+      </div>
+      <div class="panel excard">
+        <div class="exhead"><b>Macros</b><small id="macSub"></small></div>
+        <div class="sparks" id="macSparks"></div>
+        <div class="note">Big number is your average for days with that macro logged; bars are each day's total (or a week's average on longer ranges). The shaded band is your target.</div>
+      </div>
+      <div class="panel">
+        <h3>By meal <span class="note">(average a day)</span></h3>
+        <ul class="plist" id="mealList"></ul>
+      </div>
+      <div class="panel">
+        <h3>Most-logged foods</h3>
+        <ul class="plist" id="topFoods"></ul>
+      </div>
     </div>
+  </section>
+
+  <section id="foodHistView" class="wrap" style="gap:12px" hidden>
     <h2 class="sec" style="margin:0">Food history</h2>
     <div class="hist" id="foodHist"></div>
   </section>
@@ -1451,14 +1478,14 @@ $("hist").addEventListener("click",ev=>{
   const b=ev.target.closest("button[data-open]");if(!b)return;
   date=b.dataset.open;loadCur();showView("log");});
 /* Two sections in the bottom bar, each with its own tabs up top:
-   Workout → Today · Progress · History, Food → Today · History.
+   Workout → Today · Progress · History, Food → Today · Progress · History.
    Each section remembers the tab you were on; the app reopens in the section you used last. */
 const SECTIONS={
   workout:{tabs:[["log","Today"],["stats","Progress"],["hist","History"]]},
-  food:{tabs:[["food","Today"],["fhist","History"]]}};
-const VIEWS={log:"logView",stats:"statsView",hist:"histView",food:"foodView",fhist:"foodHistView",settings:"settingsView",plan:"planView",setup:"setupView"};
+  food:{tabs:[["food","Today"],["fstats","Progress"],["fhist","History"]]}};
+const VIEWS={log:"logView",stats:"statsView",hist:"histView",food:"foodView",fhist:"foodHistView",fstats:"foodStatsView",settings:"settingsView",plan:"planView",setup:"setupView"};
 const OVERLAY=new Set(["settings","plan","setup"]);   // screens outside the two sections
-const SEC_OF=v=>v==="food"||v==="fhist"?"food":"workout";
+const SEC_OF=v=>v==="food"||v==="fhist"||v==="fstats"?"food":"workout";
 let backTo="log";   // where the Settings screen's Back button returns
 let section=ls.get("ll.section","workout"); if(!SECTIONS[section])section="workout";
 const lastTab={workout:"log",food:"food"};
@@ -1487,7 +1514,7 @@ window.__nativeSection=o=>{const sec=o&&o.section;if(!SECTIONS[sec])return;
 window.__updateReady=()=>{$("updBar").hidden=false};
 $("updBtn").onclick=()=>{flush();try{window.webkit.messageHandlers.liftlog.postMessage({type:"reload"})}catch(e){location.reload()}};
 function rerender(){
-  if(view==="settings")renderSettings();else if(view==="plan")renderPlanEditor();else if(view==="setup")renderSetup();else if(view==="hist")renderHist();else if(view==="stats")renderStats();else if(view==="food")renderFood();else if(view==="fhist")renderFoodHist();else render();}
+  if(view==="settings")renderSettings();else if(view==="plan")renderPlanEditor();else if(view==="setup")renderSetup();else if(view==="hist")renderHist();else if(view==="stats")renderStats();else if(view==="food")renderFood();else if(view==="fhist")renderFoodHist();else if(view==="fstats")renderFoodStats();else render();}
 $("subTabs").addEventListener("click",ev=>{const b=ev.target.closest("button[data-view]");if(b&&b.dataset.view!==view)showView(b.dataset.view)});
 $("navbar").addEventListener("click",ev=>{const b=ev.target.closest("button[data-sec]");if(!b)return;
   const sec=b.dataset.sec;
@@ -1502,7 +1529,7 @@ $("eraseBtn").onclick=()=>{
   eraseArmed=false;
   sessions={};customNames={};bodyweight={};food={};myFoods=[];foodTarget={lo:2500,hi:3000};
   foodProfile={sex:null,age:null,ft:null,inch:null,wt:null,act:1.55,auto:false,goal:null};plan=null;savedPlans=[];gear={};exNotes={};cuesAdded={};addCues();
-  try{["ll.data","ll.apikey","ll.section","ll.mChain","ll.bwRange","ll.exRange","gl.statEx"].forEach(k=>localStorage.removeItem(k))}catch(e){}
+  try{["ll.data","ll.apikey","ll.section","ll.mChain","ll.bwRange","ll.exRange","ll.fsRange","gl.statEx"].forEach(k=>localStorage.removeItem(k))}catch(e){}
   rebuildPlan();persist();loadCur();$("eraseBtn").textContent="Erase all data";$("eraseNote").hidden=true;showView("setup");
 };
 function renderMacroSet(){const g=macroGoals(), pc=v=>Math.round(v*100);
@@ -1671,14 +1698,14 @@ function lineChart(el,pts,unit,overlay,goal){
 function barChart(el,pts,o={}){
   const max=Math.max(...pts.map(p=>p.v),1,o.band?o.band[1]:0),{lo,hi,s}=niceRange(0,max);
   const y=v=>PT+(1-(v-0)/(hi-0))*(H-PT-PB),base=H-PB;
-  const bw=(W-PL-PR)/pts.length,barW=Math.max(6,bw-8);
+  const bw=(W-PL-PR)/pts.length,barW=bw>14?bw-8:Math.max(1.5,bw*.65), every=o.every||2;
   const xs=pts.map((p,i)=>PL+i*bw+bw/2);
   const rect=(p,i)=>{const top=y(p.v),h=base-top;if(h<=0)return"";const r=Math.min(4,h);
     const x0=xs[i]-barW/2,x1=xs[i]+barW/2;
     return `<path class="bar${p.now?" now":""}" d="M${x0},${base}V${top+r}Q${x0},${top} ${x0+r},${top}H${x1-r}Q${x1},${top} ${x1},${top+r}V${base}Z"/>`};
   el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${o.label||"Weekly volume, last 8 weeks"}">${o.band?`<rect x="${PL}" width="${W-PL-PR}" y="${y(Math.min(o.band[1],hi))}" height="${Math.max(0,y(Math.min(o.band[0],hi))-y(Math.min(o.band[1],hi)))}" fill="var(--done)" opacity=".15"/>`:""}${yAxis(0,hi,s,y)}
     ${pts.map(rect).join("")}
-    ${pts.map((p,i)=>i%2===1||i===pts.length-1?`<text class="axis" x="${xs[i]}" y="${H-6}" text-anchor="middle">${p.now?(o.now||"This wk"):p.label}</text>`:"").join("")}</svg>`;
+    ${pts.map((p,i)=>(pts.length-1-i)%every===0?`<text class="axis" x="${xs[i]}" y="${H-6}" text-anchor="middle">${p.now?(o.now||"This wk"):p.label}</text>`:"").join("")}</svg>`;
   hover(el,pts,xs,pts.map(p=>Math.min(y(p.v),base-4)));
 }
 
@@ -1942,22 +1969,94 @@ function renderFoodList(){
       ${same?"":`<div class="q">${esc(e.text)}</div><table>${rows}</table>`}
       <div class="acts"><button data-fe="edit">Edit</button><button data-fe="del" class="del">${fDelArmed===e.id?"Tap again to delete":"Delete"}</button></div></div>`}).join("")}).join("");
 }
-function renderCalChart(){
-  const today=todayStr(), ds=[];for(let i=13;i>=0;i--)ds.push(shift(today,-i));
-  const pts=ds.map(d=>({label:nice(d,{month:"numeric",day:"numeric"}),v:dayCal(d),now:d===today,
-    tip:`${nice(d,{weekday:"short",month:"short",day:"numeric"})}: ${dayFood(d).length?n0(dayCal(d))+" cal":"nothing logged"}`}));
-  if(!pts.some(p=>p.v)){$("calChart").innerHTML=`<div class="note">Your daily totals show up here as you log food.</div>`;$("calFacts").innerHTML="";return}
-  barChart($("calChart"),pts,{label:"Calories per day, last 14 days",now:"Today",band:[foodTarget.lo,foodTarget.hi]});
-  // averages use days with food logged, so a skipped log doesn't look like a zero-calorie day
-  const wk=ds.slice(-7).filter(d=>dayFood(d).length), avg=wk.length?wk.reduce((a,d)=>a+dayCal(d),0)/wk.length:0;
-  const inR=wk.filter(d=>{const c=dayCal(d);return c>=foodTarget.lo&&c<=foodTarget.hi}).length;
-  const pAvg=wk.length?wk.reduce((a,d)=>a+dayP(d),0)/wk.length:0;
-  $("calFacts").innerHTML=fact(wk.length?n0(avg):"—","7-day avg cal")+fact(`${inR}/${wk.length}`,"days in range")+fact(wk.length?n0(pAvg)+" g":"—","avg protein");
+/* ---- food progress ----
+   Tiles always cover the last 7 days. The range chips (30 days, 90 days, All) set everything below them.
+   30 days or less is one bar a day; longer ranges are a bar a week (or a month past 40 weeks), each the average of the days
+   with food logged in it, so a skipped log never looks like a zero-calorie day. Carbs and fat only count days that have them,
+   since food logged before 3.01 has no carbs or fat. */
+let fsDays=ls.get("ll.fsRange",30);
+const loggedDays=()=>Object.keys(food).filter(d=>dayFood(d).length).sort();
+function foodBuckets(){
+  const today=todayStr(), first=loggedDays()[0]||today;
+  let from=fsDays?shift(today,-fsDays+1):first; if(from<first&&!fsDays)from=first;
+  const days=[];for(let d=from;d<=today;d=shift(d,1))days.push(d);
+  if(days.length<=31)return {unit:"day",list:days.map(d=>({key:d,days:[d],now:d===today}))};
+  const byWeek=days.length/7<=40, key=d=>byWeek?weekStart(d):d.slice(0,7), m={};
+  days.forEach(d=>{(m[key(d)]=m[key(d)]||[]).push(d)});
+  return {unit:byWeek?"week":"month",list:Object.keys(m).sort().map(k=>({key:k,days:m[k],now:m[k].includes(today)}))};
 }
+// average of v(d) over the bucket's days where has(d), or null if none
+const bAvg=(b,v,has)=>{const ds=b.days.filter(has);return ds.length?ds.reduce((a,d)=>a+v(d),0)/ds.length:null};
+function bLabel(b,unit,long){
+  if(unit==="month")return parse(b.key+"-01").toLocaleDateString(undefined,long?{month:"long",year:"numeric"}:{month:"short"});
+  if(unit==="week")return long?`Week of ${nice(b.key,{month:"short",day:"numeric"})}`:nice(b.key,{month:"numeric",day:"numeric"});
+  return long?nice(b.key,{weekday:"short",month:"short",day:"numeric"}):nice(b.key,{month:"numeric",day:"numeric"})}
+function miniBars(label,unit,pts,band){
+  // pts: [{v (or null), lab}], drawn on a 100×40 box; reuses the exercise mini-chart's tap-to-read behaviour
+  const w=100,h=40,pad=3, vals=pts.map(p=>p.v).filter(v=>v!=null);
+  if(!vals.length)return `<div class="spark"><span class="lab">${label}</span><span class="val"><b>—</b></span><span class="dl">Not logged</span><div class="plot"></div></div>`;
+  const max=Math.max(...vals,band[1]*1.1,1), y=v=>h-(v/max)*(h-pad), bw=w/pts.length, bwid=Math.max(.6,bw*.7);
+  const avg=vals.reduce((a,v)=>a+v,0)/vals.length, rng=band[0]===band[1]?n0(band[0]):`${n0(band[0])}–${n0(band[1])}`;
+  const xs=pts.map((p,i)=>i*bw+bw/2), last=pts.length-1;
+  const data=esc(JSON.stringify(pts.map((p,i)=>[+(xs[i]).toFixed(1),+(p.v==null?h:y(p.v)).toFixed(1),p.v==null?"—":n0(p.v),p.lab])));
+  const bars=pts.map((p,i)=>p.v==null||p.v<=0?"":`<rect class="b${p.now?" now":""}" x="${(xs[i]-bwid/2).toFixed(2)}" width="${bwid.toFixed(2)}" y="${y(p.v).toFixed(1)}" height="${(h-y(p.v)).toFixed(1)}"/>`).join("");
+  const lp=pts[last];
+  return `<div class="spark" data-pts="${data}" data-now="${n0(avg)}" data-diff="Target ${rng}" data-unit="${unit}">
+    <span class="lab">${label}</span><span class="val"><b>${n0(avg)}</b> ${unit}</span><span class="dl">Target ${rng}</span>
+    <div class="plot"><svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" role="img" aria-label="${label}: average ${n0(avg)} ${unit}, target ${rng}">
+      <rect class="band" x="0" width="${w}" y="${y(band[1]).toFixed(1)}" height="${Math.max(.8,y(band[0])-y(band[1])).toFixed(1)}"/>${bars}</svg>
+    <i class="pt" style="left:${xs[last]}%;top:${(lp.v==null?h:y(lp.v))/h*100}%"></i></div></div>`}
+function renderFoodStats(){
+  const all=loggedDays();
+  $("fsEmpty").hidden=all.length>0; $("fsBody").hidden=!all.length; if(!all.length)return;
+  const today=todayStr(), G=macroGoals(), {lo,hi}=foodTarget, inRange=d=>{const c=dayCal(d);return c>=lo&&c<=hi};
+  // tiles: last 7 days
+  const wk=[];for(let i=6;i>=0;i--){const d=shift(today,-i);if(dayFood(d).length)wk.push(d)}
+  const avg=f=>wk.length?wk.reduce((a,d)=>a+f(d),0)/wk.length:0;
+  let streak=0,d=dayFood(today).length?today:shift(today,-1);while(dayFood(d).length){streak++;d=shift(d,-1)}
+  const sm=t=>`<small style="font-size:18px;color:var(--muted)">${t}</small>`;
+  $("fTiles").innerHTML=[
+    ["7-day avg",wk.length?`${n0(avg(dayCal))}${sm(" cal")}`:"—",`Target ${n0(lo)}–${n0(hi)}`],
+    ["Days in range",`${wk.filter(inRange).length}${sm("/"+wk.length)}`,"of the last 7 days logged"],
+    ["Avg protein",wk.length?`${n0(avg(dayP))}${sm(" g")}`:"—",`Goal ${n0(G.p[0])}–${n0(G.p[1])} g`],
+    ["Logging streak",String(streak),`day${streak===1?"":"s"} in a row with food logged`]
+  ].map(([k,v,s])=>`<div class="tile"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${s}</div></div>`).join("");
+
+  $("fsRange").querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",+b.dataset.r===fsDays));
+  const {unit,list}=foodBuckets(), has=d=>dayFood(d).length>0, rangeDays=list.flatMap(b=>b.days).filter(has);
+  $("calTitle").innerHTML=`Calories <span class="note">(${unit==="day"?"per day":unit==="week"?"weekly average":"monthly average"})</span>`;
+  const pts=list.map(b=>{const v=bAvg(b,dayCal,has);return {label:bLabel(b,unit),v:v||0,now:b.now,
+    tip:`${bLabel(b,unit,true)}: ${v==null?"nothing logged":n0(v)+" cal"+(unit==="day"?"":" avg")}`}});
+  barChart($("calChart"),pts,{label:"Calories over time",now:unit==="day"?"Today":unit==="week"?"This wk":"This mo",band:[lo,hi],
+    every:Math.max(2,Math.ceil(pts.length/6))});
+  const rAvg=rangeDays.length?rangeDays.reduce((a,d)=>a+dayCal(d),0)/rangeDays.length:0;
+  $("calFacts").innerHTML=fact(rangeDays.length?n0(rAvg):"—","avg cal")+fact(`${rangeDays.filter(inRange).length}/${rangeDays.length}`,"days in range")+fact(String(rangeDays.length),"days logged");
+
+  // macros
+  const mac=(k,f)=>miniBars(k,"g",list.map(b=>({v:bAvg(b,f,d=>has(d)&&f(d)>0),lab:bLabel(b,unit,true),now:b.now})),G[k[0].toLowerCase()]);
+  $("macSparks").innerHTML=mac("Protein",dayP)+mac("Carbs",d=>dayMac(d,"c"))+mac("Fat",d=>dayMac(d,"f"));
+  $("macSub").textContent=`${G.s.n}${G.mine?" · your protein goal":""}`;
+
+  // by meal: each meal's calories summed over the range, divided by the days logged
+  const tot={}; rangeDays.forEach(d=>dayFood(d).forEach(e=>{const k=MEAL_NAME[e.meal]?e.meal:"";tot[k]=(tot[k]||0)+entryCal(e)}));
+  const sum=Object.values(tot).reduce((a,v)=>a+v,0)||1, nd=rangeDays.length||1;
+  $("mealList").innerHTML=[...MEALS.map(([k])=>k),""].filter(k=>tot[k]>0||(k&&rangeDays.length))
+    .map(k=>`<li><span>${k?MEAL_NAME[k]:"Not sorted"}</span><span><b>${n0((tot[k]||0)/nd)} cal</b> <em>${Math.round((tot[k]||0)/sum*100)}%</em></span></li>`).join("")
+    ||`<li><em>Nothing logged in this range.</em></li>`;
+
+  // most-logged foods (unnamed quick adds are left out)
+  const foods={}; rangeDays.forEach(d=>dayFood(d).forEach(e=>e.items.forEach(x=>{const n=String(x.name||"").trim();if(!n||n==="Quick add")return;
+    const k=n.toLowerCase(), f=foods[k]=foods[k]||{n,count:0,cal:0};f.count++;f.cal+=+x.cal||0})));
+  const top=Object.values(foods).sort((a,b)=>b.count-a.count||b.cal-a.cal).slice(0,8);
+  $("topFoods").innerHTML=top.map(f=>`<li><span>${esc(f.n)}</span><span><b>${f.count}×</b> <em>${n0(f.cal/f.count)} cal each</em></span></li>`).join("")
+    ||`<li><em>Nothing logged in this range.</em></li>`;
+}
+$("fsRange").addEventListener("click",ev=>{const b=ev.target.closest("button[data-r]");if(!b)return;
+  fsDays=+b.dataset.r;ls.set("ll.fsRange",fsDays);renderFoodStats()});
+$("macSparks").addEventListener("pointermove",ev=>{if(ev.buttons||ev.pointerType==="mouse")sparkAt(ev)});
 function calStatus(c){const {lo,hi}=foodTarget;
   return c<lo?{cls:"",t:`${n0(lo-c)} under`}:c<=hi?{cls:"up",t:"In range"}:{cls:"down",t:`${n0(c-hi)} over`}}
 function renderFoodHist(){
-  renderCalChart();
   const days=Object.keys(food).filter(d=>dayFood(d).length).sort().reverse(), {hi}=foodTarget;
   if(!days.length){$("foodHist").innerHTML=`<div class="empty">Nothing logged yet. Add what you eat on the Food › Today tab and each day shows up here.</div>`;return}
   $("foodHist").innerHTML=days.map(d=>{
